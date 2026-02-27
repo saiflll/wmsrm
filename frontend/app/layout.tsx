@@ -1,0 +1,31 @@
+import React from 'react';
+import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
+import { ColorSchemeScript, MantineProvider, createTheme } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
+
+export const metadata = {
+    title: 'WMS Pro',
+    description: 'Warehouse Management System',
+};
+
+const theme = createTheme({
+    primaryColor: 'blue',
+    fontFamily: 'Inter, sans-serif',
+});
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <html lang="en" data-mantine-color-scheme="light">
+            <head>
+                <ColorSchemeScript />
+            </head>
+            <body>
+                <MantineProvider theme={theme}>
+                    <Notifications />
+                    {children}
+                </MantineProvider>
+            </body>
+        </html>
+    );
+}

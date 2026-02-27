@@ -1,0 +1,58 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+build_frontend.log
+
+# Dependency directories
+node_modules/
+vendor/
+
+# Build and Output directories
+.next/
+out/
+build/
+dist/
+bin/
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# Testing and Coverage
+coverage/
+.nyc_output/
+
+# Temporary and Cache files
+tmp/
+temp/
+.eslintcache
+.stylelintcache
+.prettiercache
