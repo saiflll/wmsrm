@@ -18,8 +18,16 @@ export default function DashboardPage() {
     const [stats, setStats] = useState<any>(null);
     const [stocks, setStocks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [userRole, setUserRole] = useState<number>(1);
 
     useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                const u = JSON.parse(storedUser);
+                if (u && u.role) setUserRole(u.role);
+            } catch (e) { }
+        }
         loadData();
     }, []);
 
@@ -99,39 +107,72 @@ export default function DashboardPage() {
         );
     };
 
+    const isForeman = userRole === 1;
+    const isAdmin = userRole === 2;
+    const isSuperAdmin = userRole === 3;
+
+    let titleText = "MONITORING STOCK REALTIME";
+    if (isForeman) titleText = "DASHBOARD FOREMAN - OPRASIONAL GUDANG";
+    if (isAdmin) titleText = "DASHBOARD ADMIN - INVENTORY & UTILIZATION";
+    if (isSuperAdmin) titleText = "DASHBOARD SUPER ADMIN - FULL SYSTEM OVERVIEW";
+
     return (
         <Box>
             <Box style={{ background: '#fff', borderBottom: '1px solid #ddd', padding: '12px 20px' }}>
-                <Title order={3} style={{ color: '#e6921e', fontWeight: 900 }}>MONITORING STOCK REALTIME</Title>
+                <Title order={3} style={{ color: isSuperAdmin ? '#d9480f' : isAdmin ? '#1c7ed6' : '#e6921e', fontWeight: 900 }}>
+                    {titleText}
+                </Title>
             </Box>
 
             <Box p="md">
-                {/* Stat cards */}
-                <Grid mb="md" gutter="md">
-                    <Grid.Col span={3}>{statCard('Total SKU', s.totalSku || 0, '#ff6600')}</Grid.Col>
-                    <Grid.Col span={3}>{statCard('Total Stok', s.totalStock || 0, '#40c057')}</Grid.Col>
-                    <Grid.Col span={3}>{statCard('Transaksi Inbound', s.inboundCount || 0, '#1c7ed6')}</Grid.Col>
-                    <Grid.Col span={3}>{statCard('Transaksi Outbound', s.outboundCount || 0, '#f06595')}</Grid.Col>
-                </Grid>
+                {isSuperAdmin && (
+                    <Paper withBorder p="sm" mb="md" style={{ background: '#fff5f5', borderLeft: '4px solid #fa5252' }}>
+                        <Group justify="space-between">
+                            <Box>
+                                <Text fw={700} color="red">System Health & Alert</Text>
+                                <Text size="sm" color="dimmed">Status sistem berjalan normal. Tidak ada error log pada WMS.</Text>
+                            </Box>
+                            <Button color="red" variant="light">Manage Users</Button>
+                        </Group>
+                    </Paper>
+                )}
 
-                {/* Utilization */}
-                <Paper withBorder p="sm" mb="md">
-                    <Group justify="space-between" mb="xs">
-                        <Text fw={700}>Utilisasi Gudang</Text>
-                        <Badge color="blue" variant="light">{s.utilization || 0}% terisi ({s.filledSlots || 0}/{s.totalSlots || 0} slot)</Badge>
-                    </Group>
-                    <BarChart data={[
-                        { label: 'Filled', val: s.filledSlots || 0, color: '#4dabf7' },
-                        { label: 'Empty', val: (s.totalSlots || 0) - (s.filledSlots || 0), color: '#dee2e6' },
-                        { label: 'Inbound', val: s.inboundCount || 0, color: '#40c057' },
-                        { label: 'Outbound', val: s.outboundCount || 0, color: '#f06595' },
-                    ]} />
-                </Paper>
+                {/* Stat cards - Hidden for Foreman */}
+                {!isForeman && (
+                    <Grid mb="md" gutter="md">
+                        <Grid.Col span={3}>{statCard('Total SKU', s.totalSku || 0, '#ff6600')}</Grid.Col>
+                        <Grid.Col span={3}>{statCard('Total Stok', s.totalStock || 0, '#40c057')}</Grid.Col>
+                        <Grid.Col span={3}>{statCard('Transaksi Inbound', s.inboundCount || 0, '#1c7ed6')}</Grid.Col>
+                        <Grid.Col span={3}>{statCard('Transaksi Outbound', s.outboundCount || 0, '#f06595')}</Grid.Col>
+                    </Grid>
+                )}
 
-                {/* Stock tables */}
+                {/* Utilization - Hidden for Foreman */}
+                {!isForeman && (
+                    <Paper withBorder p="sm" mb="md">
+                        <Group justify="space-between" mb="xs">
+                            <Text fw={700}>Utilisasi Gudang</Text>
+                            <Badge color="blue" variant="light">{s.utilization || 0}% terisi ({s.filledSlots || 0}/{s.totalSlots || 0} slot)</Badge>
+                        </Group>
+                        <BarChart data={[
+                            { label: 'Filled', val: s.filledSlots || 0, color: '#4dabf7' },
+                            { label: 'Empty', val: (s.totalSlots || 0) - (s.filledSlots || 0), color: '#dee2e6' },
+                            { label: 'Inbound', val: s.inboundCount || 0, color: '#40c057' },
+                            { label: 'Outbound', val: s.outboundCount || 0, color: '#f06595' },
+                        ]} />
+                    </Paper>
+                )}
+
+                {/* Stock tables - Visible to all */}
+                {isForeman && (
+                    <Paper withBorder p="xs" mb="md" style={{ background: '#e7f5ff', borderLeft: '4px solid #339af0' }}>
+                        <Text fw={600} size="sm">Fokuskan pada pengecekan stok harian. Laporkan segera jika ada discrepancy (selisih stok).</Text>
+                    </Paper>
+                )}
+
                 <Group align="flex-start" gap="md">
-                    <TblSection title="UTILITAS GUDANG DRY" rows={dryStocks} />
-                    <TblSection title="UTILITAS GUDANG WET" rows={wetStocks} />
+                    <TblSection title="STOK GUDANG DRY" rows={dryStocks} />
+                    <TblSection title="STOK GUDANG WET" rows={wetStocks} />
                 </Group>
             </Box>
         </Box>
