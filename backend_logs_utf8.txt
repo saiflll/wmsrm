@@ -1,0 +1,1494 @@
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:29:51 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:29:51 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +45ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:29:51 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:29:51 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:29:51 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:29:51 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:29:51 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +139ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:29:55 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:30:02 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:30:08 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:30:15 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:30:22 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:30:29 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:30:36 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:30:43 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:30:50 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:30:50 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:30:54 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:30:54 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +34ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:30:54 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:30:54 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:30:54 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:30:54 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:30:54 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +89ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:30:58 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:31:05 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:31:12 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:31:19 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:31:26 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:31:32 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:31:39 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:31:46 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:31:53 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:31:53 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:31:57 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:31:57 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +26ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:31:57 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:31:57 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:31:57 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:31:57 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:31:57 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +61ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:32:01 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:32:08 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:32:15 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:32:22 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:32:28 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:32:35 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:32:42 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:32:49 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:32:56 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:32:56 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:33:00 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:33:00 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +28ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:33:00 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:33:00 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:33:00 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:33:00 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:33:00 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +63ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:33:04 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:33:11 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:33:18 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:33:24 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:33:31 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:33:38 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:33:45 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:33:52 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:33:59 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:33:59 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:34:03 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:34:03 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +30ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:34:03 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:34:03 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:34:03 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:34:03 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:34:03 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +59ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:34:07 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:34:14 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:34:21 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:34:27 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:34:34 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:34:41 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:34:48 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:34:55 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:35:02 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:35:02 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:35:06 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:35:06 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +36ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:35:06 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:35:06 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:35:06 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:35:06 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:35:06 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +70ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:35:10 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:35:17 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:35:24 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:35:31 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:35:37 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:35:44 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:35:51 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:35:58 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:36:05 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:36:05 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:36:09 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:36:09 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +30ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:36:09 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:36:09 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:36:09 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:36:09 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:36:09 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +61ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:36:13 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:36:20 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:36:27 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:36:34 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:36:40 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:36:47 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:36:54 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:37:01 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:37:08 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:37:08 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:37:12 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:37:12 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +31ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:37:12 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:37:12 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:37:12 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:37:12 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:37:12 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +62ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:37:16 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:37:23 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:37:30 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:37:37 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:37:44 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:37:50 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:37:57 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:38:04 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:38:11 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:38:11 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:38:15 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:38:15 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +32ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:38:15 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:38:15 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:38:15 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:38:15 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:38:15 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +63ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:38:19 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:38:26 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:38:33 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:38:39 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:38:46 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:38:53 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:39:00 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:39:07 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:39:14 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:39:14 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:39:18 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:39:18 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +30ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:39:18 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:39:18 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:39:18 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:39:18 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:39:18 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +66ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:39:22 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:39:29 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:39:36 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:39:43 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:39:49 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:39:56 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:40:03 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:40:10 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:40:17 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:40:17 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:40:21 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:40:21 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +49ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:40:21 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:40:21 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:40:21 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +3ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:40:21 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:40:21 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +80ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:40:25 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:40:32 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:40:39 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:40:46 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:40:53 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:41:00 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:41:07 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:41:14 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:41:21 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:41:21 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:41:24 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:41:24 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +29ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:41:24 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:41:24 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:41:24 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:41:24 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:41:25 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +55ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:41:28 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:41:35 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:41:42 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:41:49 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:41:56 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:42:03 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:42:10 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:42:17 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:42:24 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:42:24 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:42:28 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:42:28 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +29ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:42:28 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:42:28 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:42:28 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:42:28 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:42:28 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +62ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:42:32 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:42:39 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:42:45 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:42:52 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:42:59 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:43:06 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:43:13 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:43:20 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:43:27 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:43:27 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:43:31 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:43:31 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +29ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:43:31 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:43:31 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:43:31 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:43:31 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:43:31 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +63ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:43:35 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:43:42 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:43:49 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:43:55 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:44:02 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:44:09 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:44:16 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:44:23 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:44:30 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:44:30 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:44:34 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:44:34 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +28ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:44:34 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:44:34 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:44:34 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:44:34 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:44:34 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +57ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:44:38 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:44:45 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:44:52 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:44:58 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:45:05 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:45:12 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:45:19 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:45:26 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:45:33 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:45:33 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:45:37 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:45:37 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +31ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:45:37 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:45:37 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:45:37 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:45:37 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:45:37 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +55ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:45:41 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:45:48 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:45:55 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:46:01 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:46:08 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:46:15 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:46:22 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:46:29 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:46:36 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:46:36 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:46:40 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:46:40 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +31ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:46:40 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:46:40 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:46:40 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:46:40 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:46:40 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +68ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:46:44 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:46:51 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:46:58 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:47:05 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:47:11 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:47:18 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:47:25 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:47:32 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:47:39 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:47:39 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:47:43 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:47:43 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +33ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:47:43 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:47:43 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:47:43 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:47:43 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:47:43 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +64ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:47:47 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:47:54 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:48:01 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:48:08 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:48:14 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:48:21 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:48:28 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:48:35 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:48:42 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:48:42 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:48:46 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:48:46 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +57ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:48:46 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:48:46 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:48:46 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:48:46 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:48:46 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +91ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:48:50 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:48:57 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:49:04 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:49:11 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:49:18 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:49:24 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:49:31 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:49:38 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:49:45 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:49:45 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:49:50 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:49:50 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +32ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:49:50 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:49:50 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:49:50 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:49:50 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:49:50 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +129ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:49:54 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:50:00 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:50:07 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:50:14 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:50:21 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:50:28 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:50:35 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:50:42 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:50:49 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:50:49 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 7:50:53 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 7:50:53 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +27ms[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 7:50:53 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 7:50:53 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 7:50:53 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 7:50:53 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 7:50:53 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +61ms[39m
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 7:50:57 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 7:51:04 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 7:51:11 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 7:51:17 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 7:51:24 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 7:51:31 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 7:51:38 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 7:51:45 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 7:51:52 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 7:51:52 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:51:56 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:51:56 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +33ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:51:56 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:51:56 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:51:56 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:51:56 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:51:56 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +73ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:52:00 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:52:07 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:52:14 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:52:21 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:52:28 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:52:34 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:52:41 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:52:48 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:52:55 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:52:55 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:52:59 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:52:59 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +27ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:52:59 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:52:59 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:52:59 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:52:59 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:52:59 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +57ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:53:03 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:53:10 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:53:17 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:53:24 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:53:30 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:53:37 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:53:44 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:53:51 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:53:58 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:53:58 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:54:02 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:54:02 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +29ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:54:02 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:54:02 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:54:02 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:54:02 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:54:02 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +60ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:54:06 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:54:13 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:54:20 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:54:27 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:54:33 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:54:40 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:54:47 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:54:54 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:55:01 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:55:01 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:55:05 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:55:05 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +30ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:55:05 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:55:05 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:55:05 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:55:05 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:55:05 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +61ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:55:09 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:55:16 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:55:23 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:55:30 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:55:36 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:55:43 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:55:50 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:55:57 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:56:04 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:56:04 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:56:08 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:56:08 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +29ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:56:08 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:56:08 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:56:08 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:56:08 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:56:08 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +53ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:56:12 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:56:19 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:56:26 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:56:32 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:56:39 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:56:46 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:56:53 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:57:00 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:57:07 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:57:07 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 17  - [39m02/27/2026, 7:57:11 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 17  - [39m02/27/2026, 7:57:11 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +30ms[39m
+wms_backend  | [32m[Nest] 17  - [39m02/27/2026, 7:57:11 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 17  - [39m02/27/2026, 7:57:11 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 17  - [39m02/27/2026, 7:57:11 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 17  - [39m02/27/2026, 7:57:11 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 17  - [39m02/27/2026, 7:57:11 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +55ms[39m
+wms_backend  | [31m[Nest] 17  - [39m02/27/2026, 7:57:15 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 17  - [39m02/27/2026, 7:57:22 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 17  - [39m02/27/2026, 7:57:29 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 17  - [39m02/27/2026, 7:57:35 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 17  - [39m02/27/2026, 7:57:42 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 17  - [39m02/27/2026, 7:57:49 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 17  - [39m02/27/2026, 7:57:56 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 17  - [39m02/27/2026, 7:58:03 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 17  - [39m02/27/2026, 7:58:10 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 17  - [39m02/27/2026, 7:58:10 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:58:14 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:58:14 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +30ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:58:14 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:58:14 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:58:14 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:58:14 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:58:14 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +54ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:58:18 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:58:25 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:58:32 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:58:38 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:58:45 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:58:52 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:58:59 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:59:06 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:59:13 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:59:13 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:59:17 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:59:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +31ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:59:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:59:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:59:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:59:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 7:59:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +57ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:59:21 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:59:28 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:59:34 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:59:41 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:59:48 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 7:59:55 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:00:02 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:00:09 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:00:16 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:00:16 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:00:20 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:00:20 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +36ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:00:20 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:00:20 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:00:20 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +3ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:00:20 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:00:20 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +65ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:00:24 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:00:31 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:00:38 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:00:45 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:00:52 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:00:58 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:01:05 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:01:12 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:01:19 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:01:19 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:01:23 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:01:23 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +30ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:01:23 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:01:23 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:01:23 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:01:23 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:01:23 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +65ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:01:27 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:01:34 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:01:41 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:01:48 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:01:55 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:02:02 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:02:09 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:02:15 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:02:22 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:02:22 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:02:26 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:02:26 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +38ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:02:26 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:02:26 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:02:26 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:02:26 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:02:26 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +66ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:02:30 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:02:37 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:02:44 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:02:51 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:02:58 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:03:04 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (6)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:03:11 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (7)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:03:18 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (8)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:03:25 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (9)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:03:25 AM [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39mError: getaddrinfo ENOTFOUND db
+wms_backend  | [90m    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)[39m {
+wms_backend  |   errno: [33m-3008[39m,
+wms_backend  |   code: [32m'ENOTFOUND'[39m,
+wms_backend  |   syscall: [32m'getaddrinfo'[39m,
+wms_backend  |   hostname: [32m'db'[39m
+wms_backend  | }
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:03:29 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:03:29 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +26ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:03:29 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:03:29 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:03:29 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:03:29 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 18  - [39m02/27/2026, 8:03:29 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +64ms[39m
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:03:33 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:03:40 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:03:47 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 18  - [39m02/27/2026, 8:03:54 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | npm error path /app
+wms_backend  | npm error command failed
+wms_backend  | npm error signal SIGTERM
+wms_backend  | npm error command sh -c node dist/main
+wms_backend  | npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T08_03_28_568Z-debug-0.log
+wms_backend  | 
+wms_backend  | > backend@0.0.1 start:prod
+wms_backend  | > node dist/main
+wms_backend  | 
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 8:04:17 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 8:04:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +46ms[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 8:04:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 8:04:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 8:04:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +2ms[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 8:04:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+wms_backend  | [32m[Nest] 19  - [39m02/27/2026, 8:04:17 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +71ms[39m
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 8:04:21 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 8:04:28 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 8:04:35 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (3)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 8:04:42 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (4)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)
+wms_backend  | [31m[Nest] 19  - [39m02/27/2026, 8:04:48 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (5)...[39m
+wms_backend  | Error: getaddrinfo ENOTFOUND db
+wms_backend  |     at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)

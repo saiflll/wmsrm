@@ -1,0 +1,236 @@
+[
+    {
+        "Id": "6c512fdc659a6ea2c0f977f95ff4b40798bcb34650153669807242bbeb805d88",
+        "Created": "2026-02-26T15:57:50.432560991Z",
+        "Path": "docker-entrypoint.sh",
+        "Args": [
+            "postgres"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 63668,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-02-27T08:04:15.422316286Z",
+            "FinishedAt": "2026-02-27T08:04:03.531832065Z"
+        },
+        "Image": "sha256:5fe8ca7fc662071188c30271cb870d1ce9a6ec4578c934b064697ae77a9241e1",
+        "ResolvConfPath": "/var/lib/docker/containers/6c512fdc659a6ea2c0f977f95ff4b40798bcb34650153669807242bbeb805d88/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/6c512fdc659a6ea2c0f977f95ff4b40798bcb34650153669807242bbeb805d88/hostname",
+        "HostsPath": "/var/lib/docker/containers/6c512fdc659a6ea2c0f977f95ff4b40798bcb34650153669807242bbeb805d88/hosts",
+        "LogPath": "/var/lib/docker/containers/6c512fdc659a6ea2c0f977f95ff4b40798bcb34650153669807242bbeb805d88/6c512fdc659a6ea2c0f977f95ff4b40798bcb34650153669807242bbeb805d88-json.log",
+        "Name": "/wms_db",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "wms_postgres_data:/var/lib/postgresql/data:rw"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "wms_default",
+            "PortBindings": {
+                "5432/tcp": [
+                    {
+                        "HostIp": "",
+                        "HostPort": "5432"
+                    }
+                ]
+            },
+            "RestartPolicy": {
+                "Name": "always",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": null,
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "volume",
+                "Name": "wms_postgres_data",
+                "Source": "/var/lib/docker/volumes/wms_postgres_data/_data",
+                "Destination": "/var/lib/postgresql/data",
+                "Driver": "local",
+                "Mode": "rw",
+                "RW": true,
+                "Propagation": ""
+            }
+        ],
+        "Config": {
+            "Hostname": "6c512fdc659a",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "5432/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "POSTGRES_USER=wms_user",
+                "POSTGRES_PASSWORD=wms_password",
+                "POSTGRES_DB=wms_db",
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "GOSU_VERSION=1.19",
+                "LANG=en_US.utf8",
+                "PG_MAJOR=15",
+                "PG_VERSION=15.16",
+                "PG_SHA256=695ee29a77be1f5010e10f3667696f29871587f7aa311eadc1f809bea287cf48",
+                "DOCKER_PG_LLVM_DEPS=llvm19-dev \t\tclang19",
+                "PGDATA=/var/lib/postgresql/data"
+            ],
+            "Cmd": [
+                "postgres"
+            ],
+            "Image": "postgres:15-alpine",
+            "Volumes": {
+                "/var/lib/postgresql/data": {}
+            },
+            "WorkingDir": "/",
+            "Entrypoint": [
+                "docker-entrypoint.sh"
+            ],
+            "Labels": {
+                "com.docker.compose.config-hash": "90ba85e55579744bb6e84378978457a39e4f7dec5d9953ce5d1328d18ece1cf5",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "",
+                "com.docker.compose.image": "sha256:5fe8ca7fc662071188c30271cb870d1ce9a6ec4578c934b064697ae77a9241e1",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "wms",
+                "com.docker.compose.project.config_files": "C:\\Users\\Lenovo\\Documents\\dev\\app\\wms\\docker-compose.yml",
+                "com.docker.compose.project.working_dir": "C:\\Users\\Lenovo\\Documents\\dev\\app\\wms",
+                "com.docker.compose.service": "db",
+                "com.docker.compose.version": "5.0.1"
+            },
+            "StopSignal": "SIGINT",
+            "StopTimeout": 1
+        },
+        "NetworkSettings": {
+            "SandboxID": "2ba6a4e574aa0f77de4e6f5ff26f408a2039c3604d9be8e2e91154055c3cc391",
+            "SandboxKey": "/var/run/docker/netns/2ba6a4e574aa",
+            "Ports": {
+                "5432/tcp": []
+            },
+            "Networks": {}
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:f93ddcbeeaf7cd05cc2d764f6d29a3501fe820c6abe1997e31ce967f277ed984",
+            "size": 3054,
+            "annotations": {
+                "com.docker.official-images.bashbrew.arch": "amd64",
+                "org.opencontainers.image.base.digest": "sha256:59855d3dceb3ae53991193bd03301e082b2a7faa56a514b03527ae0ec2ce3a95",
+                "org.opencontainers.image.base.name": "alpine:3.23",
+                "org.opencontainers.image.created": "2026-02-12T21:05:26Z",
+                "org.opencontainers.image.revision": "2c1a455e1e9e5f0f0a791264c2eec5ef36e1e36f",
+                "org.opencontainers.image.source": "https://github.com/docker-library/postgres.git#2c1a455e1e9e5f0f0a791264c2eec5ef36e1e36f:15/alpine3.23",
+                "org.opencontainers.image.url": "https://hub.docker.com/_/postgres",
+                "org.opencontainers.image.version": "15.16-alpine3.23"
+            },
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    }
+]

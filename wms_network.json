@@ -1,0 +1,65 @@
+[
+    {
+        "Name": "wms_default",
+        "Id": "abc6d936568989482e58b07bba7cab053d01f516827f7a003d8f8b62d0e02d82",
+        "Created": "2026-02-26T15:57:50.269941163Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv4": true,
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "172.19.0.0/16",
+                    "IPRange": "",
+                    "Gateway": "172.19.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Options": {
+            "com.docker.network.enable_ipv4": "true",
+            "com.docker.network.enable_ipv6": "false"
+        },
+        "Labels": {
+            "com.docker.compose.config-hash": "8819932afc6eca5ef02212184066246dc511b76b8afd14801b0c0d8b4cb4ff1f",
+            "com.docker.compose.network": "default",
+            "com.docker.compose.project": "wms",
+            "com.docker.compose.version": "5.0.1"
+        },
+        "Containers": {
+            "051fe57ed6d070f1f00c63ba667b525bcd50812974a9d639c95619c147371d29": {
+                "Name": "wms_frontend",
+                "EndpointID": "9bb5eaa4637ea3fa929e9400aba7c798c3f10e46a04194db52df1bcc54a22fde",
+                "MacAddress": "16:76:11:49:a3:0e",
+                "IPv4Address": "172.19.0.3/16",
+                "IPv6Address": ""
+            },
+            "1048707d45c9d4e4f0f81bef793672789c947f7eb281b2eaf84f478e0d7b3c16": {
+                "Name": "wms_backend",
+                "EndpointID": "3996784c5077121062e9e2d0befd3c3507f2a1f44ffccf50174902ca1f06b0d0",
+                "MacAddress": "32:22:9d:da:0e:b8",
+                "IPv4Address": "172.19.0.2/16",
+                "IPv6Address": ""
+            }
+        },
+        "Status": {
+            "IPAM": {
+                "Subnets": {
+                    "172.19.0.0/16": {
+                        "IPsInUse": 5,
+                        "DynamicIPsAvailable": 65531
+                    }
+                }
+            }
+        }
+    }
+]
