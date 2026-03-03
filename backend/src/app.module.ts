@@ -23,6 +23,7 @@ import { GudangModule } from './gudang/gudang.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { CustomersModule } from './customers/customers.module';
 import { HardwareModule } from './hardware/hardware.module';
+import { ShiftsController } from './shifts/shifts.controller';
 
 import { SeedService } from './seed.service';
 
@@ -48,7 +49,7 @@ import { SeedService } from './seed.service';
     CustomersModule,
     HardwareModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, ShiftsController],
   providers: [AppService, SeedService],
 })
 export class AppModule { }

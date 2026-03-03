@@ -98,7 +98,7 @@ export default function App() {
         {/* Nav Items */}
         <ScrollArea style={{ flex: 1 }} p={0}>
           <Stack gap={0} p={0}>
-            {NAV.map((n) => {
+            {NAV.map((n: any) => {
               const active = tab === n.id;
               return (
                 <UnstyledButton

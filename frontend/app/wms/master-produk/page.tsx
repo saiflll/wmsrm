@@ -8,7 +8,7 @@ import { api, unwrap } from '../lib/api';
 
 export default function MasterProdukPage() {
     const [tab, setTab] = useState('items');
-    const [items, setItems] = useState([]);
+    const [items, setItems] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const [opened, { open, close }] = useDisclosure(false);
@@ -58,11 +58,11 @@ export default function MasterProdukPage() {
     };
 
     const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
-    const filtered = search ? items.filter(i => i.nama?.toLowerCase().includes(search.toLowerCase()) || i.sku?.includes(search)) : items;
+    const filtered = search ? items.filter((i: any) => i.nama?.toLowerCase().includes(search.toLowerCase()) || i.sku?.includes(search)) : items;
 
     // Count by kategori
     const katGroups = {};
-    items.forEach(i => { katGroups[i.kategori] = (katGroups[i.kategori] || 0) + 1; });
+    items.forEach((i: any) => { katGroups[i.kategori] = (katGroups[i.kategori] || 0) + 1; });
 
     return (
         <Box>
@@ -108,13 +108,13 @@ export default function MasterProdukPage() {
                             <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
                                 <Table.Thead style={{ background: '#1a1a1a' }}>
                                     <Table.Tr>
-                                        {['SKU', 'Nama', 'Kategori', 'Satuan', 'Stok', 'Min Stok', 'Aksi'].map(h => (
+                                        {['SKU', 'Nama', 'Kategori', 'Satuan', 'Stok', 'Min Stok', 'Aksi'].map((h: any) => (
                                             <Table.Th key={h} style={{ color: '#fff', fontSize: 11 }}>{h}</Table.Th>
                                         ))}
                                     </Table.Tr>
                                 </Table.Thead>
                                 <Table.Tbody>
-                                    {filtered.map(item => (
+                                    {filtered.map((item: any) => (
                                         <Table.Tr key={item.id}>
                                             <Table.Td>{item.sku}</Table.Td>
                                             <Table.Td fw={600}>{item.nama}</Table.Td>

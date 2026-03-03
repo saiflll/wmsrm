@@ -1,18 +1,32 @@
-'use client';
 // @ts-nocheck
+'use client';
 import React, { useState, useEffect } from 'react';
-import { Box, Group, Button, Title, Text, Table, Badge, Paper, Stack, TextInput, Select, Loader } from '@mantine/core';
+import {
+    Box, Group, Button, Title, Text, Table, Badge, Paper, Stack,
+    TextInput, Select, Loader, NumberInput, Divider, Autocomplete
+} from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { api, unwrap, fmt, statusLabel, statusColor } from '../lib/api';
 
 export default function PutawayPage() {
     const [type, setType] = useState('wet');
-    const [stocks, setStocks] = useState([]);
-    const [gudangs, setGudangs] = useState([]);
+    const [stocks, setStocks] = useState<any[]>([]);
+    const [barangs, setBarangs] = useState<any[]>([]);
+    const [allGudangs, setAllGudangs] = useState<any[]>([]);
+    const [inboundLogs, setInboundLogs] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
-    const [selectedLoc, setSelectedLoc] = useState('');
+    const [filterRak, setFilterRak] = useState('');
     const [loading, setLoading] = useState(true);
+    const [form, setForm] = useState({
+        no_po: '',
+        stock_id: '',
+        gudang_tujuan_id: '',
+        qty: 0,
+    });
+
+    const [selectedBarangId, setSelectedBarangId] = useState('');
+    const [selectedZoneTujuan, setSelectedZoneTujuan] = useState('');
 
     useEffect(() => { load(); }, [type]);
 
@@ -20,93 +34,250 @@ export default function PutawayPage() {
         setLoading(true);
         try {
             const side = type === 'dry';
-            const [s, g] = await Promise.all([
+            const [s, g, il, b] = await Promise.all([
                 api().get(`/inventory/stock?side=${side}`),
                 api().get(`/gudang?side=${side}`),
+                api().get('/inventory/logs/inbound'),
+                api().get('/barang'),
             ]);
             setStocks(unwrap(s));
-            setGudangs(unwrap(g));
+            setAllGudangs(unwrap(g));
+            setInboundLogs(unwrap(il).filter((l: any) => type === 'wet' ? !l.barang?.side : l.barang?.side));
+            setBarangs(unwrap(b));
         } catch (e) { console.error(e); }
         setLoading(false);
     };
 
-    const relocate = async (stock) => {
-        if (!selectedLoc) return notifications.show({ title: 'Error', message: 'Pilih lokasi tujuan dulu', color: 'red' });
+    const relocate = async () => {
+        if (!form.stock_id || !form.gudang_tujuan_id || !form.qty) {
+            return notifications.show({ title: 'Error', message: 'Pilih stock, lokasi tujuan, dan qty', color: 'red' });
+        }
         try {
             await api().post('/inventory/relocation', {
-                stock_id: stock.id,
-                gudang_tujuan_id: +selectedLoc,
-                qty: stock.qty,
+                stock_id: +form.stock_id,
+                gudang_tujuan_id: +form.gudang_tujuan_id,
+                qty: +form.qty,
             });
-            notifications.show({ title: 'Sukses', message: `${stock.barang?.nama} dipindahkan`, color: 'green' });
+            const stk = stocks.find((s: any) => s.id === +form.stock_id);
+            notifications.show({ title: 'Sukses', message: `${stk?.barang?.nama} berhasil dipindahkan`, color: 'green' });
+            setForm({ no_po: '', stock_id: '', gudang_tujuan_id: '', qty: 0 });
+            setSelectedZoneTujuan('');
             load();
         } catch (e: any) {
             notifications.show({ title: 'Error', message: unwrap(e.response)?.message || 'Failed', color: 'red' });
         }
     };
 
-    const filtered = stocks
-        .filter(r => !search || r.barang?.nama?.toLowerCase().includes(search.toLowerCase()))
-        .filter(r => !filterStatus || statusLabel(r.expiry_date) === filterStatus);
+    const ZONES_WET = ['CS FROZEN', 'CHILL', 'WASTE'];
+    const ZONES_DRY = ['DRY A', 'DRY B', 'DRY FG'];
+    const defaultZones = type === 'wet' ? ZONES_WET : ZONES_DRY;
 
-    const gudangOpts = gudangs.map(g => ({ value: String(g.id), label: g.name }));
+    const dynamicZones = Array.from(new Set(allGudangs.map((g: any) => g.zone).filter(Boolean)));
+    // Add "Reject" option to all zones and merge dynamic + default
+    const allZonesWithReject = Array.from(new Set([...defaultZones, ...dynamicZones, 'REJECT']));
+
+    // Stocks for the selected source
+    const selStock = stocks.find((s: any) => s.id === +form.stock_id);
+
+    // Rak options for tujuan zone (include Reject as special)
+    const tujuanRakOpts = selectedZoneTujuan === 'REJECT'
+        ? [{ value: 'reject', label: 'Reject Area' }]
+        : selectedZoneTujuan
+            ? allGudangs.filter((g: any) => g.zone === selectedZoneTujuan).map((g: any) => {
+                const stockInRack = stocks.filter((s: any) => String(s.gudang?.id) === String(g.id));
+                const isItemExistInRack = stockInRack.reduce((acc: number, s: any) => acc + s.qty, 0);
+                const label = isItemExistInRack > 0
+                    ? `${g.name} (Terisi ${isItemExistInRack} qty dari ${stockInRack.length} jenis)`
+                    : `${g.name} (KOSONG)`;
+                return { value: String(g.id), label };
+            })
+            : [];
+
+    // Filter options for current stocks right table
+    const filteredStocks = stocks
+        .filter((r: any) => !filterRak || r.gudang?.name?.toLowerCase().includes(filterRak.toLowerCase()) || r.barang?.nama?.toLowerCase().includes(filterRak.toLowerCase()))
+        .filter((r: any) => !filterStatus || filterStatus === 'all' ||
+            (filterStatus === 'reject' ? false : statusLabel(r.expiry_date) === filterStatus));
+
+    const poOpts = Array.from(new Set(inboundLogs.map((l: any) => l.no_po).filter(Boolean)));
+
+    const stockOpts = stocks
+        .filter((s: any) => !selectedBarangId || String(s.barang?.id) === String(selectedBarangId))
+        .map((s: any) => ({
+            value: String(s.id),
+            label: `[Zone ${s.gudang?.zone}] Rak ${s.gudang?.name} (Tersedia: ${s.qty} ${s.satuan || ''})`
+        }));
+
+    const barangOpts = barangs.map((b: any) => ({ value: String(b.id), label: b.sku ? `${b.sku} - ${b.nama}` : b.nama }));
 
     return (
         <Box>
             <Box style={{ background: '#fff', borderBottom: '1px solid #ddd', padding: '12px 20px' }}>
                 <Group justify="space-between">
-                    <Title order={3} style={{ color: '#e6921e', fontWeight: 900 }}>PUTAWAY</Title>
+                    <Title order={3} style={{ color: '#e6921e', fontWeight: 900 }}>PUTAWAY (RELOCATION)</Title>
                     <Group gap="xs">
-                        <Button size="xs" color={type === 'wet' ? 'yellow' : 'gray'} variant={type === 'wet' ? 'filled' : 'outline'} onClick={() => setType('wet')} style={{ fontWeight: 700 }}>ITEM WET</Button>
-                        <Button size="xs" variant={type === 'dry' ? 'filled' : 'outline'} color="gray" onClick={() => setType('dry')} style={{ fontWeight: 700 }}>ITEM DRY</Button>
+                        <Button size="xs" color={type === 'wet' ? 'yellow' : 'gray'} variant={type === 'wet' ? 'filled' : 'outline'} onClick={() => { setType('wet'); setSelectedZoneTujuan(''); }} style={{ fontWeight: 700 }}>ITEM WET</Button>
+                        <Button size="xs" color={type === 'dry' ? 'blue' : 'gray'} variant={type === 'dry' ? 'filled' : 'outline'} onClick={() => { setType('dry'); setSelectedZoneTujuan(''); }} style={{ fontWeight: 700 }}>ITEM DRY</Button>
                     </Group>
                 </Group>
             </Box>
 
             <Box p="md">
                 <Group align="flex-start" gap="md">
-                    {/* Side panel */}
-                    <Paper withBorder p="md" style={{ width: 220, flexShrink: 0 }}>
+                    {/* Left form */}
+                    <Paper withBorder p="md" style={{ width: 270, flexShrink: 0 }}>
                         <Stack gap="xs">
+                            <Autocomplete label="No.PO/SJ" size="xs" data={poOpts} value={form.no_po} onChange={v => setForm(p => ({ ...p, no_po: v }))} placeholder="Ketik / Pilih No PO referensi" />
+
+                            <Select
+                                label="Nama Item (Master Produk)"
+                                size="xs"
+                                searchable
+                                clearable
+                                data={barangOpts}
+                                value={selectedBarangId}
+                                onChange={v => {
+                                    setSelectedBarangId(v || '');
+                                    setForm(p => ({ ...p, stock_id: '', qty: 0 }));
+                                }}
+                                placeholder="Pilih dari master produk"
+                            />
+
+                            <Select
+                                label="Stock (Pilih Rak Asal)"
+                                size="xs"
+                                searchable
+                                data={stockOpts}
+                                value={form.stock_id}
+                                onChange={v => setForm(p => ({ ...p, stock_id: v || '', qty: stocks.find((s: any) => s.id === +v)?.qty || 0 }))}
+                                placeholder="Pilih item"
+                            />
+
+                            {/* Auto-fill info */}
+                            {selStock && (
+                                <Box style={{ background: '#f8f9fa', borderRadius: 6, padding: '6px 8px', fontSize: 11 }}>
+                                    <Text size="xs" c="dimmed">Item: <b>{selStock.barang?.nama}</b></Text>
+                                    <Text size="xs" c="dimmed">Tgl Expired: <b style={{ color: selStock.expiry_date ? statusColor(selStock.expiry_date) === 'red' ? 'red' : 'inherit' : 'inherit' }}>{selStock.expiry_date ? fmt(selStock.expiry_date) : '-'} [Otomatis Relasi]</b></Text>
+                                    <Text size="xs" c="dimmed">Qty Tersedia: <b>{selStock.qty} {selStock.satuan}</b></Text>
+                                </Box>
+                            )}
+
+                            <NumberInput
+                                label="Qty Dipindahkan (bisa di-split)"
+                                size="xs"
+                                value={form.qty}
+                                onChange={v => setForm(p => ({ ...p, qty: Number(v) }))}
+                                min={1}
+                                max={selStock?.qty}
+                            />
+                            {selStock && form.qty < selStock.qty && (
+                                <Text size="xs" c="orange" fw={600}>⚠ Split Qty: {form.qty} dari {selStock.qty} {selStock.satuan}</Text>
+                            )}
+
+                            <Divider my={4} />
                             <Text size="xs" fw={600}>Transfer Location</Text>
-                            <Select size="xs" searchable data={gudangOpts} value={selectedLoc} onChange={v => setSelectedLoc(v || '')} placeholder="Pilih lokasi tujuan" />
-                            <Text size="xs" c="dimmed">Pilih lokasi lalu klik PINDAHKAN pada item</Text>
+                            <Select
+                                label="Zone Tujuan"
+                                size="xs"
+                                searchable
+                                data={allZonesWithReject}
+                                value={selectedZoneTujuan}
+                                onChange={v => { setSelectedZoneTujuan(v || ''); setForm(p => ({ ...p, gudang_tujuan_id: '' })); }}
+                                placeholder="Pilih zone tujuan"
+                            />
+
+                            {selectedZoneTujuan && selectedZoneTujuan !== 'REJECT' && (
+                                <Select
+                                    label="Nomor Rak Tujuan"
+                                    size="xs"
+                                    searchable
+                                    data={tujuanRakOpts}
+                                    value={form.gudang_tujuan_id}
+                                    onChange={v => setForm(p => ({ ...p, gudang_tujuan_id: v || '' }))}
+                                    placeholder="Pilih rak"
+                                />
+                            )}
+
+                            <Button fullWidth size="sm" color="blue" onClick={relocate} style={{ fontWeight: 700, marginTop: 4 }}>
+                                PINDAHKAN
+                            </Button>
+
+                            <Text size="xs" c="red" fw={600} style={{ textAlign: 'center' }}>
+                                NOTE: RELOCATION INI BISA DI SPLIT DARI QTY INCOMING!
+                            </Text>
                         </Stack>
                     </Paper>
 
-                    {/* Table */}
+                    {/* Right table */}
                     <Box style={{ flex: 1 }}>
+                        {/* Filters */}
                         <Group mb="xs" gap="xs">
-                            <TextInput placeholder="Cari item..." size="xs" value={search} onChange={e => setSearch(e.target.value)} style={{ width: 200 }} />
-                            <Button size="xs" variant={filterStatus === 'NEAR EXPIRED' ? 'filled' : 'outline'} color="orange" onClick={() => setFilterStatus(p => p === 'NEAR EXPIRED' ? '' : 'NEAR EXPIRED')}>▼ NEAR EXPIRED</Button>
-                            <Button size="xs" color="gray" variant="outline" onClick={() => { setSearch(''); setFilterStatus(''); }}>Reset</Button>
+                            <TextInput
+                                placeholder="Cari berdasarkan ID, kode..."
+                                size="xs"
+                                value={filterRak}
+                                onChange={e => setFilterRak(e.target.value)}
+                                style={{ width: 200 }}
+                            />
+                            <Button
+                                size="xs"
+                                variant={filterStatus === 'NEAR EXPIRED' ? 'filled' : 'outline'}
+                                color="orange"
+                                onClick={() => setFilterStatus(p => p === 'NEAR EXPIRED' ? '' : 'NEAR EXPIRED')}
+                            >
+                                Near Expired
+                            </Button>
+                            <Button
+                                size="xs"
+                                variant={filterStatus === 'EXPIRED' ? 'filled' : 'outline'}
+                                color="red"
+                                onClick={() => setFilterStatus(p => p === 'EXPIRED' ? '' : 'EXPIRED')}
+                            >
+                                Reject
+                            </Button>
+                            <Button size="xs" color="gray" variant="outline" onClick={() => { setFilterRak(''); setFilterStatus(''); }}>Reset</Button>
                         </Group>
 
-                        <Text fw={700} size="sm" mb="xs">ITEM {type.toUpperCase()} ({filtered.length})</Text>
+                        <Group mb="xs" gap="xs">
+                            <Text size="xs" fw={600}>dari</Text>
+                            <TextInput type="date" size="xs" style={{ width: 130 }} />
+                            <Text size="xs" fw={600}>sampai</Text>
+                            <TextInput type="date" size="xs" style={{ width: 130 }} />
+                            <Button size="xs" color="blue">Filter</Button>
+                        </Group>
+
+                        <Text fw={700} size="sm" mb="xs">ITEM {type.toUpperCase()} - STOK SAAT INI ({filteredStocks.length})</Text>
 
                         {loading ? <Loader /> : (
                             <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
                                 <Table.Thead style={{ background: '#1a1a1a' }}>
                                     <Table.Tr>
-                                        {['Item', 'Lokasi', 'Batch', 'Tgl.Expired', 'Qty', 'Status', 'Aksi'].map(h => (
+                                        {['Batch', 'Item', 'Tgl.Incoming', 'Nomor Rak', 'Tgl.Expired', 'Qty', 'Status', 'Location'].map((h: any) => (
                                             <Table.Th key={h} style={{ color: '#fff', fontSize: 11 }}>{h}</Table.Th>
                                         ))}
                                     </Table.Tr>
                                 </Table.Thead>
                                 <Table.Tbody>
-                                    {filtered.map(r => (
-                                        <Table.Tr key={r.id}>
-                                            <Table.Td fw={600}>{r.barang?.nama}</Table.Td>
-                                            <Table.Td><Badge size="xs" color="blue">{r.gudang?.name}</Badge></Table.Td>
-                                            <Table.Td>{r.batch_no || '-'}</Table.Td>
-                                            <Table.Td>{fmt(r.expiry_date)}</Table.Td>
-                                            <Table.Td ta="right">{r.qty} {r.satuan}</Table.Td>
-                                            <Table.Td><Badge size="xs" color={statusColor(r.expiry_date)} variant="filled">{statusLabel(r.expiry_date)}</Badge></Table.Td>
-                                            <Table.Td>
-                                                <Button size="xs" color="blue" variant="light" onClick={() => relocate(r)} disabled={!selectedLoc}>PINDAHKAN</Button>
-                                            </Table.Td>
-                                        </Table.Tr>
-                                    ))}
+                                    {filteredStocks.map((r: any) => {
+                                        const sl = statusLabel(r.expiry_date);
+                                        const isReject = sl === 'EXPIRED';
+                                        return (
+                                            <Table.Tr key={r.id} style={{ background: isReject ? '#fff5f5' : undefined }}>
+                                                <Table.Td>{r.batch_no || '-'}</Table.Td>
+                                                <Table.Td fw={600}>{r.barang?.nama}</Table.Td>
+                                                <Table.Td>{fmt(r.created_at)}</Table.Td>
+                                                <Table.Td><Badge size="xs" color="blue">{r.gudang?.name}</Badge></Table.Td>
+                                                <Table.Td>{fmt(r.expiry_date)}</Table.Td>
+                                                <Table.Td ta="right">{r.qty} {r.satuan}</Table.Td>
+                                                <Table.Td>
+                                                    <Badge size="xs" color={isReject ? 'red' : statusColor(r.expiry_date)} variant={isReject ? 'filled' : 'light'}>
+                                                        {isReject ? 'Reject' : sl}
+                                                    </Badge>
+                                                </Table.Td>
+                                                <Table.Td><Badge size="xs" color="teal">{r.gudang?.zone}</Badge></Table.Td>
+                                            </Table.Tr>
+                                        );
+                                    })}
                                 </Table.Tbody>
                             </Table>
                         )}

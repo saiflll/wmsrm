@@ -62,6 +62,9 @@ export class StockLog {
     @ManyToOne(() => User, { eager: true, nullable: true })
     user: User;
 
+    @Column({ type: 'date', nullable: true })
+    tanggal_income: string;
+
     @Column({ type: 'time', nullable: true })
     jam_datang: string;
 

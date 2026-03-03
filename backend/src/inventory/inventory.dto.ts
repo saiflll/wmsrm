@@ -32,6 +32,9 @@ export class InboundItemDto {
     @IsOptional() @IsString()
     jam_datang?: string;
 
+    @IsOptional() @IsDateString()
+    tanggal_income?: string;
+
     @IsOptional() @IsString()
     jam_bongkar?: string;
 
@@ -50,8 +53,8 @@ export class InboundPostDto {
 }
 
 export class OutboundItemDto {
-    @IsNotEmpty() @IsString()
-    no_ref: string;
+    @IsOptional() @IsString()
+    no_ref?: string;
 
     @IsNotEmpty() @IsNumber()
     barang_id: number;
@@ -91,6 +94,9 @@ export class RelocationDto {
 
     @IsNotEmpty() @IsNumber()
     qty: number;
+
+    @IsOptional() @IsString()
+    no_po?: string;
 }
 
 export class OpnameDto {

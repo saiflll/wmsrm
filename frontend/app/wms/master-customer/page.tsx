@@ -6,9 +6,10 @@ import { notifications } from '@mantine/notifications';
 import { api, unwrap } from '../lib/api';
 
 export default function MasterCustomerPage() {
-    const [list, setList] = useState([]);
+    const [list, setList] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [editId, setEditId] = useState<number | null>(null);
     const [form, setForm] = useState({ nama: '', alamat: '', telp: '' });
 
     useEffect(() => { load(); }, []);
@@ -22,8 +23,14 @@ export default function MasterCustomerPage() {
     const save = async () => {
         if (!form.nama) return notifications.show({ title: 'Error', message: 'Nama wajib', color: 'red' });
         try {
-            await api().post('/customers', form);
-            notifications.show({ title: 'Sukses', message: 'Customer disimpan', color: 'green' });
+            if (editId) {
+                await api().put(`/customers/${editId}`, form);
+                notifications.show({ title: 'Sukses', message: 'Customer diupdate', color: 'green' });
+            } else {
+                await api().post('/customers', form);
+                notifications.show({ title: 'Sukses', message: 'Customer disimpan', color: 'green' });
+            }
+            setEditId(null);
             setForm({ nama: '', alamat: '', telp: '' });
             load();
         } catch (e: any) {
@@ -36,8 +43,22 @@ export default function MasterCustomerPage() {
         try { await api().delete(`/customers/${id}`); load(); } catch (e) { console.error(e); }
     };
 
-    const filtered = search ? list.filter(l => l.nama?.toLowerCase().includes(search.toLowerCase())) : list;
+    const filtered = search ? list.filter((l: any) => l.nama?.toLowerCase().includes(search.toLowerCase())) : list;
     const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+    const handleEdit = (item: any) => {
+        setEditId(item.id);
+        setForm({
+            nama: item.nama || '',
+            alamat: item.alamat || '',
+            telp: item.telp || ''
+        });
+    };
+
+    const handleCancelEdit = () => {
+        setEditId(null);
+        setForm({ nama: '', alamat: '', telp: '' });
+    };
 
     return (
         <Box>
@@ -51,7 +72,10 @@ export default function MasterCustomerPage() {
                             <TextInput label="Nama Supplier/Customer" size="xs" value={form.nama} onChange={e => f('nama', e.target.value)} />
                             <TextInput label="Alamat" size="xs" value={form.alamat} onChange={e => f('alamat', e.target.value)} />
                             <TextInput label="No. Telp" size="xs" value={form.telp} onChange={e => f('telp', e.target.value)} />
-                            <Button fullWidth size="xs" color="dark" mt="xs" onClick={save}>Submit</Button>
+                            <Group grow gap="xs" mt="xs">
+                                {editId && <Button size="xs" color="gray" variant="outline" onClick={handleCancelEdit}>Batal</Button>}
+                                <Button size="xs" color="dark" onClick={save}>{editId ? 'Update' : 'Submit'}</Button>
+                            </Group>
                         </Stack>
                     </Paper>
                     <Box style={{ flex: 1 }}>
@@ -62,19 +86,22 @@ export default function MasterCustomerPage() {
                             <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
                                 <Table.Thead style={{ background: '#1a1a1a' }}>
                                     <Table.Tr>
-                                        {['Nama', 'Alamat', 'Telp', 'Aksi'].map(h => (
+                                        {['Nama', 'Alamat', 'Telp', 'Aksi'].map((h: any) => (
                                             <Table.Th key={h} style={{ color: '#fff', fontSize: 11 }}>{h}</Table.Th>
                                         ))}
                                     </Table.Tr>
                                 </Table.Thead>
                                 <Table.Tbody>
-                                    {filtered.map(c => (
+                                    {filtered.map((c: any) => (
                                         <Table.Tr key={c.id}>
                                             <Table.Td fw={600}>{c.nama}</Table.Td>
                                             <Table.Td>{c.alamat || '-'}</Table.Td>
                                             <Table.Td>{c.telp || '-'}</Table.Td>
                                             <Table.Td>
-                                                <Button size="xs" color="red" variant="filled" style={{ padding: '0 6px' }} onClick={() => del(c.id)}>✕</Button>
+                                                <Group gap={4}>
+                                                    <Button size="xs" color="green" variant="light" style={{ padding: '0 6px' }} onClick={() => handleEdit(c)}>✎</Button>
+                                                    <Button size="xs" color="red" variant="filled" style={{ padding: '0 6px' }} onClick={() => del(c.id)}>✕</Button>
+                                                </Group>
                                             </Table.Td>
                                         </Table.Tr>
                                     ))}

@@ -6,9 +6,10 @@ import { notifications } from '@mantine/notifications';
 import { api, unwrap } from '../lib/api';
 
 export default function MasterLokasiPage() {
-    const [locs, setLocs] = useState([]);
+    const [locs, setLocs] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [editId, setEditId] = useState<number | null>(null);
     const [form, setForm] = useState({ name: '', zone: 'DRY A', level: 1, kolom: '', type: 'Single Deep' });
 
     useEffect(() => { load(); }, []);
@@ -23,8 +24,14 @@ export default function MasterLokasiPage() {
         if (!form.name) return notifications.show({ title: 'Error', message: 'Nama lokasi wajib', color: 'red' });
         try {
             const side = ['DRY A', 'DRY B', 'DRY FG'].includes(form.zone);
-            await api().post('/gudang', { ...form, side, status: true });
-            notifications.show({ title: 'Sukses', message: 'Lokasi ditambah', color: 'green' });
+            if (editId) {
+                await api().put(`/gudang/${editId}`, { ...form, side, status: true });
+                notifications.show({ title: 'Sukses', message: 'Lokasi diupdate', color: 'green' });
+            } else {
+                await api().post('/gudang', { ...form, side, status: true });
+                notifications.show({ title: 'Sukses', message: 'Lokasi ditambah', color: 'green' });
+            }
+            setEditId(null);
             setForm({ name: '', zone: 'DRY A', level: 1, kolom: '', type: 'Single Deep' });
             load();
         } catch (e: any) {
@@ -38,7 +45,23 @@ export default function MasterLokasiPage() {
     };
 
     const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
-    const filtered = search ? locs.filter(l => l.name?.toLowerCase().includes(search.toLowerCase())) : locs;
+    const filtered = search ? locs.filter((l: any) => l.name?.toLowerCase().includes(search.toLowerCase())) : locs;
+
+    const handleEdit = (item: any) => {
+        setEditId(item.id);
+        setForm({
+            name: item.name,
+            zone: item.zone || 'DRY A',
+            level: item.level || 1,
+            kolom: item.kolom || '',
+            type: item.type || 'Single Deep'
+        });
+    };
+
+    const handleCancelEdit = () => {
+        setEditId(null);
+        setForm({ name: '', zone: 'DRY A', level: 1, kolom: '', type: 'Single Deep' });
+    };
 
     return (
         <Box>
@@ -55,7 +78,10 @@ export default function MasterLokasiPage() {
                             <TextInput label="Kolom" size="xs" value={form.kolom} onChange={e => f('kolom', e.target.value)} placeholder="A, B, C..." />
                             <TextInput label="Level" size="xs" type="number" value={form.level} onChange={e => f('level', +e.target.value)} />
                             <Select label="Type" size="xs" data={['Single Deep', 'Double Deep']} value={form.type} onChange={v => f('type', v)} />
-                            <Button fullWidth size="xs" color="dark" onClick={save}>Submit</Button>
+                            <Group grow gap="xs" mt="xs">
+                                {editId && <Button size="xs" color="gray" variant="outline" onClick={handleCancelEdit}>Batal</Button>}
+                                <Button size="xs" color="dark" onClick={save}>{editId ? 'Update' : 'Submit'}</Button>
+                            </Group>
                         </Stack>
                     </Paper>
 
@@ -68,13 +94,13 @@ export default function MasterLokasiPage() {
                             <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
                                 <Table.Thead style={{ background: '#1a1a1a' }}>
                                     <Table.Tr>
-                                        {['Nama Rak', 'Zone', 'Kolom', 'Level', 'Type', 'Status', 'Aksi'].map(h => (
+                                        {['Nama Rak', 'Zone', 'Kolom', 'Level', 'Type', 'Status', 'Aksi'].map((h: any) => (
                                             <Table.Th key={h} style={{ color: '#fff', fontSize: 11 }}>{h}</Table.Th>
                                         ))}
                                     </Table.Tr>
                                 </Table.Thead>
                                 <Table.Tbody>
-                                    {filtered.slice(0, 50).map(l => (
+                                    {filtered.slice(0, 50).map((l: any) => (
                                         <Table.Tr key={l.id}>
                                             <Table.Td fw={600}>{l.name}</Table.Td>
                                             <Table.Td><Badge size="xs" color={l.side ? 'blue' : 'yellow'}>{l.zone || (l.side ? 'DRY' : 'WET')}</Badge></Table.Td>
@@ -83,7 +109,10 @@ export default function MasterLokasiPage() {
                                             <Table.Td>{l.type || '-'}</Table.Td>
                                             <Table.Td><Badge size="xs" color={l.status ? 'green' : 'red'}>{l.status ? 'Available' : 'Occupied'}</Badge></Table.Td>
                                             <Table.Td>
-                                                <Button size="xs" color="red" variant="filled" style={{ padding: '0 6px' }} onClick={() => del(l.id)}>✕</Button>
+                                                <Group gap={4}>
+                                                    <Button size="xs" color="green" variant="light" style={{ padding: '0 6px' }} onClick={() => handleEdit(l)}>✎</Button>
+                                                    <Button size="xs" color="red" variant="filled" style={{ padding: '0 6px' }} onClick={() => del(l.id)}>✕</Button>
+                                                </Group>
                                             </Table.Td>
                                         </Table.Tr>
                                     ))}

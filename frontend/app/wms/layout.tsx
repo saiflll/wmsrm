@@ -54,7 +54,7 @@ export default function WMSLayout({ children }: { children: React.ReactNode }) {
 
             <AppShell.Navbar p="sm" style={{ background: '#fff' }}>
                 <Text fw={700} c="dimmed" size="xs" mb="sm" pl="sm">MAIN MENU</Text>
-                {links.map((link) => (
+                {links.map((link: any) => (
                     <NavLink
                         key={link.label}
                         label={link.label}

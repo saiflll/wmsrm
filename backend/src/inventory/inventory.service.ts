@@ -70,6 +70,7 @@ export class InventoryService {
                     supplier: item.supplier,
                     shift: shift || undefined,
                     jam_datang: item.jam_datang,
+                    tanggal_income: item.tanggal_income,
                     jam_bongkar: item.jam_bongkar,
                     jam_selesai: item.jam_selesai,
                 } as any);
@@ -129,6 +130,49 @@ export class InventoryService {
         });
     }
 
+    // ========== REVERT OUTBOUND ==========
+    async revertOutbound(noRef: string, userId?: number) {
+        return this.dataSource.transaction(async manager => {
+            const logs = await manager.find(StockLog, {
+                where: { no_ref: noRef, type: LogType.OUTBOUND },
+                relations: ['barang', 'gudang'],
+            });
+
+            if (!logs.length) throw new NotFoundException('Transaksi tidak ditemukan');
+
+            for (const log of logs) {
+                // Return barang total stock
+                if (log.barang) {
+                    log.barang.stok += log.qty;
+                    await manager.save(Barang, log.barang);
+                }
+
+                // Restore to rack
+                let stock = await manager.findOne(Stock, {
+                    where: { barang: { id: log.barang.id }, gudang: { id: log.gudang.id }, batch_no: log.batch_no || '' }
+                });
+
+                if (stock) {
+                    stock.qty += log.qty;
+                } else {
+                    stock = manager.create(Stock, {
+                        barang: log.barang,
+                        gudang: log.gudang,
+                        qty: log.qty,
+                        satuan: log.satuan,
+                        batch_no: log.batch_no,
+                        expiry_date: log.expiry_date,
+                    });
+                }
+                await manager.save(Stock, stock);
+
+                // Delete log
+                await manager.remove(StockLog, log);
+            }
+            return { message: 'Reverted successfully' };
+        });
+    }
+
     // ========== RELOCATION ==========
     async relocate(dto: RelocationDto, userId?: number) {
         return this.dataSource.transaction(async manager => {
@@ -142,10 +186,8 @@ export class InventoryService {
             const tujuan = await manager.findOneBy(Gudang, { id: dto.gudang_tujuan_id });
             if (!tujuan) throw new NotFoundException('Gudang tujuan not found');
 
-            // Decrease source
-            stock.qty -= dto.qty;
-            await manager.save(Stock, stock);
-            if (stock.qty <= 0) await manager.remove(Stock, stock);
+            // Save source values for logging before modifying
+            const sourceGudang = stock.gudang;
 
             // Increase destination
             let destStock = await manager.findOne(Stock, {
@@ -169,6 +211,7 @@ export class InventoryService {
             // Log
             const log = manager.create(StockLog, {
                 type: LogType.RELOCATION,
+                no_po: dto.no_po,
                 barang: stock.barang,
                 gudang: stock.gudang,
                 gudang_tujuan: tujuan,
@@ -178,6 +221,15 @@ export class InventoryService {
                 expiry_date: stock.expiry_date,
             } as any);
             await manager.save(StockLog, log);
+
+            // Decrease source LAST
+            stock.qty -= dto.qty;
+            if (stock.qty <= 0) {
+                await manager.remove(Stock, stock);
+            } else {
+                await manager.save(Stock, stock);
+            }
+
             return log;
         });
     }
@@ -314,15 +366,30 @@ export class InventoryService {
             const logWhere: any = { barang: { id: brg.id } };
             if (from && to) logWhere.created_at = Between(new Date(from), new Date(to + 'T23:59:59'));
 
-            const logs = await this.logRepo.find({ where: logWhere, order: { created_at: 'ASC' } });
+            const logs = await this.logRepo.find({
+                where: logWhere,
+                relations: ['shift'],
+                order: { created_at: 'ASC' }
+            });
 
-            // Group by date
-            const daily: Record<string, { in: number; out: number }> = {};
+            // Group by date then shift. Shift 1, 2, 3
+            const daily: Record<string, Record<string, { in: number; out: number }>> = {};
             for (const log of logs) {
                 const dt = log.created_at.toISOString().split('T')[0];
-                if (!daily[dt]) daily[dt] = { in: 0, out: 0 };
-                if (log.type === LogType.INBOUND) daily[dt].in += log.qty;
-                if (log.type === LogType.OUTBOUND) daily[dt].out += log.qty;
+                let sh = '1';
+                if (log.shift?.name?.includes('2')) sh = '2';
+                else if (log.shift?.name?.includes('3')) sh = '3';
+
+                if (!daily[dt]) {
+                    daily[dt] = {
+                        '1': { in: 0, out: 0 },
+                        '2': { in: 0, out: 0 },
+                        '3': { in: 0, out: 0 },
+                    };
+                }
+
+                if (log.type === LogType.INBOUND) daily[dt][sh].in += log.qty;
+                if (log.type === LogType.OUTBOUND) daily[dt][sh].out += log.qty;
             }
 
             result.push({
@@ -370,6 +437,75 @@ export class InventoryService {
                 opnamed: !!opnameLog,
                 totalQty: stocks.reduce((s, st) => s + st.qty, 0),
             });
+        }
+        return result;
+    }
+
+    // Stock opname export data (for Excel/PDF)
+    async getOpnameExportData(zone?: string) {
+        const where: any = {};
+        if (zone) where.zone = zone;
+
+        const gudangs = await this.gudangRepo.find({ where });
+        const result: any[] = [];
+        const today = new Date();
+
+        for (const g of gudangs) {
+            const stocks = await this.stockRepo.find({
+                where: { gudang: { id: g.id } },
+                relations: ['barang'],
+            });
+
+            if (!stocks.length) continue;
+
+            const opnameLogs = await this.logRepo.find({
+                where: { gudang: { id: g.id }, type: LogType.OPNAME },
+                order: { created_at: 'DESC' },
+                take: 1,
+            });
+
+            for (const stock of stocks) {
+                const expiry = stock.expiry_date;
+                let daysToExp: number | null = null;
+                if (expiry) {
+                    daysToExp = Math.floor((new Date(expiry).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                }
+
+                const stockOpname = opnameLogs[0]?.qty ?? null;
+                const stockAkhir = stock.qty;
+                const variance = stockOpname !== null ? stockOpname - stockAkhir : null;
+                const absVariance = variance !== null ? Math.abs(variance) : null;
+                const variancePct = stockAkhir > 0 && variance !== null ? ((Math.abs(variance) / stockAkhir) * 100).toFixed(2) : null;
+                const accuracyPct = stockAkhir > 0 && stockOpname !== null ? ((Math.min(stockOpname, stockAkhir) / Math.max(stockOpname, stockAkhir)) * 100).toFixed(2) : '100';
+
+                let agingStatus = 'NORMAL';
+                if (daysToExp !== null) {
+                    if (daysToExp < 0) agingStatus = 'EXPIRED';
+                    else if (daysToExp < 30) agingStatus = 'NEAR EXPIRED';
+                    else if (daysToExp < 90) agingStatus = 'AGING';
+                }
+
+                result.push({
+                    nomor_rak: g.name,
+                    item_code: stock.barang?.sku,
+                    item_name: stock.barang?.nama,
+                    category: stock.barang?.kategori,
+                    uom: stock.satuan || stock.barang?.satuan,
+                    location: g.zone,
+                    batch_lot: stock.batch_no,
+                    expiry_date: expiry ? new Date(expiry).toISOString().split('T')[0] : null,
+                    stock_akhir: stockAkhir,
+                    stock_opname: stockOpname,
+                    variance_phys_book: variance,
+                    abs_variance: absVariance,
+                    variance_pct: variancePct,
+                    accuracy_pct: accuracyPct,
+                    aging_status: agingStatus,
+                    days_to_exp: daysToExp,
+                    tolerance_ok: absVariance !== null ? absVariance <= 5 : true,
+                    notes: agingStatus !== 'NORMAL' ? `${agingStatus}: ${daysToExp !== null ? daysToExp + ' hari' : ''}` : '',
+                });
+            }
         }
         return result;
     }

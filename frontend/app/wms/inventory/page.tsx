@@ -1,12 +1,12 @@
 'use client';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Box, Group, Button, Title, Text, Table, Badge, Loader, TextInput } from '@mantine/core';
+import { Box, Group, Button, Title, Text, Table, Badge, Loader, TextInput, Paper, ScrollArea } from '@mantine/core';
 import { api, unwrap, fmt } from '../lib/api';
 
 export default function InventoryPage() {
     const [side, setSide] = useState(true);
-    const [data, setData] = useState([]);
+    const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
 
@@ -21,79 +21,116 @@ export default function InventoryPage() {
         setLoading(false);
     };
 
-    // Collect all dates
-    const allDates = [...new Set(data.flatMap(d => Object.keys(d.daily || {})))].sort();
-    const filtered = search ? data.filter(d => d.nama?.toLowerCase().includes(search.toLowerCase())) : data;
+    const allDates = [...new Set(data.flatMap((d: any) => Object.keys(d.daily || {})))].sort();
+    const filtered = search ? data.filter((d: any) => d.nama?.toLowerCase().includes(search.toLowerCase())) : data;
 
     return (
-        <Box>
-            <Box style={{ background: '#fff', borderBottom: '1px solid #ddd', padding: '12px 20px' }}>
-                <Group justify="space-between">
-                    <Title order={3} style={{ color: '#e6921e', fontWeight: 900 }}>DATA INVENTORY</Title>
-                    <Group gap="xs">
-                        <Button size="xs" color={side ? 'blue' : 'gray'} variant={side ? 'filled' : 'outline'} onClick={() => setSide(true)} style={{ fontWeight: 700 }}>DRY</Button>
-                        <Button size="xs" color={!side ? 'yellow' : 'gray'} variant={!side ? 'filled' : 'outline'} onClick={() => setSide(false)} style={{ fontWeight: 700 }}>WET</Button>
-                    </Group>
-                </Group>
-            </Box>
+        <Box p="md" bg="#fff" style={{ minHeight: '100vh' }}>
+            <Title order={3} mb="xl" style={{ color: '#059669', fontWeight: 900 }}>INVENTORY DATA</Title>
 
-            <Box p="md">
-                <Group mb="xs" gap="xs">
-                    <TextInput placeholder="Cari item..." size="xs" value={search} onChange={e => setSearch(e.target.value)} style={{ width: 200 }} />
+            <Group justify="space-between" align="flex-end" mb="xl">
+                <Group gap="xs">
+                    <Button
+                        radius="md"
+                        size="md"
+                        style={{ width: 180, background: !side ? '#0ea5e9' : '#e5e7eb', color: !side ? '#fff' : '#000', fontWeight: 800, fontSize: 13 }}
+                        onClick={() => setSide(false)}
+                    >
+                        ITEM WET
+                    </Button>
+                    <Button
+                        radius="md"
+                        size="md"
+                        style={{ width: 180, background: side ? '#0ea5e9' : '#e5e7eb', color: side ? '#fff' : '#000', fontWeight: 800, fontSize: 13 }}
+                        onClick={() => setSide(true)}
+                    >
+                        ITEM DRY
+                    </Button>
                 </Group>
+                <Group gap="xs">
+                    <TextInput placeholder="Cari berdasarkan ID, kode" size="sm" radius="md" style={{ width: 220 }} leftSection="🔍" value={search} onChange={(e: any) => setSearch(e.target.value)} />
+                    <Text size="xs" fw={600} ml="xs">Dari</Text>
+                    <TextInput type="date" size="sm" radius="md" />
+                    <Text size="xs" fw={600}>Sampai</Text>
+                    <TextInput type="date" size="sm" radius="md" />
+                    <Button size="sm" color="blue" radius="md">Filter</Button>
+                    <Button size="sm" color="gray" variant="outline" radius="md" onClick={() => setSearch('')}>Reset</Button>
+                </Group>
+            </Group>
 
-                {loading ? <Loader /> : (
-                    <Box style={{ overflowX: 'auto' }}>
-                        <Table withTableBorder withColumnBorders style={{ fontSize: 10, minWidth: 800 }}>
-                            <Table.Thead style={{ background: '#1a1a1a' }}>
+            {loading ? <Loader /> : (
+                <ScrollArea type="always" offsetScrollbars>
+                    <Box style={{ minWidth: 900, paddingBottom: 20 }}>
+                        <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
+                            <Table.Thead style={{ background: '#fff' }}>
                                 <Table.Tr>
-                                    <Table.Th style={{ color: '#fff', fontSize: 10, position: 'sticky', left: 0, background: '#1a1a1a', zIndex: 1 }}>Item</Table.Th>
-                                    <Table.Th style={{ color: '#fff', fontSize: 10 }}>Satuan</Table.Th>
-                                    <Table.Th style={{ color: '#fff', fontSize: 10 }}>Saldo</Table.Th>
-                                    {allDates.map(dt => (
-                                        <Table.Th key={dt} colSpan={3} style={{ color: '#fff', fontSize: 10, textAlign: 'center' }}>{dt}</Table.Th>
+                                    <Table.Th rowSpan={2} style={{ position: 'sticky', left: 0, background: '#fff', zIndex: 2, borderBottom: '2px solid #10b981', minWidth: 200, verticalAlign: 'middle', textAlign: 'center' }}>Nama Item</Table.Th>
+                                    <Table.Th rowSpan={2} style={{ background: '#10b981', color: '#fff', borderBottom: '2px solid #059669', textAlign: 'center', verticalAlign: 'middle' }}>SATUAN</Table.Th>
+                                    <Table.Th rowSpan={2} style={{ background: '#fff', borderBottom: '2px solid #10b981' }}></Table.Th>
+                                    <Table.Th rowSpan={2} style={{ background: '#fff', borderBottom: '2px solid #10b981', textAlign: 'center', verticalAlign: 'middle' }}>Saldo Awal</Table.Th>
+                                    {allDates.map((dt: string) => (
+                                        <Table.Th key={dt} colSpan={3} style={{ background: '#fff', textAlign: 'center', borderLeft: '2px solid #555', borderBottom: '1px solid #ddd', fontSize: 12 }}>{fmt(dt).split(' ')[0]}</Table.Th>
                                     ))}
                                 </Table.Tr>
-                                <Table.Tr>
-                                    <Table.Th style={{ color: '#aaa', fontSize: 9, position: 'sticky', left: 0, background: '#222', zIndex: 1 }}></Table.Th>
-                                    <Table.Th style={{ color: '#aaa', fontSize: 9 }}></Table.Th>
-                                    <Table.Th style={{ color: '#aaa', fontSize: 9 }}>Awal</Table.Th>
-                                    {allDates.map(dt => (
-                                        <React.Fragment key={dt}>
-                                            <Table.Th style={{ color: '#4dabf7', fontSize: 9, textAlign: 'center' }}>IN</Table.Th>
-                                            <Table.Th style={{ color: '#f06595', fontSize: 9, textAlign: 'center' }}>OUT</Table.Th>
-                                            <Table.Th style={{ color: '#40c057', fontSize: 9, textAlign: 'center' }}>BAL</Table.Th>
-                                        </React.Fragment>
-                                    ))}
-                                </Table.Tr>
+                                {allDates.length > 0 && (
+                                    <Table.Tr>
+                                        {allDates.map((dt: string) => (
+                                            <React.Fragment key={dt}>
+                                                <Table.Th style={{ textAlign: 'center', background: '#fff', borderLeft: '2px solid #555' }}>1</Table.Th>
+                                                <Table.Th style={{ textAlign: 'center', background: '#fff', borderLeft: '1px solid #ddd' }}>2</Table.Th>
+                                                <Table.Th style={{ textAlign: 'center', background: '#fff', borderLeft: '1px solid #ddd' }}>3</Table.Th>
+                                            </React.Fragment>
+                                        ))}
+                                    </Table.Tr>
+                                )}
                             </Table.Thead>
                             <Table.Tbody>
-                                {filtered.map(item => {
-                                    let bal = item.saldoAwal || 0;
+                                {filtered.length === 0 ? <Table.Tr><Table.Td colSpan={50} ta="center" c="dimmed">Tidak ada data</Table.Td></Table.Tr> : filtered.map((item: any) => {
+                                    let currentBal = item.saldoAwal || 0;
+                                    const tdIn: any[] = [];
+                                    const tdOut: any[] = [];
+                                    const tdStock: any[] = [];
+
+                                    allDates.forEach(dt => {
+                                        ['1', '2', '3'].forEach((sh, shIdx) => {
+                                            const inQty = item.daily?.[dt]?.[sh]?.in || 0;
+                                            const outQty = item.daily?.[dt]?.[sh]?.out || 0;
+                                            currentBal = currentBal + inQty - outQty;
+
+                                            const cellStyle = { borderLeft: shIdx === 0 ? '2px solid #555' : '1px solid #ddd' };
+                                            tdIn.push(<Table.Td key={`in-${dt}-${sh}`} ta="right" bg="#fff" style={cellStyle}>{inQty || 0}</Table.Td>);
+                                            tdOut.push(<Table.Td key={`out-${dt}-${sh}`} ta="right" bg="#fff" style={cellStyle}>{outQty || 0}</Table.Td>);
+                                            tdStock.push(<Table.Td key={`stk-${dt}-${sh}`} ta="right" bg="#fef08a" fw={700} c={currentBal < 0 ? 'red' : 'inherit'} style={cellStyle}>{currentBal}</Table.Td>);
+                                        });
+                                    });
+
                                     return (
-                                        <Table.Tr key={item.id}>
-                                            <Table.Td fw={600} style={{ position: 'sticky', left: 0, background: '#fff', zIndex: 1 }}>{item.nama}</Table.Td>
-                                            <Table.Td>{item.satuan}</Table.Td>
-                                            <Table.Td ta="right">{item.saldoAwal}</Table.Td>
-                                            {allDates.map(dt => {
-                                                const d = item.daily?.[dt] || { in: 0, out: 0 };
-                                                bal = bal + d.in - d.out;
-                                                return (
-                                                    <React.Fragment key={dt}>
-                                                        <Table.Td ta="right" style={{ color: '#1c7ed6' }}>{d.in || '-'}</Table.Td>
-                                                        <Table.Td ta="right" style={{ color: '#e64980' }}>{d.out || '-'}</Table.Td>
-                                                        <Table.Td ta="right" fw={600}>{bal}</Table.Td>
-                                                    </React.Fragment>
-                                                );
-                                            })}
-                                        </Table.Tr>
+                                        <React.Fragment key={item.id}>
+                                            <Table.Tr>
+                                                <Table.Td rowSpan={3} style={{ position: 'sticky', left: 0, background: '#fff', zIndex: 1, borderRight: '1px solid #ddd', fontWeight: 600, verticalAlign: 'top', paddingTop: 8 }}>
+                                                    {item.nama}
+                                                </Table.Td>
+                                                <Table.Td rowSpan={3} align="center" style={{ verticalAlign: 'top', paddingTop: 8 }}>{item.satuan}</Table.Td>
+                                                <Table.Td style={{ background: '#f8f9fa' }}>in</Table.Td>
+                                                <Table.Td rowSpan={3} ta="right" bg="#fff" fw={700} style={{ verticalAlign: 'top', paddingTop: 8 }}>{item.saldoAwal}</Table.Td>
+                                                {tdIn}
+                                            </Table.Tr>
+                                            <Table.Tr>
+                                                <Table.Td style={{ background: '#f8f9fa' }}>out</Table.Td>
+                                                {tdOut}
+                                            </Table.Tr>
+                                            <Table.Tr>
+                                                <Table.Td fw={700} style={{ background: '#f8f9fa' }}>stock</Table.Td>
+                                                {tdStock}
+                                            </Table.Tr>
+                                        </React.Fragment>
                                     );
                                 })}
                             </Table.Tbody>
                         </Table>
                     </Box>
-                )}
-            </Box>
+                </ScrollArea>
+            )}
         </Box>
     );
 }

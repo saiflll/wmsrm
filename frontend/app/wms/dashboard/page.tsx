@@ -50,8 +50,8 @@ export default function DashboardPage() {
     const s = stats || {};
 
     // Group stocks by zone
-    const dryStocks = stocks.filter(s => s.barang?.side === true);
-    const wetStocks = stocks.filter(s => s.barang?.side === false);
+    const dryStocks = stocks.filter((s: any) => s.barang?.side === true);
+    const wetStocks = stocks.filter((s: any) => s.barang?.side === false);
 
     const TblSection = ({ title, rows }: any) => (
         <Paper withBorder p="sm" style={{ flex: 1 }}>
@@ -59,7 +59,7 @@ export default function DashboardPage() {
             <Table withColumnBorders withTableBorder style={{ fontSize: 11 }}>
                 <Table.Thead style={{ background: '#1a1a1a' }}>
                     <Table.Tr>
-                        {['Item', 'Lokasi', 'Qty', 'Batch', 'Status'].map(h => (
+                        {['Item', 'Lokasi', 'Qty', 'Batch', 'Status'].map((h: any) => (
                             <Table.Th key={h} style={{ color: '#fff', fontSize: 11 }}>{h}</Table.Th>
                         ))}
                     </Table.Tr>

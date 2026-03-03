@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { InboundPostDto, OutboundPostDto, RelocationDto, OpnameDto } from './inventory.dto';
@@ -38,6 +38,11 @@ export class InventoryController {
         return this.svc.postOutbound(dto.items);
     }
 
+    @Delete('outbound/:id')
+    revertOutbound(@Param('id') id: string) {
+        return this.svc.revertOutbound(id);
+    }
+
     // ========== RELOCATION ==========
     @Post('relocation')
     relocate(@Body() dto: RelocationDto) {
@@ -53,6 +58,11 @@ export class InventoryController {
     @Get('opname/summary')
     getOpnameSummary(@Query('zone') zone?: string) {
         return this.svc.getOpnameSummary(zone);
+    }
+
+    @Get('opname/export')
+    getOpnameExport(@Query('zone') zone?: string) {
+        return this.svc.getOpnameExportData(zone);
     }
 
     // ========== LOGS / REPORTS ==========
