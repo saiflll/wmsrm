@@ -15,7 +15,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
-    # Menggunakan image yang sudah di-publish (Ganti YOUR_DOCKER_USERNAME sesuai username Anda)
     image: rennnagge/wms_backend:latest
     container_name: wms_backend
     restart: always
@@ -27,7 +26,6 @@ services:
       - db
 
   frontend:
-    # Menggunakan image yang sudah di-publish (Ganti YOUR_DOCKER_USERNAME sesuai username Anda)
     image: rennnagge/wms_frontend:latest
     container_name: wms_frontend
     restart: always
