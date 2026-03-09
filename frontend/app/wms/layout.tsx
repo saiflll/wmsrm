@@ -30,6 +30,7 @@ export default function WMSLayout({ children }: { children: React.ReactNode }) {
         { label: 'Inventory Matrix', href: '/wms/inventory', c: 'teal' },
         { label: 'Report Inbound', href: '/wms/report-inbound', c: 'gray' },
         { label: 'Report Outbound', href: '/wms/report-outbound', c: 'gray' },
+        { label: 'Report Opname', href: '/wms/report-opname', c: 'gray' },
         { label: 'Master Produk', href: '/wms/master-produk', c: 'dark' },
         { label: 'Master Lokasi', href: '/wms/master-lokasi', c: 'dark' },
         { label: 'Master Customer', href: '/wms/master-customer', c: 'dark' },

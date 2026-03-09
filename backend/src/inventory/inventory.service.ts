@@ -467,7 +467,15 @@ export class InventoryService {
             for (const stock of stocks) {
                 const expiry = stock.expiry_date;
                 let daysToExp: number | null = null;
+                let daysInStorage: number | null = null;
+
+                // Menghitung lamanya simpan (Aging storage time dari saat stok masuk/dibuat)
+                if (stock.created_at) {
+                    daysInStorage = Math.floor((today.getTime() - new Date(stock.created_at).getTime()) / (1000 * 60 * 60 * 24));
+                }
+
                 if (expiry) {
+                    //daysToExp = Math.floor((new Date(expiry).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)); #jika umur pakai atau lifetime (exp to today)
                     daysToExp = Math.floor((new Date(expiry).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                 }
 
@@ -479,10 +487,37 @@ export class InventoryService {
                 const accuracyPct = stockAkhir > 0 && stockOpname !== null ? ((Math.min(stockOpname, stockAkhir) / Math.max(stockOpname, stockAkhir)) * 100).toFixed(2) : '100';
 
                 let agingStatus = 'NORMAL';
+
+                // Prioritas 1: Kategori AGING berdasarkan lama waktu simpan (misalnya > 90 hari = AGING)
+                if (daysInStorage !== null) {
+                    if (daysInStorage > 90) {
+                        agingStatus = 'AGING';
+                    }
+                }
+
+                // Prioritas 2: Menimpa status jika kedapatan kondisinya lebih darurat berdasarkan Expired Date
                 if (daysToExp !== null) {
                     if (daysToExp < 0) agingStatus = 'EXPIRED';
                     else if (daysToExp < 30) agingStatus = 'NEAR EXPIRED';
-                    else if (daysToExp < 90) agingStatus = 'AGING';
+
+                }
+
+
+                let notes = '';
+                let noteColor = '#000000'; // Default black
+
+                if (daysInStorage !== null && agingStatus === 'AGING') {
+
+                    if (daysInStorage >= 40) noteColor = '#ef4444'; // Merah
+                    else if (daysInStorage >= 30) noteColor = '#f97316'; // Orange
+                    else if (daysInStorage >= 20) noteColor = '#eab308'; // Kuning
+
+                    else noteColor = '#22c55e'; // Hijau
+
+                    notes = `AGING (${daysInStorage} hari)`;
+                } else if (agingStatus !== 'NORMAL') {
+                    notes = `${agingStatus}: ${daysToExp !== null ? daysToExp + ' hari tersisa' : ''}`;
+                    noteColor = agingStatus === 'EXPIRED' ? '#ef4444' : '#f97316';
                 }
 
                 result.push({
@@ -503,7 +538,8 @@ export class InventoryService {
                     aging_status: agingStatus,
                     days_to_exp: daysToExp,
                     tolerance_ok: absVariance !== null ? absVariance <= 5 : true,
-                    notes: agingStatus !== 'NORMAL' ? `${agingStatus}: ${daysToExp !== null ? daysToExp + ' hari' : ''}` : '',
+                    notes: notes,
+                    note_color: noteColor,
                 });
             }
         }

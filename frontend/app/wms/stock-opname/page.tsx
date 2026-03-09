@@ -171,7 +171,7 @@ export default function StockOpnamePage() {
                                     <td>${r.stock_opname !== null ? r.stock_opname : ''}</td>
                                     <td>${r.variance_phys_book !== null ? r.variance_phys_book : ''}</td>
                                     <td>${r.accuracy_pct !== null ? r.accuracy_pct + '%' : ''}</td>
-                                    <td>${r.notes || ''}</td>
+                                    <td style="color: ${r.note_color || '#000'}; font-weight: 600;">${r.notes || ''}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -427,7 +427,7 @@ export default function StockOpnamePage() {
                                     return days < 0
                                         ? <Text size="xs" c="red" fw={700}>EXPIRED ({Math.abs(days)} hari lalu)</Text>
                                         : days < 90
-                                            ? <Text size="xs" c="orange" fw={700}>AGING: {days} hari tersisa</Text>
+                                            ? <Text size="xs" c="orange" fw={700}>AGING: {days} hari</Text>
                                             : null;
                                 })()}
                             </Box>

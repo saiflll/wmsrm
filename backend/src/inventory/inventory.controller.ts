@@ -92,6 +92,11 @@ export class InventoryController {
         return this.svc.findLogs({ type: LogType.OUTBOUND, from, to, shift_id: shift_id ? +shift_id : undefined });
     }
 
+    @Get('logs/opname')
+    getOpnameLogs(@Query('from') from?: string, @Query('to') to?: string, @Query('shift_id') shift_id?: string) {
+        return this.svc.findLogs({ type: LogType.OPNAME, from, to, shift_id: shift_id ? +shift_id : undefined });
+    }
+
     // ========== DASHBOARD ==========
     @Get('dashboard')
     getDashboard() {
