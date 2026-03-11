@@ -108,4 +108,7 @@ export class OpnameDto {
 
     @IsNotEmpty() @IsNumber()
     qty_opname: number;
+
+    @IsOptional() @IsNumber()
+    shift_id?: number;
 }

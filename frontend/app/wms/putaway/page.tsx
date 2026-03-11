@@ -5,8 +5,31 @@ import {
     Box, Group, Button, Title, Text, Table, Badge, Paper, Stack,
     TextInput, Select, Loader, NumberInput, Divider, Autocomplete
 } from '@mantine/core';
+import { IconPlus, IconTrash, IconFileTypePdf, IconFileSpreadsheet } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { api, unwrap, fmt, statusLabel, statusColor } from '../lib/api';
+import { api, unwrap, fmt, statusLabel, statusColor, saveXlsx } from '../lib/api';
+import * as XLSX from 'xlsx';
+
+const renderColorfulOption: any = ({ option }: any) => {
+    if (option.isEmpty) {
+        return (
+            <Group gap={6} wrap="nowrap">
+                <Badge color="green" variant="filled" style={{ textTransform: 'none' }}>{option.locName}</Badge>
+                <Badge color="gray" variant="filled" style={{ textTransform: 'none' }}>KOSONG</Badge>
+            </Group>
+        );
+    }
+    if (option.locName) {
+        return (
+            <Group gap={6} wrap="nowrap">
+                <Badge color="green" variant="filled" style={{ textTransform: 'none' }}>{option.locName}</Badge>
+                <Badge color="orange" variant="filled" style={{ textTransform: 'none' }}>{option.itemNames}</Badge>
+                <Badge color="blue" variant="filled" style={{ textTransform: 'none' }}>{option.qtyStr}</Badge>
+            </Group>
+        );
+    }
+    return <Text size="sm">{option.label}</Text>;
+};
 
 export default function PutawayPage() {
     const [type, setType] = useState('wet');
@@ -81,15 +104,40 @@ export default function PutawayPage() {
 
     // Rak options for tujuan zone (include Reject as special)
     const tujuanRakOpts = selectedZoneTujuan === 'REJECT'
-        ? [{ value: 'reject', label: 'Reject Area' }]
+        ? allGudangs.filter((g: any) => g.zone === 'REJECT').map((g: any) => ({ value: String(g.id), label: `${g.name} (REJECT AREA)`, locName: g.name, isEmpty: true, disabled: false }))
         : selectedZoneTujuan
             ? allGudangs.filter((g: any) => g.zone === selectedZoneTujuan).map((g: any) => {
                 const stockInRack = stocks.filter((s: any) => String(s.gudang?.id) === String(g.id));
-                const isItemExistInRack = stockInRack.reduce((acc: number, s: any) => acc + s.qty, 0);
-                const label = isItemExistInRack > 0
-                    ? `${g.name} (Terisi ${isItemExistInRack} qty dari ${stockInRack.length} jenis)`
-                    : `${g.name} (KOSONG)`;
-                return { value: String(g.id), label };
+                const totalQty = stockInRack.reduce((acc: number, s: any) => acc + s.qty, 0);
+
+                let disabled = false;
+                if (totalQty > 0) {
+                    // If there's stock in the rack, check for product conflict
+                    // A rack is disabled if it contains a different product than the one being moved
+                    if (selectedBarangId && stockInRack.some((s: any) => s.barang && String(s.barang.id) !== String(selectedBarangId))) {
+                        disabled = true;
+                    }
+                    // If the selected stock is already in this rack, it's also disabled (no self-relocation to same rack)
+                    if (selStock && String(selStock.gudang?.id) === String(g.id)) {
+                        disabled = true;
+                    }
+
+                    const produkNames = Array.from(new Set(stockInRack.map((s: any) => s.barang?.nama).filter(Boolean))).join(', ');
+                    return {
+                        value: String(g.id),
+                        label: `${g.name} — ${produkNames} (${totalQty} qty)`,
+                        locName: g.name,
+                        itemNames: produkNames,
+                        qtyStr: `${totalQty} qty`,
+                        disabled,
+                        isEmpty: false
+                    };
+                }
+                // If the rack is empty, it's not disabled unless it's the source rack
+                if (selStock && String(selStock.gudang?.id) === String(g.id)) {
+                    disabled = true;
+                }
+                return { value: String(g.id), label: `${g.name} (KOSONG)`, locName: g.name, isEmpty: true, disabled: disabled };
             })
             : [];
 
@@ -105,7 +153,10 @@ export default function PutawayPage() {
         .filter((s: any) => !selectedBarangId || String(s.barang?.id) === String(selectedBarangId))
         .map((s: any) => ({
             value: String(s.id),
-            label: `[Zone ${s.gudang?.zone}] Rak ${s.gudang?.name} (Tersedia: ${s.qty} ${s.satuan || ''})`
+            label: `[Zone ${s.gudang?.zone}] Rak ${s.gudang?.name} (Tersedia: ${s.qty} ${s.satuan || ''})`,
+            locName: `[Zone ${s.gudang?.zone}] Rak ${s.gudang?.name}`,
+            itemNames: s.barang?.nama || 'Unknown',
+            qtyStr: `Tersedia: ${s.qty} ${s.satuan || ''}`
         }));
 
     const barangOpts = barangs.map((b: any) => ({ value: String(b.id), label: b.sku ? `${b.sku} - ${b.nama}` : b.nama }));
@@ -151,6 +202,7 @@ export default function PutawayPage() {
                                 value={form.stock_id}
                                 onChange={v => setForm(p => ({ ...p, stock_id: v || '', qty: stocks.find((s: any) => s.id === +v)?.qty || 0 }))}
                                 placeholder="Pilih item"
+                                renderOption={renderColorfulOption}
                             />
 
                             {/* Auto-fill info */}
@@ -195,6 +247,7 @@ export default function PutawayPage() {
                                     value={form.gudang_tujuan_id}
                                     onChange={v => setForm(p => ({ ...p, gudang_tujuan_id: v || '' }))}
                                     placeholder="Pilih rak"
+                                    renderOption={renderColorfulOption}
                                 />
                             )}
 

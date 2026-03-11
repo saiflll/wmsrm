@@ -5,8 +5,31 @@ import {
     Box, Group, Button, Title, Text, Table, Badge, Paper, Stack, TextInput,
     Select, NumberInput, Divider, ActionIcon, Autocomplete
 } from '@mantine/core';
+import { IconPlus, IconTrash, IconFileTypePdf, IconFileSpreadsheet } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { api, unwrap } from '../lib/api';
+import { api, unwrap, fmt, statusLabel, statusColor, saveXlsx } from '../lib/api';
+import * as XLSX from 'xlsx';
+
+const renderColorfulOption: any = ({ option }: any) => {
+    if (option.isEmpty) {
+        return (
+            <Group gap={6} wrap="nowrap">
+                <Badge color="green" variant="filled" style={{ textTransform: 'none' }}>{option.locName}</Badge>
+                <Badge color="gray" variant="filled" style={{ textTransform: 'none' }}>KOSONG</Badge>
+            </Group>
+        );
+    }
+    if (option.locName) {
+        return (
+            <Group gap={6} wrap="nowrap">
+                <Badge color="green" variant="filled" style={{ textTransform: 'none' }}>{option.locName}</Badge>
+                <Badge color="orange" variant="filled" style={{ textTransform: 'none' }}>{option.itemNames}</Badge>
+                <Badge color="blue" variant="filled" style={{ textTransform: 'none' }}>{option.qtyStr}</Badge>
+            </Group>
+        );
+    }
+    return <Text size="sm">{option.label}</Text>;
+};
 
 export default function InboundPage() {
     const [type, setType] = useState('wet');
@@ -14,6 +37,7 @@ export default function InboundPage() {
     const [allGudangs, setAllGudangs] = useState<any[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
     const [shifts, setShifts] = useState<any[]>([]);
+    const [stocks, setStocks] = useState<any[]>([]);
     const [drafts, setDrafts] = useState<any[]>([]);
     const [logs, setLogs] = useState<any[]>([]);
     const [search, setSearch] = useState('');
@@ -32,6 +56,7 @@ export default function InboundPage() {
         api().get('/gudang').then(r => setAllGudangs(unwrap(r)));
         api().get('/customers').then(r => setCustomers(unwrap(r)));
         api().get('/shifts').then(r => setShifts(unwrap(r)));
+        api().get('/inventory/stock').then(r => setStocks(unwrap(r)));
         loadLogs();
     }, []);
 
@@ -49,6 +74,17 @@ export default function InboundPage() {
     const addDraft = () => {
         if (!form.barang_id && !form.item_manual) return notifications.show({ title: 'Error', message: 'Pilih / isi item', color: 'red' });
         if (!selectedZone) return notifications.show({ title: 'Error', message: 'Pilih Zone Gudang', color: 'red' });
+        if (form.gudang_id) {
+            const stocksInRack = stocks.filter((s: any) => String(s.gudang?.id) === String(form.gudang_id));
+            if (stocksInRack.length > 0) {
+                if (form.barang_id && stocksInRack.some((s: any) => s.barang && String(s.barang.id) !== String(form.barang_id))) {
+                    return notifications.show({ title: 'Klaim Error', message: 'Rak ini sudah dialokasikan untuk produk lain!', color: 'red' });
+                }
+                if (!form.barang_id && form.item_manual && stocksInRack.some((s: any) => s.barang || (s.item_name && s.item_name !== form.item_manual))) {
+                    return notifications.show({ title: 'Klaim Error', message: 'Rak ini sudah dialokasikan untuk produk lain!', color: 'red' });
+                }
+            }
+        }
 
         let brgName = form.item_manual || '';
         if (!brgName && form.barang_id) {
@@ -97,7 +133,34 @@ export default function InboundPage() {
     const customerOpts = customers.map((c: any) => c.nama || c.name).filter(Boolean);
     const shiftOpts = shifts.map((s: any) => ({ value: String(s.id), label: s.name }));
     const zones = type === 'wet' ? ['CS FROZEN', 'CHILL', 'WASTE'] : ['DRY A', 'DRY B', 'DRY FG'];
-    const rakOpts = getGudangs().map((g: any) => ({ value: String(g.id), label: g.name }));
+    const rakOpts = getGudangs().map((g: any) => {
+        const stocksInRack = stocks.filter((s: any) => String(s.gudang?.id) === String(g.id));
+        const totalQty = stocksInRack.reduce((sum: number, s: any) => sum + (s.qty || 0), 0);
+
+        let disabled = false;
+        if (totalQty > 0) {
+            if (form.barang_id && stocksInRack.some((s: any) => s.barang && String(s.barang.id) !== String(form.barang_id))) disabled = true;
+            if (!form.barang_id && form.item_manual && stocksInRack.some((s: any) => s.barang || (s.item_name && s.item_name !== form.item_manual))) disabled = true;
+
+            const produkNames = Array.from(new Set(stocksInRack.map((s: any) => s.barang ? s.barang.nama : s.item_name).filter(Boolean))).join(', ');
+            return {
+                value: String(g.id),
+                label: `${g.name} — ${produkNames} (${totalQty} ${stocksInRack[0]?.satuan || 'qty'})`,
+                locName: g.name,
+                itemNames: produkNames,
+                qtyStr: `${totalQty} ${stocksInRack[0]?.satuan || 'qty'}`,
+                disabled,
+                isEmpty: false
+            };
+        }
+        return {
+            value: String(g.id),
+            label: `${g.name} (KOSONG)`,
+            locName: g.name,
+            isEmpty: true,
+            disabled: false
+        };
+    });
     const poOpts = Array.from(new Set(logs.map((l: any) => l.no_po).filter(Boolean)));
     const satuanOpts = Array.from(new Set([...barangs.map((b: any) => b.satuan), ...logs.map((l: any) => l.satuan)].filter(Boolean)));
     const batchOpts = Array.from(new Set(logs.map((l: any) => l.batch_no).filter(Boolean)));
@@ -153,7 +216,7 @@ export default function InboundPage() {
                             </Box>
 
                             {selectedZone && (
-                                <Select label="Sub-Lokasi Gudang / Rak" size="xs" searchable data={rakOpts} value={form.gudang_id} onChange={(v: any) => f('gudang_id', v || '')} placeholder="Pilih rak" />
+                                <Select label="Sub-Lokasi Gudang / Rak" size="xs" searchable data={rakOpts} value={form.gudang_id} onChange={(v: any) => f('gudang_id', v || '')} placeholder="Pilih rak" renderOption={renderColorfulOption} />
                             )}
 
                             <Group gap="xs">

@@ -3,24 +3,61 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput,
-    Modal, NumberInput, Loader, Table
+    Modal, NumberInput, Loader, Table, Select
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconFileTypePdf, IconFileSpreadsheet } from '@tabler/icons-react';
-import { api, unwrap, fmt } from '../lib/api';
+import { api, unwrap, fmt, saveXlsx } from '../lib/api';
+import * as XLSX from 'xlsx';
 
-// Helper: generate & download CSV
-function downloadCsv(data: any[], zone: string) {
-    const headers = [
-        'Nomor Rak', 'Item Code', 'Item Name', 'Category', 'UOM', 'Location',
-        'Batch/Lot', 'Expiry Date', 'Stock Akhir (Sistem)', 'Stock Opname',
-        'Variance (Phys-Book)', 'Abs Variance', 'Variance %', 'Accuracy %',
-        'Aging Status', 'Hari ke Expired', 'Status Tolerance', 'Counted?', 'Notes'
+// Helper: download Excel dengan format profesional (mirip referensi xlsx)
+function downloadExcel(data: any[], zone: string) {
+    const title = `STOCK OPNAME - ZONA ${zone}`;
+    const dateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    // Header rows seperti template referensi
+    const headerRows = [
+        [title],
+        [`Tanggal Cetak: ${dateStr}`],
+        [`Zone/Area: ${zone}`],
+        [],
+        [
+            'No',
+            'No. Rak',
+            'Item Code',
+            'Item Name',
+            'Category',
+            'UOM',
+            'Batch/Lot',
+            'Expiry Date',
+            'Shift',
+            'Stock Akhir (Sistem)',
+            'Stock Opname (Fisik)',
+            'Variance (Fisik-Buku)',
+            'Abs Variance',
+            'Variance %',
+            'Accuracy % (Universal)',
+            'Aging Status',
+            'Hari ke Expired',
+            'Hari Simpan',
+            'Status Tolerance',
+            'Sudah Dihitung?',
+            'Keterangan',
+        ]
     ];
-    const rows = data.map((r: any) => [
-        r.nomor_rak, r.item_code, r.item_name, r.category, r.uom, r.location,
-        r.batch_lot, r.expiry_date, r.stock_akhir,
+
+    const rows = data.map((r: any, i: number) => [
+        i + 1,
+        r.nomor_rak,
+        r.item_code || '',
+        r.item_name || '',
+        r.category || '',
+        r.uom || '',
+        r.batch_lot || '',
+        r.expiry_date || '',
+        r.shift || '',
+        r.stock_akhir,
         r.stock_opname !== null ? r.stock_opname : '',
         r.variance_phys_book !== null ? r.variance_phys_book : '',
         r.abs_variance !== null ? r.abs_variance : '',
@@ -28,22 +65,68 @@ function downloadCsv(data: any[], zone: string) {
         r.accuracy_pct + '%',
         r.aging_status,
         r.days_to_exp !== null ? r.days_to_exp : '',
+        r.days_in_storage !== null ? r.days_in_storage : '',
         r.tolerance_ok ? 'OK' : 'TIDAK OK',
         r.stock_opname !== null ? 'Y' : 'N',
-        r.notes,
+        r.notes || '',
     ]);
 
-    const csvContent = [headers, ...rows]
-        .map((row: any) => row.map((cell: any) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
-        .join('\n');
+    const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
 
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `StockOpname_${zone}_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    // Merge title row
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 20 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 20 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 20 } },
+    ];
+
+    // Column widths
+    ws['!cols'] = [
+        { wch: 4 }, { wch: 12 }, { wch: 14 }, { wch: 28 }, { wch: 12 }, { wch: 8 },
+        { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+        { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 12 },
+        { wch: 14 }, { wch: 14 }, { wch: 24 },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `Opname ${zone}`);
+
+    // Rekap per shift sheet
+    const shiftMap: Record<string, { totalRak: number; totalOpname: number; totalSistem: number }> = {};
+    data.forEach((r: any) => {
+        const sh = r.shift || 'Tidak ada shift';
+        if (!shiftMap[sh]) shiftMap[sh] = { totalRak: 0, totalOpname: 0, totalSistem: 0 };
+        shiftMap[sh].totalRak++;
+        if (r.stock_opname !== null) shiftMap[sh].totalOpname += r.stock_opname;
+        shiftMap[sh].totalSistem += r.stock_akhir;
+    });
+
+    const rekapRows = [
+        [`REKAP PER SHIFT - ZONA ${zone}`],
+        [`Tanggal: ${dateStr}`],
+        [],
+        ['Shift', 'Jumlah Rak Diopname', 'Total Qty Fisik', 'Total Qty Sistem', 'Akurasi'],
+        ...Object.entries(shiftMap).map(([sh, d]) => [
+            sh,
+            d.totalRak,
+            d.totalOpname,
+            d.totalSistem,
+            d.totalSistem > 0
+                ? ((Math.min(d.totalOpname, d.totalSistem) / Math.max(d.totalOpname, d.totalSistem)) * 100).toFixed(2) + '%'
+                : '-',
+        ]),
+    ];
+
+    const wsRekap = XLSX.utils.aoa_to_sheet(rekapRows);
+    wsRekap['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } },
+    ];
+    wsRekap['!cols'] = [{ wch: 16 }, { wch: 22 }, { wch: 18 }, { wch: 18 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, wsRekap, 'Rekap Shift');
+
+    const datePart = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    saveXlsx(XLSX, wb, `StockOpname_${zone.replace(/\s/g, '_')}_${datePart}.xlsx`);
 }
 
 export default function StockOpnamePage() {
@@ -55,6 +138,8 @@ export default function StockOpnamePage() {
     const [opened, { open, close }] = useDisclosure(false);
     const [sel, setSel] = useState(null);
     const [actualQty, setActualQty] = useState('');
+    const [shiftId, setShiftId] = useState('');
+    const [shifts, setShifts] = useState<any[]>([]);
 
     const [allZones, setAllZones] = useState<string[]>(['CS FROZEN', 'CHILL', 'DRY A', 'DRY B', 'DRY FG']);
 
@@ -63,6 +148,7 @@ export default function StockOpnamePage() {
             const z = Array.from(new Set(unwrap(r).map((g: any) => g.zone).filter(Boolean)));
             if (z.length) setAllZones(z as string[]);
         }).catch(() => { });
+        api().get('/shifts').then(r => setShifts(unwrap(r))).catch(() => { });
     }, []);
 
     useEffect(() => { load(); }, [zone]);
@@ -80,8 +166,10 @@ export default function StockOpnamePage() {
         if (!sel || actualQty === '') return;
         try {
             await api().post('/inventory/opname', {
+                stock_id: sel.stocks?.[0]?.id,
                 gudang_id: sel.gudang.id,
                 qty_opname: Number(actualQty),
+                shift_id: shiftId ? Number(shiftId) : undefined,
             });
             notifications.show({ title: 'Sukses', message: `Opname ${sel.gudang.name} tersimpan`, color: 'green' });
             close();
@@ -101,8 +189,8 @@ export default function StockOpnamePage() {
                 setExporting(false);
                 return;
             }
-            downloadCsv(data, zone);
-            notifications.show({ title: 'Export Berhasil', message: `${data.length} baris data diexport`, color: 'green' });
+            downloadExcel(data, zone);
+            notifications.show({ title: 'Export Berhasil', message: `${data.length} baris data diexport ke Excel`, color: 'green' });
         } catch (e) {
             notifications.show({ title: 'Error', message: 'Gagal export data', color: 'red' });
         }
@@ -129,14 +217,14 @@ export default function StockOpnamePage() {
                     <style>
                         body { font-family: Arial; padding: 20px; font-size: 11px; }
                         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                        th, td { border: 1px solid #333; padding: 6px; text-align: left; }
-                        th { background: #eee; }
-                        .header { font-size: 16px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-                        .info { display: flex; justify-content: space-between; margin-bottom: 10px; }
+                        th, td { border: 1px solid #333; padding: 5px; text-align: left; }
+                        th { background: #1f2937; color: #fff; }
+                        .header { font-size: 14px; font-weight: bold; margin-bottom: 6px; }
+                        .info { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 11px; }
                     </style>
                 </head>
                 <body>
-                    <div class="header">STOCK OPNAME REPORT</div>
+                    <div class="header">STOCK OPNAME REPORT - ZONA ${zone}</div>
                     <div class="info">
                         <div>
                             <b>Zone / Area:</b> ${zone}<br/>
@@ -149,28 +237,34 @@ export default function StockOpnamePage() {
                     <table>
                         <thead>
                             <tr>
+                                <th>No</th>
                                 <th>Rak</th>
                                 <th>Item</th>
                                 <th>Batch</th>
                                 <th>Exp</th>
+                                <th>Shift</th>
                                 <th>Sistem</th>
                                 <th>Fisik</th>
                                 <th>Selisih</th>
-                                <th>Akurasi</th>
-                                <th>Notes</th>
+                                <th>Akurasi (Universal)</th>
+                                <th>Aging</th>
+                                <th>Keterangan</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${data.map((r: any) => `
+                            ${data.map((r: any, i: number) => `
                                 <tr>
+                                    <td>${i + 1}</td>
                                     <td>${r.nomor_rak}</td>
                                     <td>${r.item_name || ''}</td>
                                     <td>${r.batch_lot || '-'}</td>
-                                    <td>${r.expiry_date ? fmt(r.expiry_date) : '-'}</td>
+                                    <td>${r.expiry_date ?? '-'}</td>
+                                    <td>${r.shift || '-'}</td>
                                     <td>${r.stock_akhir}</td>
                                     <td>${r.stock_opname !== null ? r.stock_opname : ''}</td>
                                     <td>${r.variance_phys_book !== null ? r.variance_phys_book : ''}</td>
                                     <td>${r.accuracy_pct !== null ? r.accuracy_pct + '%' : ''}</td>
+                                    <td>${r.aging_status}</td>
                                     <td style="color: ${r.note_color || '#000'}; font-weight: 600;">${r.notes || ''}</td>
                                 </tr>
                             `).join('')}
@@ -193,24 +287,46 @@ export default function StockOpnamePage() {
         if (!s.filled) return notifications.show({ title: 'Info', message: 'Rak kosong, tidak perlu opname', color: 'blue' });
         setSel(s);
         setActualQty(s.totalQty);
+        setShiftId('');
         open();
     };
 
-    // Calculate accuracy percentage
-    const locsWithStock = summary.filter((s: any) => s.filled);
-    const opnamed = locsWithStock.filter((s: any) => s.opnamed).length;
-    const accuracy = locsWithStock.length ? Math.round((opnamed / locsWithStock.length) * 100) : 100;
+    // === UNIVERSAL ACCURACY: hitung per barang melintasi semua rak ===
+    const barangAccMap: Record<number, { totalSistem: number; totalOpname: number }> = {};
+    summary.forEach((s: any) => {
+        s.stocks?.forEach((st: any) => {
+            const bid = st.barang?.id;
+            if (!bid) return;
+            if (!barangAccMap[bid]) barangAccMap[bid] = { totalSistem: 0, totalOpname: 0 };
+            barangAccMap[bid].totalSistem += st.qty;
+            if (s.opnamed) barangAccMap[bid].totalOpname += st.qty;
+        });
+    });
 
-    // Aging count
+    // Hitung global accuracy dari barang-barang yang sudah diopname
+    const allBarangs = Object.values(barangAccMap);
+    const opnamedBarangs = allBarangs.filter(b => b.totalOpname > 0);
+    const avgAccuracy = opnamedBarangs.length > 0
+        ? Math.round(
+            opnamedBarangs.reduce((sum, b) => {
+                const acc = b.totalSistem > 0
+                    ? (Math.min(b.totalOpname, b.totalSistem) / Math.max(b.totalOpname, b.totalSistem)) * 100
+                    : 100;
+                return sum + acc;
+            }, 0) / opnamedBarangs.length
+        )
+        : 100;
+
+    // Aging count (menggunakan storage time > 90 hari)
     const agingCount = summary.filter((s: any) =>
-        s.stocks?.some(st => {
-            if (!st.expiry_date) return false;
-            const days = (new Date(st.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-            return days < 90;
+        s.stocks?.some((st: any) => {
+            if (!st.created_at) return false;
+            const days = (Date.now() - new Date(st.created_at).getTime()) / (1000 * 60 * 60 * 24);
+            return days > 90;
         })
     ).length;
     const expiredCount = summary.filter((s: any) =>
-        s.stocks?.some(st => st.expiry_date && new Date(st.expiry_date) < new Date())
+        s.stocks?.some((st: any) => st.expiry_date && new Date(st.expiry_date) < new Date())
     ).length;
 
     // Grouping by Kolom then Level
@@ -226,7 +342,7 @@ export default function StockOpnamePage() {
 
     // Get aging color for rack
     const getRackColor = (s) => {
-        if (!s.filled) return { bg: '#e5e7eb', text: '#9ca3af' };
+        if (!s.filled) return { bg: '#9ca3af', text: '#fff' }; // Abu kosong
         const hasExpired = s.stocks?.some(st => st.expiry_date && new Date(st.expiry_date) < new Date());
         if (hasExpired) return { bg: '#ef4444', text: '#fff' };
         const hasNearExp = s.stocks?.some(st => {
@@ -236,13 +352,15 @@ export default function StockOpnamePage() {
         });
         if (hasNearExp) return { bg: '#f97316', text: '#fff' };
         const hasAging = s.stocks?.some(st => {
-            if (!st.expiry_date) return false;
-            const days = (new Date(st.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-            return days < 90;
+            if (!st.created_at) return false;
+            const days = (Date.now() - new Date(st.created_at).getTime()) / (1000 * 60 * 60 * 24);
+            return days > 90;
         });
         if (hasAging) return { bg: '#eab308', text: '#fff' };
-        return { bg: '#0ea5e9', text: '#fff' };
+        return { bg: '#0ea5e9', text: '#fff' }; // Biru = berisi normal
     };
+
+    const shiftOpts = shifts.map((s: any) => ({ value: String(s.id), label: s.name }));
 
     return (
         <Box>
@@ -274,7 +392,7 @@ export default function StockOpnamePage() {
                         </Group>
                         <Group gap={6}>
                             <Box w={40} h={16} style={{ background: '#eab308', borderRadius: 10 }}></Box>
-                            <Text size="xs" fw={700}>AGING (&lt;90hr)</Text>
+                            <Text size="xs" fw={700}>AGING (&gt;90 hari simpan)</Text>
                         </Group>
                         <Group gap={6}>
                             <Box w={40} h={16} style={{ background: '#f97316', borderRadius: 10 }}></Box>
@@ -285,7 +403,7 @@ export default function StockOpnamePage() {
                             <Text size="xs" fw={700}>EXPIRED</Text>
                         </Group>
                         <Group gap={6}>
-                            <Box w={40} h={16} style={{ background: '#e5e7eb', borderRadius: 10 }}></Box>
+                            <Box w={40} h={16} style={{ background: '#9ca3af', borderRadius: 10 }}></Box>
                             <Text size="xs" fw={700}>KOSONG</Text>
                         </Group>
                     </Box>
@@ -296,16 +414,10 @@ export default function StockOpnamePage() {
                 <Group justify="space-between" align="flex-end" mb="xl">
                     <Group gap="xs">
                         <TextInput placeholder="Cari berdasarkan ID, Kode..." size="xs" radius="md" style={{ width: 220 }} leftSection="🔍" />
-                        <Text size="xs" fw={600} ml="md">dari</Text>
-                        <TextInput type="date" size="xs" radius="md" />
-                        <Text size="xs" fw={600}>sampai</Text>
-                        <TextInput type="date" size="xs" radius="md" />
-                        <Button size="xs" color="blue" radius="md">Filter</Button>
-                        <Button size="xs" color="gray" variant="outline" radius="md">Reset</Button>
                     </Group>
 
                     <Box style={{ textAlign: 'right' }}>
-                        <Text fw={800} size="md" mb={4}>Stock Akurasi : {accuracy} %</Text>
+                        <Text fw={800} size="md" mb={4}>Stock Akurasi (Universal) : {avgAccuracy} %</Text>
                         {agingCount > 0 && (
                             <Text size="xs" c="orange" fw={700} mb={4}>⚠ Aging Material: {agingCount} rak | Expired: {expiredCount} rak</Text>
                         )}
@@ -360,6 +472,11 @@ export default function StockOpnamePage() {
                                                             const isOpnamed = r.opnamed;
                                                             const borderBottom = isOpnamed ? '3px solid #000' : 'none';
 
+                                                            // Tooltip: info barang dan qty di tiap rak
+                                                            const tooltipText = r.filled
+                                                                ? r.stocks?.map((s: any) => `${s.barang?.nama}: ${s.qty} ${s.satuan || ''}`).join('\n')
+                                                                : 'KOSONG';
+
                                                             return (
                                                                 <Box key={r.gudang.id} style={{ position: 'relative' }}>
                                                                     <Button
@@ -375,10 +492,28 @@ export default function StockOpnamePage() {
                                                                             padding: 0
                                                                         }}
                                                                         onClick={() => selRack(r)}
-                                                                        title={r.stocks?.map((s: any) => `${s.barang?.nama}: ${s.qty}${s.satuan ? ' ' + s.satuan : ''}`).join('\n')}
+                                                                        title={tooltipText}
                                                                     >
                                                                         {r.gudang.name}
                                                                     </Button>
+                                                                    {/* Indikator kecil qty */}
+                                                                    {r.filled && (
+                                                                        <Text
+                                                                            size="xs"
+                                                                            style={{
+                                                                                position: 'absolute',
+                                                                                bottom: -14,
+                                                                                left: 0,
+                                                                                right: 0,
+                                                                                textAlign: 'center',
+                                                                                fontSize: 9,
+                                                                                color: '#374151',
+                                                                                fontWeight: 600,
+                                                                            }}
+                                                                        >
+                                                                            {r.totalQty} {r.stocks?.[0]?.satuan || ''}
+                                                                        </Text>
+                                                                    )}
                                                                 </Box>
                                                             );
                                                         })}
@@ -407,6 +542,19 @@ export default function StockOpnamePage() {
                             <TextInput readOnly value={sel.stocks[0]?.barang?.nama || ''} size="sm" radius="md" label="Nama Item" styles={{ input: { backgroundColor: '#fff', color: '#000', fontSize: 13 } }} />
                             <TextInput readOnly value={sel.stocks[0]?.batch_no || '-'} size="sm" radius="md" label="Batch/Lot" styles={{ input: { backgroundColor: '#fff' } }} />
 
+                            {/* Shift selector */}
+                            <Select
+                                label="Shift"
+                                size="sm"
+                                radius="md"
+                                data={shiftOpts}
+                                value={shiftId}
+                                onChange={(v) => setShiftId(v || '')}
+                                placeholder="Pilih Shift"
+                                clearable
+                                styles={{ input: { backgroundColor: '#fff', fontWeight: 600 } }}
+                            />
+
                             <Box mt="xs">
                                 <Text size="xs" fw={700} c="dimmed" mb={2}>Tanggal Expired</Text>
                                 <TextInput
@@ -426,11 +574,19 @@ export default function StockOpnamePage() {
                                     const days = Math.floor((new Date(sel.stocks[0].expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                                     return days < 0
                                         ? <Text size="xs" c="red" fw={700}>EXPIRED ({Math.abs(days)} hari lalu)</Text>
-                                        : days < 90
-                                            ? <Text size="xs" c="orange" fw={700}>AGING: {days} hari</Text>
+                                        : days < 30
+                                            ? <Text size="xs" c="orange" fw={700}>NEAR EXPIRED: {days} hari</Text>
                                             : null;
                                 })()}
                             </Box>
+
+                            {/* Aging storage info */}
+                            {sel.stocks[0]?.created_at && (() => {
+                                const days = Math.floor((Date.now() - new Date(sel.stocks[0].created_at).getTime()) / (1000 * 60 * 60 * 24));
+                                return days > 90
+                                    ? <Text size="xs" c="orange" fw={700}>⚠ AGING: Sudah {days} hari di gudang</Text>
+                                    : <Text size="xs" c="dimmed">Hari simpan: {days} hari</Text>;
+                            })()}
 
                             <Box mt="xs">
                                 <Text size="xs" fw={700} c="dimmed" mb={2}>Stock Akhir (Sistem)</Text>
@@ -460,13 +616,10 @@ export default function StockOpnamePage() {
                             {actualQty !== '' && actualQty !== sel.totalQty && (
                                 <Box style={{ background: '#fff', borderRadius: 8, padding: '8px 12px' }}>
                                     <Text size="xs" fw={700}>Variance: {Number(actualQty) - sel.totalQty > 0 ? '+' : ''}{Number(actualQty) - sel.totalQty}</Text>
-                                    <Text size="xs" c="dimmed">Accuracy: {sel.totalQty > 0 ? Math.round((Math.min(Number(actualQty), sel.totalQty) / Math.max(Number(actualQty), sel.totalQty)) * 100) : 100}%</Text>
+                                    <Text size="xs" c="dimmed">Accuracy Rak ini: {sel.totalQty > 0 ? Math.round((Math.min(Number(actualQty), sel.totalQty) / Math.max(Number(actualQty), sel.totalQty)) * 100) : 100}%</Text>
+                                    <Text size="xs" c="blue" fw={600}>(Akurasi Universal dihitung lintas semua rak barang ini)</Text>
                                 </Box>
                             )}
-
-                            <Text fw={800} size="sm" mt="sm">
-                                Stock Akurasi : {sel.totalQty > 0 ? Math.round((Number(actualQty) / sel.totalQty) * 100) : 100} %
-                            </Text>
 
                             <Button fullWidth bg="#111827" c="#fff" size="md" radius="md" mt="sm" onClick={doOpname} style={{ fontWeight: 700 }}>
                                 Submit

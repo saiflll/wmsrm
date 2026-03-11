@@ -8,6 +8,27 @@ import {
 import { notifications } from '@mantine/notifications';
 import { api, unwrap, fmt, statusLabel, statusColor } from '../lib/api';
 
+const renderColorfulOption: any = ({ option }: any) => {
+    if (option.isEmpty) {
+        return (
+            <Group gap={6} wrap="nowrap">
+                <Badge color="green" variant="filled" style={{ textTransform: 'none' }}>{option.locName}</Badge>
+                <Badge color="gray" variant="filled" style={{ textTransform: 'none' }}>KOSONG</Badge>
+            </Group>
+        );
+    }
+    if (option.locName) {
+        return (
+            <Group gap={6} wrap="nowrap">
+                <Badge color="green" variant="filled" style={{ textTransform: 'none' }}>{option.locName}</Badge>
+                <Badge color="orange" variant="filled" style={{ textTransform: 'none' }}>{option.itemNames}</Badge>
+                <Badge color="blue" variant="filled" style={{ textTransform: 'none' }}>{option.qtyStr}</Badge>
+            </Group>
+        );
+    }
+    return <Text size="sm">{option.label}</Text>;
+};
+
 export default function RelocationPage() {
     const [type, setType] = useState('wet');
     const [stocks, setStocks] = useState<any[]>([]);
@@ -67,7 +88,10 @@ export default function RelocationPage() {
         .filter((s: any) => !selectedBarangId || String(s.barang?.id) === String(selectedBarangId))
         .map((s: any) => ({
             value: String(s.id),
-            label: `[Zone ${s.gudang?.zone}] Rak ${s.gudang?.name} (Tersedia: ${s.qty} ${s.satuan || ''})`
+            label: `[${s.gudang?.zone}] Rak ${s.gudang?.name} — ${s.barang?.nama || 'Unknown'} (Tersedia: ${s.qty} ${s.satuan || 'qty'}, Exp: ${s.expiry_date ? new Date(s.expiry_date).toLocaleDateString('id-ID') : '-'})`,
+            locName: `[${s.gudang?.zone}] Rak ${s.gudang?.name}`,
+            itemNames: s.barang?.nama || 'Unknown',
+            qtyStr: `Tersedia: ${s.qty} ${s.satuan || ''}`
         }));
 
     const barangOpts = barangs.map((b: any) => ({ value: String(b.id), label: b.sku ? `${b.sku} - ${b.nama}` : b.nama }));
@@ -78,15 +102,36 @@ export default function RelocationPage() {
     const dynamicZones = Array.from(new Set(allGudangs.map((g: any) => g.zone).filter(Boolean)));
     const allZonesWithReject = Array.from(new Set([...defaultZones, ...dynamicZones, 'REJECT']));
     const tujuanRakOpts = selectedZoneTujuan === 'REJECT'
-        ? [{ value: 'reject', label: 'Reject Area' }]
+        ? allGudangs.filter((g: any) => g.zone === 'REJECT').map((g: any) => ({ value: String(g.id), label: `${g.name} (REJECT AREA)`, locName: g.name, isEmpty: true, disabled: false }))
         : selectedZoneTujuan
             ? allGudangs.filter((g: any) => g.zone === selectedZoneTujuan).map((g: any) => {
                 const stockInRack = stocks.filter((s: any) => String(s.gudang?.id) === String(g.id));
-                const isItemExistInRack = stockInRack.reduce((acc: number, s: any) => acc + s.qty, 0);
-                const label = isItemExistInRack > 0
-                    ? `${g.name} (Terisi ${isItemExistInRack} qty dari ${stockInRack.length} jenis)`
-                    : `${g.name} (KOSONG)`;
-                return { value: String(g.id), label };
+                const totalQty = stockInRack.reduce((acc: number, s: any) => acc + s.qty, 0);
+
+                let disabled = false;
+                if (totalQty > 0) {
+                    if (selectedBarangId && stockInRack.some((s: any) => s.barang && String(s.barang.id) !== String(selectedBarangId))) {
+                        disabled = true;
+                    }
+                    if (selStock && String(stocks.find((s: any) => s.id === +selStock)?.gudang?.id) === String(g.id)) {
+                        disabled = true;
+                    }
+
+                    const produkNames = Array.from(new Set(stockInRack.map((s: any) => s.barang?.nama).filter(Boolean))).join(', ');
+                    return {
+                        value: String(g.id),
+                        label: `${g.name} — ${produkNames} (${totalQty} qty)`,
+                        locName: g.name,
+                        itemNames: produkNames,
+                        qtyStr: `${totalQty} qty`,
+                        disabled,
+                        isEmpty: false
+                    };
+                }
+                if (selStock && String(stocks.find((s: any) => s.id === +selStock)?.gudang?.id) === String(g.id)) {
+                    disabled = true;
+                }
+                return { value: String(g.id), label: `${g.name} (KOSONG)`, locName: g.name, isEmpty: true, disabled: disabled };
             })
             : [];
 
@@ -140,15 +185,18 @@ export default function RelocationPage() {
                                 value={selStock}
                                 onChange={v => {
                                     setSelStock(v || '');
-                                    const st = stocks.find((s: any) => s.id === +(v || ''));
-                                    setRelQty(st?.qty || 0);
-                                    if (st) {
+                                    const s = stocks.find((x: any) => x.id === +(v || ''));
+                                    if (s) {
+                                        setRelQty(s.qty);
                                         // Auto-fetch original PO
-                                        const inLog = logs.find((l: any) => l.type === 'INBOUND' && l.barang?.id === st.barang?.id && l.gudang?.id === st.gudang?.id);
+                                        const inLog = logs.find((l: any) => l.type === 'INBOUND' && l.barang?.id === s.barang?.id && l.gudang?.id === s.gudang?.id);
                                         if (inLog && inLog.no_po) setNoPo(inLog.no_po);
+                                    } else {
+                                        setRelQty(0);
                                     }
                                 }}
-                                placeholder="Pilih item dari rak"
+                                placeholder="Pilih dari stok tersedia"
+                                renderOption={renderColorfulOption}
                             />
 
                             {/* Auto-info */}
@@ -182,15 +230,17 @@ export default function RelocationPage() {
                                 placeholder="Pilih zone tujuan"
                             />
 
-                            {selectedZoneTujuan && selectedZoneTujuan !== 'REJECT' && (
+                            {selectedZoneTujuan && (
                                 <Select
-                                    label="Nomor Rak Tujuan"
+                                    label="Rak Tujuan"
                                     size="xs"
                                     searchable
                                     data={tujuanRakOpts}
                                     value={selDest}
                                     onChange={v => setSelDest(v || '')}
-                                    placeholder="A1.1, A1.2..."
+                                    placeholder="Pilih rak"
+                                    renderOption={renderColorfulOption}
+                                    error={selDest && tujuanRakOpts.find(o => o.value === selDest)?.disabled ? 'Rak ini berisi produk lain' : null}
                                 />
                             )}
 

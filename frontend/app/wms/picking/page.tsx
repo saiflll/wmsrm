@@ -9,6 +9,19 @@ import { IconEdit, IconTrash, IconFileTypePdf } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { api, unwrap, fmt, statusLabel, statusColor } from '../lib/api';
 
+const renderColorfulOption: any = ({ option }: any) => {
+    if (option.locName) {
+        return (
+            <Group gap={6} wrap="nowrap">
+                <Badge color="green" variant="filled" style={{ textTransform: 'none' }}>{option.locName}</Badge>
+                <Badge color="orange" variant="filled" style={{ textTransform: 'none' }}>{option.itemNames}</Badge>
+                <Badge color="blue" variant="filled" style={{ textTransform: 'none' }}>{option.qtyStr}</Badge>
+            </Group>
+        );
+    }
+    return <Text size="sm">{option.label}</Text>;
+};
+
 export default function PickingPage() {
     const [type, setType] = useState('wet');
     const [allGudangs, setAllGudangs] = useState<any[]>([]);
@@ -64,9 +77,13 @@ export default function PickingPage() {
         .filter((s: any) => !selectedZone || s.gudang?.zone === selectedZone)
         .filter((s: any) => !selectedBarangId || String(s.barang?.id) === String(selectedBarangId));
 
+    // Group stocks per rak lalu buat label lengkap: [Zone X] Rak Y — Produk A, Produk B (Total: Z qty)
     const stockOpts = zoneStocks.map((s: any) => ({
         value: String(s.id),
-        label: `[Zone ${s.gudang?.zone}] Rak ${s.gudang?.name} (Tersedia: ${s.qty} ${s.satuan || ''})`
+        label: `[${s.gudang?.zone}] Rak ${s.gudang?.name} — ${s.barang?.nama || 'Unknown'} (Tersedia: ${s.qty} ${s.satuan || 'qty'}, Exp: ${s.expiry_date ? new Date(s.expiry_date).toLocaleDateString('id-ID') : '-'})`,
+        locName: `[${s.gudang?.zone}] Rak ${s.gudang?.name}`,
+        itemNames: s.barang?.nama || 'Unknown',
+        qtyStr: `Tersedia: ${s.qty} ${s.satuan || 'qty'}`
     }));
 
     const barangOpts = barangs.map((b: any) => ({ value: String(b.id), label: b.sku ? `${b.sku} - ${b.nama}` : b.nama }));
@@ -132,51 +149,63 @@ export default function PickingPage() {
         win.document.write(`
             <html>
             <head>
-                <title>Picking - ${transId}</title>
+                <title>Picking Plan - ${transId}</title>
                 <style>
-                    body { font-family: Arial; padding: 20px; font-size: 11px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                    th, td { border: 1px solid #333; padding: 6px; text-align: left; }
-                    th { background: #eee; }
-                    .header { font-size: 16px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-                    .info { display: flex; justify-content: space-between; margin-bottom: 10px; }
+                    body { font-family: Arial; padding: 20px; font-size: 10px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+                    th, td { border: 1px solid #333; padding: 5px; text-align: left; }
+                    th { background: #1f2937; color: #fff; font-size: 10px; }
+                    .title { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+                    .meta { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 8px; color: #333; }
+                    .badge { display: inline-block; background: #1f2937; color:#fff; border-radius: 4px; padding: 1px 6px; font-size: 9px; font-weight: bold; }
                 </style>
             </head>
             <body>
-                <div class="header">PICKING PLAN DOCUMENT</div>
-                <div class="info">
+                <div class="title">PICKING PLAN DOCUMENT</div>
+                <div class="meta">
                     <div>
                         <b>ID Transaksi:</b> ${transId}<br/>
                         <b>Tujuan:</b> ${items[0]?.tujuan || '-'}<br/>
                         <b>Shift:</b> ${items[0]?.shift?.name || '-'}
                     </div>
                     <div style="text-align: right">
-                        <b>Dicetak:</b> ${new Date().toLocaleString()}<br/>
-                        <b>Tgl Sistem:</b> ${fmt(items[0]?.created_at)}
+                        <b>Dicetak:</b> ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}<br/>
+                        <b>Tgl Transaksi:</b> ${items[0]?.created_at ? fmt(items[0].created_at) : '-'}<br/>
+                        <b>Total Item:</b> ${items.length} baris
                     </div>
                 </div>
                 <table>
                     <thead>
                         <tr>
                             <th>No.</th>
-                            <th>Batch</th>
-                            <th>Item Name</th>
+                            <th>Item / Produk</th>
+                            <th>Batch No</th>
+                            <th>Tgl Expired</th>
+                            <th>Zone / Rak Asal</th>
                             <th>Qty</th>
-                            <th>Lokasi Asal Rak (Zone)</th>
+                            <th>Satuan</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${items.map((r: any, i: number) => `
                             <tr>
                                 <td>${i + 1}</td>
+                                <td><b>${r.barang?.nama || '-'}</b></td>
                                 <td>${r.batch_no || '-'}</td>
-                                <td>${r.barang?.nama || '-'}</td>
-                                <td>${r.qty} ${r.satuan || ''}</td>
-                                <td>${r.gudang?.name} (${r.gudang?.zone || '-'})</td>
+                                <td>${r.expiry_date ? new Date(r.expiry_date).toLocaleDateString('id-ID') : '-'}</td>
+                                <td>${r.gudang?.name || '-'} <span class="badge">${r.gudang?.zone || '-'}</span></td>
+                                <td>${r.qty}</td>
+                                <td>${r.satuan || ''}</td>
+                                <td>${statusLabel(r.expiry_date)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
+                <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 10px;">
+                    <div>Checker / Pengambil:<br/><br/>______________________________</div>
+                    <div>Supervisor / Approved:<br/><br/>______________________________</div>
+                </div>
                 <script>window.onload=()=>{window.print();window.close()}</script>
             </body>
             </html>
@@ -251,7 +280,19 @@ export default function PickingPage() {
                             {/* Zone Selector (sekarang pakai dropdown) */}
                             <Select label="Filter Zone (Opsional)" size="xs" clearable data={zoneOpts} value={selectedZone} onChange={v => { setSelectedZone(v || ''); setForm(p => ({ ...p, stock_id: '' })); }} placeholder="Pilih Zone..." />
 
-                            <Select label="Nomor Rak / Stock" size="xs" searchable data={stockOpts} value={form.stock_id} onChange={v => setForm(p => ({ ...p, stock_id: v || '' }))} placeholder="Item @ Rak" />
+                            <Select
+                                label="Nomor Rak / Stock"
+                                size="xs"
+                                searchable
+                                data={stockOpts}
+                                value={form.stock_id}
+                                onChange={v => {
+                                    setForm(p => ({ ...p, stock_id: v || '', qty: stocks.find((s: any) => String(s.id) === String(v))?.qty || 0 }));
+                                }}
+                                placeholder="Pilih rak yg berisi produk..."
+                                mb="xs"
+                                renderOption={renderColorfulOption}
+                            />
 
                             {/* Auto-filled from selected stock */}
                             {selStock && (

@@ -61,8 +61,12 @@ export class InventoryController {
     }
 
     @Get('opname/export')
-    getOpnameExport(@Query('zone') zone?: string) {
-        return this.svc.getOpnameExportData(zone);
+    getOpnameExport(
+        @Query('zone') zone?: string,
+        @Query('from') from?: string,
+        @Query('to') to?: string,
+    ) {
+        return this.svc.getOpnameExportData(zone, from, to);
     }
 
     // ========== LOGS / REPORTS ==========

@@ -237,43 +237,55 @@ export class InventoryService {
     // ========== STOCK OPNAME ==========
     async opname(dto: OpnameDto, userId?: number) {
         return this.dataSource.transaction(async manager => {
-            let stock: Stock | null = null;
+            const stocks = await manager.find(Stock, {
+                where: { gudang: { id: dto.gudang_id } },
+                relations: ['barang', 'gudang'],
+            });
 
-            if (dto.stock_id) {
-                stock = await manager.findOne(Stock, {
-                    where: { id: dto.stock_id },
-                    relations: ['barang', 'gudang'],
-                });
-            } else {
-                // Find any stock at this gudang
-                stock = await manager.findOne(Stock, {
-                    where: { gudang: { id: dto.gudang_id } },
-                    relations: ['barang', 'gudang'],
-                });
+            if (!stocks.length) throw new NotFoundException('Stock not found at this location');
+
+            const totalOldQty = stocks.reduce((sum, s) => sum + s.qty, 0);
+            const diff = dto.qty_opname - totalOldQty;
+
+            // Reorder so that the target stock_id is processed last (absorbs the diff)
+            const targetIndex = dto.stock_id ? stocks.findIndex(s => s.id === dto.stock_id) : 0;
+            const primaryStock = stocks.splice(targetIndex !== -1 ? targetIndex : 0, 1)[0];
+            stocks.push(primaryStock); // primaryStock is now at the END of the array
+
+            let remainingOpname = dto.qty_opname;
+
+            // Distribute the new qty_opname across available stocks
+            for (let i = 0; i < stocks.length; i++) {
+                const s = stocks[i];
+                if (i === stocks.length - 1) {
+                    s.qty = remainingOpname; // Last one takes whatever is left
+                } else {
+                    const assign = Math.min(s.qty, remainingOpname);
+                    s.qty = assign;
+                    remainingOpname -= assign;
+                }
+                await manager.save(Stock, s);
             }
 
-            if (!stock) throw new NotFoundException('Stock not found at this location');
+            // Update barang total by the total physical diff of the rack
+            primaryStock.barang.stok += diff;
+            await manager.save(Barang, primaryStock.barang);
 
-            const diff = dto.qty_opname - stock.qty;
-            const oldQty = stock.qty;
-
-            stock.qty = dto.qty_opname;
-            await manager.save(Stock, stock);
-
-            // Update barang total
-            stock.barang.stok += diff;
-            await manager.save(Barang, stock.barang);
+            // Resolve shift if provided
+            const shift = dto.shift_id ? await manager.findOneBy(Shift, { id: dto.shift_id }) : null;
 
             const log = manager.create(StockLog, {
                 type: LogType.OPNAME,
-                barang: stock.barang,
-                gudang: stock.gudang,
+                barang: primaryStock.barang,
+                gudang: primaryStock.gudang,
                 qty: dto.qty_opname,
-                satuan: stock.satuan,
-                note: `Opname: ${oldQty} → ${dto.qty_opname} (diff: ${diff > 0 ? '+' : ''}${diff})`,
+                satuan: primaryStock.satuan,
+                shift: shift || undefined,
+                note: `Opname Rak: ${totalOldQty} → ${dto.qty_opname} (diff: ${diff > 0 ? '+' : ''}${diff})`,
             } as any);
             await manager.save(StockLog, log);
-            return { stock, log, diff };
+
+            return { stock: primaryStock, log, diff };
         });
     }
 
@@ -441,14 +453,59 @@ export class InventoryService {
         return result;
     }
 
-    // Stock opname export data (for Excel/PDF)
-    async getOpnameExportData(zone?: string) {
-        const where: any = {};
-        if (zone) where.zone = zone;
+    // Stock opname export data (for Excel/PDF) - accuracy is UNIVERSAL per barang across all racks
+    async getOpnameExportData(zone?: string, from?: string, to?: string) {
+        const whereGudang: any = {};
+        if (zone) whereGudang.zone = zone;
 
-        const gudangs = await this.gudangRepo.find({ where });
-        const result: any[] = [];
+        const gudangs = await this.gudangRepo.find({ where: whereGudang });
         const today = new Date();
+
+        // Step 1: Collect all stock keyed by barang_id to compute universal accuracy
+        // Universal accuracy = total qty opname (seluruh rak barang A) vs total qty sistem (seluruh rak barang A)
+        const barangAccMap: Record<number, { totalSistem: number; totalOpname: number; shift?: string }> = {};
+
+        // Kumpulkan semua stok yang relevan
+        const allStocksInZone = await this.stockRepo.find({
+            where: gudangs.map(g => ({ gudang: { id: g.id } })),
+            relations: ['barang', 'gudang'],
+        });
+
+        // Get opname logs per gudang (latest per gudang)
+        const opnameLogsPerGudang: Record<number, { qty: number; shift?: string }> = {};
+        for (const g of gudangs) {
+            const logWhere: any = { gudang: { id: g.id }, type: LogType.OPNAME };
+            if (from && to) {
+                logWhere.created_at = Between(new Date(from), new Date(to + 'T23:59:59'));
+            }
+            const opnameLogs = await this.logRepo.find({
+                where: logWhere,
+                relations: ['shift'],
+                order: { created_at: 'DESC' },
+                take: 1,
+            });
+            if (opnameLogs[0]) {
+                opnameLogsPerGudang[g.id] = {
+                    qty: opnameLogs[0].qty,
+                    shift: opnameLogs[0].shift?.name,
+                };
+            }
+        }
+
+        // Aggregate per barang_id across all racks for universal accuracy
+        for (const stock of allStocksInZone) {
+            if (!stock.barang) continue;
+            const bid = stock.barang.id;
+            if (!barangAccMap[bid]) barangAccMap[bid] = { totalSistem: 0, totalOpname: 0 };
+            barangAccMap[bid].totalSistem += stock.qty;
+            const opLog = opnameLogsPerGudang[stock.gudang?.id];
+            if (opLog) {
+                barangAccMap[bid].totalOpname += opLog.qty;
+                if (!barangAccMap[bid].shift) barangAccMap[bid].shift = opLog.shift;
+            }
+        }
+
+        const result: any[] = [];
 
         for (const g of gudangs) {
             const stocks = await this.stockRepo.find({
@@ -458,66 +515,68 @@ export class InventoryService {
 
             if (!stocks.length) continue;
 
-            const opnameLogs = await this.logRepo.find({
-                where: { gudang: { id: g.id }, type: LogType.OPNAME },
-                order: { created_at: 'DESC' },
-                take: 1,
-            });
+            const opnameLog = opnameLogsPerGudang[g.id];
 
             for (const stock of stocks) {
                 const expiry = stock.expiry_date;
                 let daysToExp: number | null = null;
                 let daysInStorage: number | null = null;
 
-                // Menghitung lamanya simpan (Aging storage time dari saat stok masuk/dibuat)
+                // Aging: lama simpan dari saat stok masuk
                 if (stock.created_at) {
                     daysInStorage = Math.floor((today.getTime() - new Date(stock.created_at).getTime()) / (1000 * 60 * 60 * 24));
                 }
 
                 if (expiry) {
-                    //daysToExp = Math.floor((new Date(expiry).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)); #jika umur pakai atau lifetime (exp to today)
                     daysToExp = Math.floor((new Date(expiry).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                 }
 
-                const stockOpname = opnameLogs[0]?.qty ?? null;
+                const stockOpname = opnameLog?.qty ?? null;
                 const stockAkhir = stock.qty;
                 const variance = stockOpname !== null ? stockOpname - stockAkhir : null;
                 const absVariance = variance !== null ? Math.abs(variance) : null;
-                const variancePct = stockAkhir > 0 && variance !== null ? ((Math.abs(variance) / stockAkhir) * 100).toFixed(2) : null;
-                const accuracyPct = stockAkhir > 0 && stockOpname !== null ? ((Math.min(stockOpname, stockAkhir) / Math.max(stockOpname, stockAkhir)) * 100).toFixed(2) : '100';
+                const variancePct = stockAkhir > 0 && variance !== null
+                    ? ((Math.abs(variance) / stockAkhir) * 100).toFixed(2)
+                    : null;
 
-                let agingStatus = 'NORMAL';
-
-                // Prioritas 1: Kategori AGING berdasarkan lama waktu simpan (misalnya > 90 hari = AGING)
-                if (daysInStorage !== null) {
-                    if (daysInStorage > 90) {
-                        agingStatus = 'AGING';
+                // === UNIVERSAL ACCURACY: berdasarkan total seluruh rak per barang ===
+                const bid = stock.barang?.id;
+                let accuracyPct = '100';
+                if (bid && barangAccMap[bid]) {
+                    const { totalSistem, totalOpname } = barangAccMap[bid];
+                    if (totalSistem > 0 && totalOpname > 0) {
+                        accuracyPct = ((Math.min(totalOpname, totalSistem) / Math.max(totalOpname, totalSistem)) * 100).toFixed(2);
                     }
                 }
 
-                // Prioritas 2: Menimpa status jika kedapatan kondisinya lebih darurat berdasarkan Expired Date
+                // === AGING STATUS ===
+                let agingStatus = 'NORMAL';
+
+                // Prioritas 1: berdasarkan lama simpan (>90 hari = AGING)
+                if (daysInStorage !== null && daysInStorage > 90) {
+                    agingStatus = 'AGING';
+                }
+
+                // Prioritas 2: override jika expiry date lebih darurat
                 if (daysToExp !== null) {
                     if (daysToExp < 0) agingStatus = 'EXPIRED';
                     else if (daysToExp < 30) agingStatus = 'NEAR EXPIRED';
-
                 }
 
-
                 let notes = '';
-                let noteColor = '#000000'; // Default black
+                let noteColor = '#000000';
 
-                if (daysInStorage !== null && agingStatus === 'AGING') {
-
-                    if (daysInStorage >= 40) noteColor = '#ef4444'; // Merah
-                    else if (daysInStorage >= 30) noteColor = '#f97316'; // Orange
-                    else if (daysInStorage >= 20) noteColor = '#eab308'; // Kuning
-
-                    else noteColor = '#22c55e'; // Hijau
-
-                    notes = `AGING (${daysInStorage} hari)`;
-                } else if (agingStatus !== 'NORMAL') {
-                    notes = `${agingStatus}: ${daysToExp !== null ? daysToExp + ' hari tersisa' : ''}`;
-                    noteColor = agingStatus === 'EXPIRED' ? '#ef4444' : '#f97316';
+                if (agingStatus === 'AGING' && daysInStorage !== null) {
+                    if (daysInStorage >= 120) noteColor = '#ef4444';      // Merah
+                    else if (daysInStorage >= 90) noteColor = '#f97316'; // Orange
+                    else noteColor = '#eab308';                           // Kuning
+                    notes = `AGING (${daysInStorage} hari simpan)`;
+                } else if (agingStatus === 'EXPIRED') {
+                    noteColor = '#ef4444';
+                    notes = `EXPIRED: ${daysToExp !== null ? Math.abs(daysToExp) + ' hari lalu' : ''}`;
+                } else if (agingStatus === 'NEAR EXPIRED') {
+                    noteColor = '#f97316';
+                    notes = `NEAR EXPIRED: ${daysToExp} hari tersisa`;
                 }
 
                 result.push({
@@ -537,9 +596,11 @@ export class InventoryService {
                     accuracy_pct: accuracyPct,
                     aging_status: agingStatus,
                     days_to_exp: daysToExp,
+                    days_in_storage: daysInStorage,
                     tolerance_ok: absVariance !== null ? absVariance <= 5 : true,
                     notes: notes,
                     note_color: noteColor,
+                    shift: opnameLog?.shift || null,
                 });
             }
         }

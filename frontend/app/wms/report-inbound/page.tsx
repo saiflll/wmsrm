@@ -2,25 +2,61 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Box, Group, Button, Title, Table, Badge, TextInput, Select, Loader, Text } from '@mantine/core';
-import { api, unwrap, fmt, statusLabel, statusColor } from '../lib/api';
+import { api, unwrap, fmt, statusLabel, statusColor, saveXlsx } from '../lib/api';
 import { IconFileTypePdf, IconFileSpreadsheet } from '@tabler/icons-react';
+import * as XLSX from 'xlsx';
 
-function exportCsv(data: any[]) {
-    const headers = ['NoPO', 'Item', 'Tgl.Incoming', 'Shift', 'Tgl.Expired', 'Qty', 'Satuan', 'Status', 'Zone', 'Lokasi', 'Supplier', 'Batch', 'Jam Datang', 'Jam Bongkar', 'Jam Selesai'];
+function exportExcel(data: any[], from: string, to: string, filterBarangNama?: string) {
+    const dateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    const periodeStr = from && to ? `${from} s/d ${to}` : from ? `Dari ${from}` : to ? `Sampai ${to}` : 'Semua Periode';
+    const headerRows = [
+        ['LAPORAN INBOUND - PENERIMAAN BARANG'],
+        [`Dicetak: ${dateStr}`],
+        [`Periode: ${periodeStr}`],
+        filterBarangNama ? [`Filter Produk: ${filterBarangNama}`] : [],
+        [],
+        ['No.PO/SJ', 'Item / Produk', 'Tanggal Income', 'Shift', 'Tanggal Expired', 'Qty', 'Satuan', 'Status', 'Zone', 'Lokasi Rak', 'Supplier', 'Batch No', 'Jam Datang', 'Jam Bongkar', 'Jam Selesai'],
+    ].filter(r => r.length > 0);
     const rows = data.map((r: any) => [
-        r.no_po, r.barang?.nama, fmt(r.created_at), r.shift?.name || '',
-        r.expiry_date ? fmt(r.expiry_date) : '', r.qty, r.satuan,
-        statusLabel(r.expiry_date), r.gudang?.zone, r.gudang?.name, r.supplier, r.batch_no,
-        r.jam_datang || '', r.jam_bongkar || '', r.jam_selesai || ''
+        r.no_po || '-',
+        r.barang?.nama || '',
+        r.tanggal_income ? r.tanggal_income : fmt(r.created_at),
+        r.shift?.name || '-',
+        r.expiry_date ? fmt(r.expiry_date) : '-',
+        r.qty,
+        r.satuan || '',
+        statusLabel(r.expiry_date),
+        r.gudang?.zone || '-',
+        r.gudang?.name || '-',
+        r.supplier || '-',
+        r.batch_no || '-',
+        r.jam_datang || '-',
+        r.jam_bongkar || '-',
+        r.jam_selesai || '-',
     ]);
-    const csv = [headers, ...rows]
-        .map((row: any) => row.map((c: any) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))
-        .join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `ReportInbound_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click(); URL.revokeObjectURL(url);
+    const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
+    const mergeEndRow = filterBarangNama ? 4 : 3;
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 14 } },
+        ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 14 } }] : []),
+    ];
+    ws['!cols'] = [
+        { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 8 },
+        { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 16 },
+        { wch: 12 }, { wch: 12 }, { wch: 12 },
+    ];
+    const wb = XLSX.utils.book_new();
+    const sheetName = filterBarangNama ? `Inbound-${filterBarangNama.slice(0, 20)}` : 'Inbound';
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+    // Nama file: ReportInbound_[NamaProduk_]Periode.xlsx
+    const produkPart = filterBarangNama ? `_${filterBarangNama.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20)}` : '';
+    const periodePart = from && to
+        ? `_${from.replace(/-/g, '')}-${to.replace(/-/g, '')}`
+        : `_${new Date().toISOString().split('T')[0].replace(/-/g, '')}`;
+    saveXlsx(XLSX, wb, `ReportInbound${produkPart}${periodePart}.xlsx`);
 }
 
 export default function ReportInboundPage() {
@@ -76,34 +112,42 @@ export default function ReportInboundPage() {
     });
 
     const handlePrint = () => {
+        const periodeStr = from && to ? `${from} s/d ${to}` : from ? `Dari ${from}` : to ? `Sampai ${to}` : 'Semua Periode';
         const win = window.open('', '_blank');
         if (!win) return;
         win.document.write(`
             <html>
             <head>
-                <title>Report Inbound</title>
+                <title>Laporan Inbound - ${periodeStr}</title>
                 <style>
-                    body { font-family: Arial; padding: 20px; font-size: 11px; }
+                    body { font-family: Arial; padding: 20px; font-size: 10px; }
                     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                    th, td { border: 1px solid #333; padding: 6px; text-align: left; }
-                    th { background: #eee; }
-                    .header { font-size: 16px; font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+                    th, td { border: 1px solid #333; padding: 5px; text-align: left; }
+                    th { background: #1f2937; color: #fff; font-size: 10px; }
+                    .title { font-size: 15px; font-weight: bold; margin-bottom: 4px; }
+                    .subtitle { font-size: 11px; color: #555; margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 8px; }
                 </style>
             </head>
             <body>
-                <div class="header">REPORT INBOUND DOCUMENT (Dari: ${from || '-'}, Sampai: ${to || '-'})</div>
+                <div class="title">LAPORAN INBOUND - PENERIMAAN BARANG</div>
+                <div class="subtitle">Periode: ${periodeStr} &nbsp;|&nbsp; Dicetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
                 <table>
                     <thead>
                         <tr>
-                            <th>ID Transaksi/PO</th>
-                            <th>Item Name</th>
-                            <th>Pemasok (Tujuan)</th>
+                            <th>No.PO/SJ</th>
+                            <th>Item / Produk</th>
+                            <th>Supplier</th>
                             <th>Shift</th>
+                            <th>Tgl.Income</th>
+                            <th>Batch</th>
                             <th>Tgl.Expired</th>
                             <th>Qty</th>
-                            <th>Status/Satuan</th>
-                            <th>Location (Lokasi)</th>
-                            <th>Tanggal Masuk</th>
+                            <th>Satuan</th>
+                            <th>Status</th>
+                            <th>Zone / Rak</th>
+                            <th>Jam Datang</th>
+                            <th>Jam Bongkar</th>
+                            <th>Jam Selesai</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -114,11 +158,16 @@ export default function ReportInboundPage() {
                                     <td>${r.barang?.nama || '-'}</td>
                                     ${idx === 0 ? `<td rowspan="${items.length}">${r.supplier || '-'}</td>` : ''}
                                     ${idx === 0 ? `<td rowspan="${items.length}">${r.shift?.name || '-'}</td>` : ''}
+                                    ${idx === 0 ? `<td rowspan="${items.length}">${r.tanggal_income || fmt(r.created_at).split(' ')[0]}</td>` : ''}
+                                    <td>${r.batch_no || '-'}</td>
                                     <td>${r.expiry_date ? fmt(r.expiry_date).split(' ')[0] : '-'}</td>
-                                    <td>${r.qty} ${r.satuan || ''}</td>
+                                    <td>${r.qty}</td>
+                                    <td>${r.satuan || ''}</td>
                                     <td>${statusLabel(r.expiry_date)}</td>
-                                    <td>${r.gudang?.name} (${r.gudang?.zone || '-'})</td>
-                                    ${idx === 0 ? `<td rowspan="${items.length}">${fmt(r.created_at).split(' ')[0]}</td>` : ''}
+                                    <td>${r.gudang?.name || '-'} (${r.gudang?.zone || '-'})</td>
+                                    ${idx === 0 ? `<td rowspan="${items.length}">${r.jam_datang || '-'}</td>` : ''}
+                                    ${idx === 0 ? `<td rowspan="${items.length}">${r.jam_bongkar || '-'}</td>` : ''}
+                                    ${idx === 0 ? `<td rowspan="${items.length}">${r.jam_selesai || '-'}</td>` : ''}
                                 </tr>
                             `).join('');
         }).join('')}
@@ -139,7 +188,7 @@ export default function ReportInboundPage() {
                 <Button size="xs" color="red" radius="md" onClick={handlePrint} leftSection={<IconFileTypePdf size={16} />}>
                     Print PDF
                 </Button>
-                <Button size="xs" color="green" radius="md" onClick={() => exportCsv(filtered)} leftSection={<IconFileSpreadsheet size={16} />}>
+                <Button size="xs" color="green" radius="md" onClick={() => exportExcel(filtered, from, to, barangs.find((b: any) => String(b.id) === filterBarang)?.nama)} leftSection={<IconFileSpreadsheet size={16} />}>
                     Export Excel
                 </Button>
             </Group>

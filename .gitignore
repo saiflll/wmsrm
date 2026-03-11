@@ -56,3 +56,8 @@ temp/
 .eslintcache
 .stylelintcache
 .prettiercache
+*.tar
+*.zip
+*.exe
+*.pdf
+*.7z

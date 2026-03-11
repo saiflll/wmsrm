@@ -2,24 +2,54 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Box, Group, Button, Title, Table, Badge, TextInput, Select, Loader, Text } from '@mantine/core';
-import { api, unwrap, fmt, statusLabel, statusColor } from '../lib/api';
+import { api, unwrap, fmt, statusLabel, statusColor, saveXlsx } from '../lib/api';
 import { IconFileTypePdf, IconFileSpreadsheet } from '@tabler/icons-react';
+import * as XLSX from 'xlsx';
 
-function exportCsv(data: any[]) {
-    const headers = ['ID Transaksi', 'Item', 'Tujuan', 'Shift', 'Tanggal', 'Tgl.Expired', 'Qty', 'Satuan', 'Status', 'Lokasi', 'Batch'];
+function exportExcel(data: any[], from: string, to: string, filterBarangNama?: string) {
+    const dateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    const periodeStr = from && to ? `${from} s/d ${to}` : from ? `Dari ${from}` : to ? `Sampai ${to}` : 'Semua Periode';
+    const headerRows = [
+        ['LAPORAN OUTBOUND - PENGELUARAN BARANG (PICKING)'],
+        [`Dicetak: ${dateStr}`],
+        [`Periode: ${periodeStr}`],
+        filterBarangNama ? [`Filter Produk: ${filterBarangNama}`] : [],
+        [],
+        ['ID Transaksi', 'Item / Produk', 'Tujuan', 'Shift', 'Tanggal Transaksi', 'Tanggal Expired', 'Qty', 'Satuan', 'Status', 'Zone', 'Lokasi Rak', 'Batch No'],
+    ].filter(r => r.length > 0);
     const rows = data.map((r: any) => [
-        r.no_ref, r.barang?.nama, r.tujuan, r.shift?.name, fmt(r.created_at),
-        r.expiry_date ? fmt(r.expiry_date) : '', r.qty, r.satuan,
-        statusLabel(r.expiry_date), r.gudang?.name, r.batch_no
+        r.no_ref || '-',
+        r.barang?.nama || '',
+        r.tujuan || '-',
+        r.shift?.name || '-',
+        fmt(r.created_at),
+        r.expiry_date ? fmt(r.expiry_date) : '-',
+        r.qty,
+        r.satuan || '',
+        statusLabel(r.expiry_date),
+        r.gudang?.zone || '-',
+        r.gudang?.name || '-',
+        r.batch_no || '-',
     ]);
-    const csv = [headers, ...rows]
-        .map((row: any) => row.map((c: any) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))
-        .join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `ReportOutbound_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click(); URL.revokeObjectURL(url);
+    const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 11 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 11 } },
+        ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 11 } }] : []),
+    ];
+    ws['!cols'] = [
+        { wch: 16 }, { wch: 28 }, { wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
+        { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 16 },
+    ];
+    const wb = XLSX.utils.book_new();
+    const sheetName = filterBarangNama ? `Outbound-${filterBarangNama.slice(0, 20)}` : 'Outbound';
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    const produkPart = filterBarangNama ? `_${filterBarangNama.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20)}` : '';
+    const periodePart = from && to
+        ? `_${from.replace(/-/g, '')}-${to.replace(/-/g, '')}`
+        : `_${new Date().toISOString().split('T')[0].replace(/-/g, '')}`;
+    saveXlsx(XLSX, wb, `ReportOutbound${produkPart}${periodePart}.xlsx`);
 }
 
 export default function ReportOutboundPage() {
@@ -73,34 +103,39 @@ export default function ReportOutboundPage() {
     });
 
     const handlePrint = () => {
+        const periodeStr = from && to ? `${from} s/d ${to}` : from ? `Dari ${from}` : to ? `Sampai ${to}` : 'Semua Periode';
         const win = window.open('', '_blank');
         if (!win) return;
         win.document.write(`
             <html>
             <head>
-                <title>Report Outbound</title>
+                <title>Laporan Outbound - ${periodeStr}</title>
                 <style>
-                    body { font-family: Arial; padding: 20px; font-size: 11px; }
+                    body { font-family: Arial; padding: 20px; font-size: 10px; }
                     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                    th, td { border: 1px solid #333; padding: 6px; text-align: left; }
-                    th { background: #eee; }
-                    .header { font-size: 16px; font-weight: bold; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+                    th, td { border: 1px solid #333; padding: 5px; text-align: left; }
+                    th { background: #1f2937; color: #fff; font-size: 10px; }
+                    .title { font-size: 15px; font-weight: bold; margin-bottom: 4px; }
+                    .subtitle { font-size: 11px; color: #555; margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 8px; }
                 </style>
             </head>
             <body>
-                <div class="header">REPORT OUTBOUND DOCUMENT (Dari: ${from || '-'}, Sampai: ${to || '-'})</div>
+                <div class="title">LAPORAN OUTBOUND - PENGELUARAN BARANG (PICKING)</div>
+                <div class="subtitle">Periode: ${periodeStr} &nbsp;|&nbsp; Dicetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
                 <table>
                     <thead>
                         <tr>
                             <th>ID Transaksi</th>
-                            <th>Item Name</th>
+                            <th>Item / Produk</th>
                             <th>Tujuan</th>
                             <th>Shift</th>
+                            <th>Tgl.Transaksi</th>
+                            <th>Batch</th>
                             <th>Tgl.Expired</th>
                             <th>Qty</th>
-                            <th>Status/Satuan</th>
-                            <th>Location (Lokasi)</th>
-                            <th>Tanggal Permintaan</th>
+                            <th>Satuan</th>
+                            <th>Status</th>
+                            <th>Zone / Rak</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -111,11 +146,13 @@ export default function ReportOutboundPage() {
                                     <td>${r.barang?.nama || '-'}</td>
                                     ${idx === 0 ? `<td rowspan="${items.length}">${r.tujuan || '-'}</td>` : ''}
                                     ${idx === 0 ? `<td rowspan="${items.length}">${r.shift?.name || '-'}</td>` : ''}
-                                    <td>${r.expiry_date ? fmt(r.expiry_date).split(' ')[0] : '-'}</td>
-                                    <td>${r.qty} ${r.satuan || ''}</td>
-                                    <td>${statusLabel(r.expiry_date)}</td>
-                                    <td>${r.gudang?.name} (${r.gudang?.zone || '-'})</td>
                                     ${idx === 0 ? `<td rowspan="${items.length}">${fmt(r.created_at).split(' ')[0]}</td>` : ''}
+                                    <td>${r.batch_no || '-'}</td>
+                                    <td>${r.expiry_date ? fmt(r.expiry_date).split(' ')[0] : '-'}</td>
+                                    <td>${r.qty}</td>
+                                    <td>${r.satuan || ''}</td>
+                                    <td>${statusLabel(r.expiry_date)}</td>
+                                    <td>${r.gudang?.name || '-'} (${r.gudang?.zone || '-'})</td>
                                 </tr>
                             `).join('');
         }).join('')}
@@ -136,7 +173,7 @@ export default function ReportOutboundPage() {
                 <Button size="xs" color="red" radius="md" onClick={handlePrint} leftSection={<IconFileTypePdf size={16} />}>
                     Print PDF
                 </Button>
-                <Button size="xs" color="green" radius="md" onClick={() => exportCsv(filtered)} leftSection={<IconFileSpreadsheet size={16} />}>
+                <Button size="xs" color="green" radius="md" onClick={() => exportExcel(filtered, from, to, barangs.find((b: any) => String(b.id) === filterBarang)?.nama)} leftSection={<IconFileSpreadsheet size={16} />}>
                     Export Excel
                 </Button>
             </Group>

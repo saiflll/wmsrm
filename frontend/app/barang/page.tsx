@@ -155,10 +155,18 @@ export default function BarangPage() {
     };
 
     const handleExport = () => {
+        const dateStr = new Date().toISOString().split('T')[0];
         const worksheet = XLSX.utils.json_to_sheet(items);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
-        XLSX.writeFile(workbook, "Inventory_Data.xlsx");
+        const wbout: string = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
+        const a = document.createElement('a');
+        a.href = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${wbout}`;
+        a.download = `Inventory_Data_${dateStr}.xlsx`;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     };
 
     return (
