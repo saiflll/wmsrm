@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
 export const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 

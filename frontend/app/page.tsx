@@ -17,7 +17,7 @@ import ReportInboundPage from './wms/report-inbound/page';
 import ReportOutboundPage from './wms/report-outbound/page';
 import StockOpnamePage from './wms/stock-opname/page';
 
-const API = 'http://localhost:3001';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
 const NAV = [
   { id: 'dashboard', label: 'DASHBOARD' },
@@ -53,7 +53,7 @@ export default function App() {
 
   if (!user) return null;
 
-  const pages = {
+  const pages: Record<string, React.ReactNode> = {
     dashboard: <DashboardPage />,
     inbound: <InboundPage />,
     putaway: <PutawayPage />,

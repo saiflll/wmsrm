@@ -13,7 +13,7 @@ Sistem WMS memiliki 3 tingkatan (role) pengguna:
 
 3. **superadmin** (Role 3 - Super Admin)
    - Level tertinggi (Pemilik/Manajer IT).
-   - Memiliki kendali penuh terhadap seluruh sistem konfigurasi, manajemen akun pengguna, pengaturan master lokasi gudang, dan seluruh fitur laporan esensial.
+   - Memiliki kendali penuh terhadap seluruh sistem konfigurasi, pengaturan master lokasi gudang, dan seluruh fitur laporan esensial.
 
 ---
 
@@ -36,7 +36,7 @@ Secara garis besar, pergerakan barang dalam sistem ini adalah sebagai berikut:
 
 ## 3. Fitur Spesifik (Aging, Accuracy, dll)
 - **Aging Material (Masa Tahan Simpan)**
-  Sistem akan melacak seberapa lama barang telah berada di gudang sejak pertama kali direkam (berdasarkan tanggal masuk/dibuat *created_at*). Jika jumlah hari mencapai lebih dari 90 hari, indikator visual akan memeringkatkan barang tersebut berstatus "AGING", bertujuan untuk segera memprioritaskan penjualannya.
+  Sistem akan melacak seberapa lama barang telah berada di gudang sejak pertama kali direkam (berdasarkan tanggal masuk/dibuat *created_at*). Jika jumlah hari mencapai lebih dari 90 hari, indikator visual akan memeringkatkan barang tersebut berstatus "AGING", bertujuan untuk segera memprioritaskan pengeluarannya.
 
 - **Near Expired / Expired (Tanggal Kadaluarsa)**
   Sistem menghitung selisih hari ini terhadap *expiry_date* produk. Tanggal yang terlewat ditandai "EXPIRED" secara sistem dan dikalkulasi rentang harinya ke belakang. Jika masih berlaku tetapi sisa usianya di bawah batas aman spesifik (kurang dari 30 hari), status bergeser menjadi peringatan darurat "NEAR EXPIRED". (Catatan: Status ini akan menimpa/menggantikan level peringatan dari sistem Aging biasa karena urgensi kelayakannya).
