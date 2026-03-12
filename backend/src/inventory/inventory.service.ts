@@ -236,7 +236,26 @@ export class InventoryService {
 
     // ========== STOCK OPNAME ==========
     async opname(dto: OpnameDto, userId?: number) {
+        if (!dto.shift_id) {
+            throw new BadRequestException('Shift wajib dipilih untuk melakukan opname.');
+        }
+
         return this.dataSource.transaction(async manager => {
+            const today = new Date().toISOString().split('T')[0];
+            const existingLog = await manager.findOne(StockLog, {
+                where: {
+                    gudang: { id: dto.gudang_id },
+                    type: LogType.OPNAME,
+                    shift: { id: dto.shift_id },
+                    created_at: Between(new Date(today), new Date(today + 'T23:59:59')),
+                },
+                relations: ['shift']
+            });
+
+            if (existingLog) {
+                throw new BadRequestException(`Rak ini sudah di-opname pada hari ini untuk shift ${existingLog.shift?.name || dto.shift_id}. Anda tidak bisa melakukan opname lagi pada shift yang sama.`);
+            }
+
             const stocks = await manager.find(Stock, {
                 where: { gudang: { id: dto.gudang_id } },
                 relations: ['barang', 'gudang'],

@@ -1,19 +1,15 @@
 @echo off
+cd /d "%~dp0"
+
 echo ========================================================
 echo   Proses Ekspor Container WMS App menjadi .tar
 echo ========================================================
 
 echo.
 echo [1/3] Memastikan semua image sudah di-build...
-docker build --no-cache -t wms-frontend:latest ./frontend
+docker-compose build --no-cache
 if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Build frontend gagal! Periksa error di atas.
-    pause
-    exit /b 1
-)
-docker build --no-cache -t wms-backend:latest ./backend
-if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Build backend gagal! Periksa error di atas.
+    echo [ERROR] Build gagal! Periksa error di atas.
     pause
     exit /b 1
 )

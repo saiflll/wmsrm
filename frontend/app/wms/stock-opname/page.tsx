@@ -164,12 +164,15 @@ export default function StockOpnamePage() {
 
     const doOpname = async () => {
         if (!sel || actualQty === '') return;
+        if (!shiftId) {
+            return notifications.show({ title: 'Error', message: 'Pilih shift terlebih dahulu', color: 'red' });
+        }
         try {
             await api().post('/inventory/opname', {
                 stock_id: sel.stocks?.[0]?.id,
                 gudang_id: sel.gudang.id,
                 qty_opname: Number(actualQty),
-                shift_id: shiftId ? Number(shiftId) : undefined,
+                shift_id: Number(shiftId),
             });
             notifications.show({ title: 'Sukses', message: `Opname ${sel.gudang.name} tersimpan`, color: 'green' });
             close();
