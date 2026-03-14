@@ -15,9 +15,6 @@ export class CreateBarangDto {
     kategori?: KategoriBarang;
 
     @IsOptional() @IsNumber()
-    stok?: number;
-
-    @IsOptional() @IsNumber()
     min_stok?: number;
 
     @IsOptional() @IsString()
@@ -39,9 +36,6 @@ export class UpdateBarangDto {
 
     @IsOptional() @IsEnum(KategoriBarang)
     kategori?: KategoriBarang;
-
-    @IsOptional() @IsNumber()
-    stok?: number;
 
     @IsOptional() @IsNumber()
     min_stok?: number;

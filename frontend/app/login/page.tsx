@@ -18,7 +18,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { notifications } from '@mantine/notifications';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.100.11:3002';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
 export default function LoginPage() {
     const router = useRouter();

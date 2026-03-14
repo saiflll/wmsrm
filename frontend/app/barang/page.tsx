@@ -34,7 +34,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.100.11:3002';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
 interface Barang {
     id: number;
@@ -58,7 +58,6 @@ export default function BarangPage() {
         satuan_kecil: '',
         faktor_konversi: 1,
         side: '1',
-        stok: 0
     });
     const [editingItem, setEditingItem] = useState<Barang | null>(null);
     const [token, setToken] = useState('');
@@ -137,7 +136,6 @@ export default function BarangPage() {
             satuan_kecil: item.satuan_kecil || '',
             faktor_konversi: item.faktor_konversi || 1,
             side: item.side ? '1' : '0',
-            stok: item.stok
         });
         openEdit();
     };
@@ -150,7 +148,6 @@ export default function BarangPage() {
             satuan_kecil: '',
             faktor_konversi: 1,
             side: '1',
-            stok: 0
         });
     };
 
@@ -233,7 +230,6 @@ export default function BarangPage() {
                     <NumberInput label="Faktor Konversi" value={formData.faktor_konversi} onChange={(val) => setFormData({ ...formData, faktor_konversi: Number(val) })} />
                     <Select label="Tipe Gudang" data={[{ value: '1', label: 'Dry' }, { value: '0', label: 'Wet' }]} value={formData.side} onChange={(val) => setFormData({ ...formData, side: val || '1' })} />
 
-                    <NumberInput label="Stok (Satuan Besar)" value={formData.stok} onChange={(val) => setFormData({ ...formData, stok: Number(val) })} />
                 </SimpleGrid>
 
                 <Button fullWidth mt="xl" onClick={opened ? handleSave : handleUpdate} leftSection={<IconDeviceFloppy size={18} />}>

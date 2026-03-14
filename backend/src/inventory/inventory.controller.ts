@@ -8,6 +8,11 @@ import { LogType } from './stock-log.entity';
 @UseGuards(JwtAuthGuard)
 export class InventoryController {
     constructor(private readonly svc: InventoryService) { }
+    
+    @Get('sync-all')
+    syncAll() {
+        return this.svc.syncAllBarangStok();
+    }
 
     // ========== STOCK ==========
     @Get('stock')

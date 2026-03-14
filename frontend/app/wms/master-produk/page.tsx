@@ -42,7 +42,17 @@ export default function MasterProdukPage() {
         }
     };
 
-    const del = async (id) => {
+    const syncAll = async () => {
+        setLoading(true);
+        try {
+            await api().get('/inventory/sync-all');
+            notifications.show({ title: 'Sukses', message: 'Seluruh stok disinkronkan ulang', color: 'green' });
+            load();
+        } catch (e) { console.error(e); }
+        setLoading(false);
+    };
+
+    const del = async (id: number) => {
         if (!confirm('Hapus produk ini?')) return;
         try {
             await api().delete(`/barang/${id}`);
@@ -51,17 +61,17 @@ export default function MasterProdukPage() {
         } catch (e) { console.error(e); }
     };
 
-    const openEdit = (item) => {
+    const openEdit = (item: any) => {
         setEditId(item.id);
         setForm({ sku: item.sku, nama: item.nama, satuan: item.satuan, kategori: item.kategori, min_stok: item.min_stok || 0 });
         open();
     };
 
-    const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
+    const f = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
     const filtered = search ? items.filter((i: any) => i.nama?.toLowerCase().includes(search.toLowerCase()) || i.sku?.includes(search)) : items;
 
     // Count by kategori
-    const katGroups = {};
+    const katGroups: Record<string, number> = {};
     items.forEach((i: any) => { katGroups[i.kategori] = (katGroups[i.kategori] || 0) + 1; });
 
     return (
@@ -102,6 +112,7 @@ export default function MasterProdukPage() {
                         <Group mb="xs" gap="xs">
                             <TextInput placeholder="Cari SKU / nama..." size="xs" value={search} onChange={e => setSearch(e.target.value)} style={{ width: 220 }} />
                             <Button size="xs" color="green" onClick={() => { setEditId(null); setForm({ sku: '', nama: '', satuan: '', kategori: 'Dry', min_stok: 0 }); open(); }} style={{ fontWeight: 700 }}>+ Tambah Produk</Button>
+                            <Button size="xs" variant="light" color="blue" onClick={syncAll}>Sync Stock</Button>
                         </Group>
 
                         {loading ? <Loader /> : (

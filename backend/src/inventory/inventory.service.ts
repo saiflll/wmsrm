@@ -18,6 +18,25 @@ export class InventoryService {
         @InjectRepository(Shift) private shiftRepo: Repository<Shift>,
         private dataSource: DataSource,
     ) { }
+    
+    private async syncBarangStok(manager: any, barangId: number) {
+        const result = await manager.getRepository(Stock).createQueryBuilder('s')
+            .where('s.barangId = :barangId', { barangId })
+            .select('SUM(s.qty)', 'total')
+            .getRawOne();
+        const total = parseFloat(result?.total || '0');
+        await manager.update(Barang, barangId, { stok: total });
+    }
+
+    async syncAllBarangStok() {
+        return this.dataSource.transaction(async manager => {
+            const barangs = await manager.find(Barang);
+            for (const b of barangs) {
+                await this.syncBarangStok(manager, b.id);
+            }
+            return { message: `Synced ${barangs.length} items` };
+        });
+    }
 
     // ========== INBOUND ==========
     async postInbound(items: InboundItemDto[], userId?: number) {
@@ -53,9 +72,8 @@ export class InventoryService {
                 }
                 await manager.save(Stock, stock);
 
-                // Update barang total stok
-                barang.stok += item.qty;
-                await manager.save(Barang, barang);
+                await manager.save(Stock, stock);
+                await this.syncBarangStok(manager, barang.id);
 
                 // Create log
                 const log = manager.create(StockLog, {
@@ -101,15 +119,14 @@ export class InventoryService {
                     throw new BadRequestException(`Stok tidak cukup untuk ${barang.nama} di ${gudang.name}`);
                 }
 
-                stock.qty -= item.qty;
                 await manager.save(Stock, stock);
 
-                // Update barang total
-                barang.stok -= item.qty;
-                await manager.save(Barang, barang);
-
                 // Clean up empty stock
-                if (stock.qty <= 0) await manager.remove(Stock, stock);
+                if (stock.qty <= 0) {
+                    await manager.remove(Stock, stock);
+                }
+                
+                await this.syncBarangStok(manager, barang.id);
 
                 const shift = item.shift_id ? await manager.findOneBy(Shift, { id: item.shift_id }) : null;
 
@@ -121,7 +138,8 @@ export class InventoryService {
                     satuan: item.satuan || barang.satuan,
                     tujuan: item.tujuan,
                     shift: shift || undefined,
-                    batch_no: item.batch_no,
+                    batch_no: stock.batch_no,
+                    expiry_date: stock.expiry_date,
                 } as any);
                 await manager.save(StockLog, log);
                 logs.push(log);
@@ -141,11 +159,7 @@ export class InventoryService {
             if (!logs.length) throw new NotFoundException('Transaksi tidak ditemukan');
 
             for (const log of logs) {
-                // Return barang total stock
-                if (log.barang) {
-                    log.barang.stok += log.qty;
-                    await manager.save(Barang, log.barang);
-                }
+                // Return barang total stock - will be synced after loop
 
                 // Restore to rack
                 let stock = await manager.findOne(Stock, {
@@ -168,6 +182,7 @@ export class InventoryService {
 
                 // Delete log
                 await manager.remove(StockLog, log);
+                await this.syncBarangStok(manager, log.barang.id);
             }
             return { message: 'Reverted successfully' };
         });
@@ -223,12 +238,13 @@ export class InventoryService {
             await manager.save(StockLog, log);
 
             // Decrease source LAST
-            stock.qty -= dto.qty;
             if (stock.qty <= 0) {
                 await manager.remove(Stock, stock);
             } else {
                 await manager.save(Stock, stock);
             }
+            
+            await this.syncBarangStok(manager, stock.barang.id);
 
             return log;
         });
@@ -283,12 +299,16 @@ export class InventoryService {
                     s.qty = assign;
                     remainingOpname -= assign;
                 }
-                await manager.save(Stock, s);
+                
+                if (s.qty <= 0) {
+                    await manager.remove(Stock, s);
+                } else {
+                    await manager.save(Stock, s);
+                }
             }
 
-            // Update barang total by the total physical diff of the rack
-            primaryStock.barang.stok += diff;
-            await manager.save(Barang, primaryStock.barang);
+            // Sync global stock
+            await this.syncBarangStok(manager, primaryStock.barang.id);
 
             // Resolve shift if provided
             const shift = dto.shift_id ? await manager.findOneBy(Shift, { id: dto.shift_id }) : null;
@@ -464,9 +484,9 @@ export class InventoryService {
             result.push({
                 gudang: g,
                 stocks,
-                filled: stocks.length > 0,
-                opnamed: !!opnameLog,
                 totalQty: stocks.reduce((s, st) => s + st.qty, 0),
+                filled: stocks.some(st => st.qty > 0),
+                opnamed: !!opnameLog,
             });
         }
         return result;

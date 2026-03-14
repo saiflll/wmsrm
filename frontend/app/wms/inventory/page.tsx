@@ -67,7 +67,7 @@ export default function InventoryPage() {
                                     <Table.Th rowSpan={2} style={{ position: 'sticky', left: 0, background: '#fff', zIndex: 2, borderBottom: '2px solid #10b981', minWidth: 200, verticalAlign: 'middle', textAlign: 'center' }}>Nama Item</Table.Th>
                                     <Table.Th rowSpan={2} style={{ background: '#10b981', color: '#fff', borderBottom: '2px solid #059669', textAlign: 'center', verticalAlign: 'middle' }}>SATUAN</Table.Th>
                                     <Table.Th rowSpan={2} style={{ background: '#fff', borderBottom: '2px solid #10b981' }}></Table.Th>
-                                    <Table.Th rowSpan={2} style={{ background: '#fff', borderBottom: '2px solid #10b981', textAlign: 'center', verticalAlign: 'middle' }}>Saldo Awal</Table.Th>
+                                    <Table.Th rowSpan={2} style={{ background: '#fff', borderBottom: '2px solid #10b981', textAlign: 'center', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>TOTAL STOK</Table.Th>
                                     {allDates.map((dt: string) => (
                                         <Table.Th key={dt} colSpan={3} style={{ background: '#fff', textAlign: 'center', borderLeft: '2px solid #555', borderBottom: '1px solid #ddd', fontSize: 12 }}>{fmt(dt).split(' ')[0]}</Table.Th>
                                     ))}
@@ -86,7 +86,29 @@ export default function InventoryPage() {
                             </Table.Thead>
                             <Table.Tbody>
                                 {filtered.length === 0 ? <Table.Tr><Table.Td colSpan={50} ta="center" c="dimmed">Tidak ada data</Table.Td></Table.Tr> : filtered.map((item: any) => {
-                                    let currentBal = item.saldoAwal || 0;
+                                    // To calculate running balance correctly for the view:
+                                    // We start currentBal from the REAL-TIME total stock and subtract backwards
+                                    // if we wanted a historical flow, but user wants 'Saldo Awal' to be 'Total Stock'.
+                                    // If we interpret 'Saldo Awal' as 'Current Total', then the daily stock row 
+                                    // should show the state at that point.
+                                    
+                                    // Logic: Find total IN/OUT for ALL dates in the view
+                                    let totalInInView = 0;
+                                    let totalOutInView = 0;
+                                    filtered.forEach(it => {
+                                        if(it.id === item.id) {
+                                            Object.values(it.daily || {}).forEach((day: any) => {
+                                                Object.values(day).forEach((sh: any) => {
+                                                    totalInInView += (sh.in || 0);
+                                                    totalOutInView += (sh.out || 0);
+                                                });
+                                            });
+                                        }
+                                    });
+
+                                    // Starting balance for the VERY FIRST cell in this view
+                                    let runningStock = (item.saldoAwal || 0) - totalInInView + totalOutInView;
+
                                     const tdIn: any[] = [];
                                     const tdOut: any[] = [];
                                     const tdStock: any[] = [];
@@ -95,12 +117,12 @@ export default function InventoryPage() {
                                         ['1', '2', '3'].forEach((sh, shIdx) => {
                                             const inQty = item.daily?.[dt]?.[sh]?.in || 0;
                                             const outQty = item.daily?.[dt]?.[sh]?.out || 0;
-                                            currentBal = currentBal + inQty - outQty;
+                                            runningStock = runningStock + inQty - outQty;
 
                                             const cellStyle = { borderLeft: shIdx === 0 ? '2px solid #555' : '1px solid #ddd' };
                                             tdIn.push(<Table.Td key={`in-${dt}-${sh}`} ta="right" bg="#fff" style={cellStyle}>{inQty || 0}</Table.Td>);
                                             tdOut.push(<Table.Td key={`out-${dt}-${sh}`} ta="right" bg="#fff" style={cellStyle}>{outQty || 0}</Table.Td>);
-                                            tdStock.push(<Table.Td key={`stk-${dt}-${sh}`} ta="right" bg="#fef08a" fw={700} c={currentBal < 0 ? 'red' : 'inherit'} style={cellStyle}>{currentBal}</Table.Td>);
+                                            tdStock.push(<Table.Td key={`stk-${dt}-${sh}`} ta="right" bg="#fef08a" fw={700} c={runningStock < 0 ? 'red' : 'inherit'} style={cellStyle}>{runningStock}</Table.Td>);
                                         });
                                     });
 
