@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 
 // Entities
 import { User } from './users/user.entity';
+import { LoginLog } from './users/login-log.entity';
 import { Shift } from './shifts/shift.entity';
 import { Suplayer } from './suplayers/suplayer.entity';
 import { Barang } from './barang/barang.entity';
@@ -17,6 +18,7 @@ import { Customer } from './customers/customer.entity';
 
 // Modules
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 import { BarangModule } from './barang/barang.module';
 import { TransaksiModule } from './transaksi/transaksi.module';
 import { GudangModule } from './gudang/gudang.module';
@@ -35,13 +37,14 @@ import { SeedService } from './seed.service';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get('DATABASE_URL'),
-        entities: [User, Shift, Suplayer, Barang, Gudang, Transaksi, Stock, StockLog, Customer],
+        entities: [User, LoginLog, Shift, Suplayer, Barang, Gudang, Transaksi, Stock, StockLog, Customer],
         synchronize: true,
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Shift, Suplayer, Barang, Gudang, Transaksi, Stock, StockLog, Customer]),
+    TypeOrmModule.forFeature([User, LoginLog, Shift, Suplayer, Barang, Gudang, Transaksi, Stock, StockLog, Customer]),
     AuthModule,
+    UsersModule,
     BarangModule,
     TransaksiModule,
     GudangModule,

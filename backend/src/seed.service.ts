@@ -40,9 +40,20 @@ export class SeedService implements OnApplicationBootstrap {
     private async seedUsers() {
         if (await this.userRepo.count() > 0) return;
         const users = [
-            { username: 'foreman1', pass: await bcrypt.hash('foreman123', 10), role: UserRole.FOREMAN },
-            { username: 'admin1', pass: await bcrypt.hash('admin123', 10), role: UserRole.ADMIN },
-            { username: 'superadmin', pass: await bcrypt.hash('super123', 10), role: UserRole.SUPER_ADMIN },
+            // Checker IB (Inbound)
+            { username: 'checkerib1', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_IB },
+            { username: 'checkerib2', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_IB },
+            { username: 'checkerib3', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_IB },
+            // Checker OB (Outbound)
+            { username: 'checkerob1', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_OB },
+            { username: 'checkerob2', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_OB },
+            { username: 'checkerob3', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_OB },
+            // Koordinator
+            { username: 'koordinator1', pass: await bcrypt.hash('koord123', 10), role: UserRole.KOORDINATOR },
+            { username: 'koordinator2', pass: await bcrypt.hash('koord123', 10), role: UserRole.KOORDINATOR },
+            { username: 'koordinator3', pass: await bcrypt.hash('koord123', 10), role: UserRole.KOORDINATOR },
+            // Supervisor (full access)
+            { username: 'supervisor', pass: await bcrypt.hash('super123', 10), role: UserRole.SUPERVISOR },
         ];
         await this.userRepo.save(this.userRepo.create(users));
         console.log('✅ Seed users');

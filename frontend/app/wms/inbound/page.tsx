@@ -102,6 +102,44 @@ export default function InboundPage() {
         if (barcodeRef.current) barcodeRef.current.focus();
     };
 
+    const downloadTemplate = () => {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([['NoPO', 'Item', 'Qty', 'Satuan', 'Batch', 'Expired', 'Supplier', 'Shift', 'Zone', 'Rak']]);
+        XLSX.utils.book_append_sheet(wb, ws, 'Template');
+        saveXlsx(XLSX, wb, 'Template_Inbound.xlsx');
+    };
+
+    const handleImport = async (file: File | null) => {
+        if (!file) return;
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data, { type: 'array' });
+        const rows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+        let success = 0, fail = 0;
+        for (const row of rows) {
+            try {
+                const itemName = String(row.Item || '');
+                const brg = barangs.find((b: any) => b.nama?.toLowerCase() === itemName.toLowerCase() || b.sku?.toLowerCase() === itemName.toLowerCase());
+                const shift = shifts.find((s: any) => s.name?.toLowerCase() === String(row.Shift || '').toLowerCase());
+                const gudang = allGudangs.find((g: any) => g.name?.toLowerCase() === String(row.Rak || '').toLowerCase());
+                await api().post('/inventory/inbound', {
+                    items: [{
+                        barang_id: brg?.id || 0,
+                        gudang_id: gudang?.id || 0,
+                        qty: Number(row.Qty) || 0,
+                        batch_no: String(row.Batch || ''),
+                        expiry_date: row.Expired || null,
+                        supplier: String(row.Supplier || ''),
+                        no_po: String(row.NoPO || ''),
+                        shift_id: shift?.id || undefined,
+                    }]
+                });
+                success++;
+            } catch { fail++; }
+        }
+        notifications.show({ title: 'Import Selesai', message: `${success} berhasil, ${fail} gagal`, color: fail > 0 ? 'yellow' : 'green' });
+        loadLogs();
+    };
+
     const postAll = async () => {
         if (!drafts.length) return;
         try {
@@ -282,7 +320,12 @@ export default function InboundPage() {
 
                         <Group justify="space-between" mb="xs" mt="lg">
                             <Text fw={700} size="sm">ITEM POSTED HARI INI ({filtered.length})</Text>
-                            <TextInput placeholder="Cari posted..." size="xs" value={search} onChange={(e: any) => setSearch(e.target.value)} style={{ width: 250 }} />
+                            <Group gap="xs">
+                                <Button size="xs" variant="outline" color="gray" onClick={downloadTemplate}>Template</Button>
+                                <input type="file" accept=".xlsx,.xls" id="import-inbound" style={{ display: 'none' }} onChange={e => handleImport(e.target.files?.[0] || null)} />
+                                <Button size="xs" variant="outline" color="blue" onClick={() => document.getElementById('import-inbound')?.click()}>Import Excel</Button>
+                                <TextInput placeholder="Cari posted..." size="xs" value={search} onChange={(e: any) => setSearch(e.target.value)} style={{ width: 250 }} />
+                            </Group>
                         </Group>
                         <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
                             <Table.Thead style={{ background: '#1a1a1a' }}>

@@ -73,10 +73,6 @@ export default function LoginPage() {
                 <Title ta="center" fw={900}>
                     WMS Login
                 </Title>
-                <Text c="dimmed" size="sm" ta="center" mt={5}>
-                    Gunakan akun dari seed: <br />
-                    (foreman1, admin1, atau superadmin)
-                </Text>
 
                 <Paper withBorder shadow="md" p={30} mt={30} radius="md">
                     <form onSubmit={handleLogin}>

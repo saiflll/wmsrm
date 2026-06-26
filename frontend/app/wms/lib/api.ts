@@ -41,6 +41,31 @@ export const unwrap = (res: any) => res?.data?.data ?? res?.data ?? res;
  *
  * Usage: saveXlsx(XLSX, wb, 'NamaFile.xlsx')
  */
+export const fetchUsers = async () => {
+    const res = await axios.get(`${API}/users`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    return unwrap(res);
+};
+
+export const createUser = async (data: { username: string; password: string; role: number }) => {
+    const res = await axios.post(`${API}/users`, data, { headers: { Authorization: `Bearer ${getToken()}` } });
+    return unwrap(res);
+};
+
+export const updateUser = async (id: number, data: { username?: string; password?: string; role?: number }) => {
+    const res = await axios.patch(`${API}/users/${id}`, data, { headers: { Authorization: `Bearer ${getToken()}` } });
+    return unwrap(res);
+};
+
+export const deleteUser = async (id: number) => {
+    const res = await axios.delete(`${API}/users/${id}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    return unwrap(res);
+};
+
+export const fetchLoginLogs = async (page = 1, limit = 50) => {
+    const res = await axios.get(`${API}/auth/login-logs?page=${page}&limit=${limit}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    return unwrap(res);
+};
+
 export const saveXlsx = (XLSXLib: any, wb: any, filename: string) => {
     const fname = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`;
     // Tulis workbook ke base64 string

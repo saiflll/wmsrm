@@ -71,6 +71,46 @@ export default function PutawayPage() {
         setLoading(false);
     };
 
+    const downloadTemplate = () => {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([['NoPO', 'Item', 'Rak Asal', 'Rak Tujuan', 'Qty', 'Batch']]);
+        XLSX.utils.book_append_sheet(wb, ws, 'Template');
+        saveXlsx(XLSX, wb, 'Template_Outbound.xlsx');
+    };
+
+    const handleImport = async (file: File | null) => {
+        if (!file) return;
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data, { type: 'array' });
+        const rows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+        let success = 0, fail = 0;
+        for (const row of rows) {
+            try {
+                const itemName = String(row.Item || '');
+                const brg = barangs.find((b: any) => b.nama?.toLowerCase() === itemName.toLowerCase() || b.sku?.toLowerCase() === itemName.toLowerCase());
+                const rakAsal = allGudangs.find((g: any) => g.name?.toLowerCase() === String(row['Rak Asal'] || '').toLowerCase());
+                const rakTujuan = allGudangs.find((g: any) => g.name?.toLowerCase() === String(row['Rak Tujuan'] || '').toLowerCase());
+                const stock = stocks.find((s: any) =>
+                    s.barang?.id === brg?.id &&
+                    s.gudang?.id === rakAsal?.id &&
+                    (!row.Batch || s.batch_no === String(row.Batch))
+                );
+                if (stock && rakTujuan) {
+                    await api().post('/inventory/relocation', {
+                        stock_id: stock.id,
+                        gudang_tujuan_id: rakTujuan.id,
+                        qty: Number(row.Qty) || stock.qty,
+                    });
+                    success++;
+                } else {
+                    fail++;
+                }
+            } catch { fail++; }
+        }
+        notifications.show({ title: 'Import Selesai', message: `${success} berhasil, ${fail} gagal`, color: fail > 0 ? 'yellow' : 'green' });
+        load();
+    };
+
     const relocate = async () => {
         if (!form.stock_id || !form.gudang_tujuan_id || !form.qty) {
             return notifications.show({ title: 'Error', message: 'Pilih stock, lokasi tujuan, dan qty', color: 'red' });
@@ -289,6 +329,9 @@ export default function PutawayPage() {
                                 Reject
                             </Button>
                             <Button size="xs" color="gray" variant="outline" onClick={() => { setFilterRak(''); setFilterStatus(''); }}>Reset</Button>
+                            <Button size="xs" variant="outline" color="gray" onClick={downloadTemplate}>Template</Button>
+                            <input type="file" accept=".xlsx,.xls" id="import-outbound" style={{ display: 'none' }} onChange={e => handleImport(e.target.files?.[0] || null)} />
+                            <Button size="xs" variant="outline" color="blue" onClick={() => document.getElementById('import-outbound')?.click()}>Import Excel</Button>
                         </Group>
 
                         <Group mb="xs" gap="xs">

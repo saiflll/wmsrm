@@ -1,9 +1,10 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum UserRole {
-    FOREMAN = 1,
-    ADMIN = 2,
-    SUPER_ADMIN = 3,
+    CHECKER_IB = 1,
+    CHECKER_OB = 2,
+    KOORDINATOR = 3,
+    SUPERVISOR = 4,
 }
 
 @Entity()
@@ -19,7 +20,7 @@ export class User {
 
     @Column({
         type: 'int',
-        default: UserRole.FOREMAN,
+        default: UserRole.CHECKER_IB,
     })
     role: UserRole;
 }

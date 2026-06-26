@@ -8,7 +8,6 @@ export const metadata = {
     title: 'WMS Pro',
     description: 'Warehouse Management System',
 };
-
 const theme = createTheme({
     primaryColor: 'blue',
     fontFamily: 'Inter, sans-serif',

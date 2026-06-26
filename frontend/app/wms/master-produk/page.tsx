@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Box, Group, Button, Title, Text, Table, Badge, Paper, Stack, TextInput, Select, Modal, Loader } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { api, unwrap } from '../lib/api';
+import { api, unwrap, saveXlsx } from '../lib/api';
+import * as XLSX from 'xlsx';
 
 export default function MasterProdukPage() {
     const [tab, setTab] = useState('items');
@@ -50,6 +51,35 @@ export default function MasterProdukPage() {
             load();
         } catch (e) { console.error(e); }
         setLoading(false);
+    };
+
+    const downloadTemplate = () => {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([['SKU', 'Nama', 'Satuan', 'Kategori', 'Min Stok']]);
+        XLSX.utils.book_append_sheet(wb, ws, 'Template');
+        saveXlsx(XLSX, wb, 'Template_Produk.xlsx');
+    };
+
+    const handleImport = async (file: File | null) => {
+        if (!file) return;
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data, { type: 'array' });
+        const rows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+        let success = 0, fail = 0;
+        for (const row of rows) {
+            try {
+                await api().post('/barang', {
+                    sku: String(row.SKU || ''),
+                    nama: String(row.Nama || ''),
+                    satuan: String(row.Satuan || 'Kg'),
+                    kategori: String(row.Kategori || 'Dry'),
+                    min_stok: Number(row['Min Stok']) || 0,
+                });
+                success++;
+            } catch { fail++; }
+        }
+        notifications.show({ title: 'Import Selesai', message: `${success} berhasil, ${fail} gagal`, color: fail > 0 ? 'yellow' : 'green' });
+        load();
     };
 
     const del = async (id: number) => {
@@ -113,6 +143,9 @@ export default function MasterProdukPage() {
                             <TextInput placeholder="Cari SKU / nama..." size="xs" value={search} onChange={e => setSearch(e.target.value)} style={{ width: 220 }} />
                             <Button size="xs" color="green" onClick={() => { setEditId(null); setForm({ sku: '', nama: '', satuan: '', kategori: 'Dry', min_stok: 0 }); open(); }} style={{ fontWeight: 700 }}>+ Tambah Produk</Button>
                             <Button size="xs" variant="light" color="blue" onClick={syncAll}>Sync Stock</Button>
+                            <Button size="xs" variant="outline" color="gray" onClick={downloadTemplate}>Template</Button>
+                            <input type="file" accept=".xlsx,.xls" id="import-produk" style={{ display: 'none' }} onChange={e => handleImport(e.target.files?.[0] || null)} />
+                            <Button size="xs" variant="outline" color="blue" onClick={() => document.getElementById('import-produk')?.click()}>Import Excel</Button>
                         </Group>
 
                         {loading ? <Loader /> : (

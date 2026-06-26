@@ -1,47 +1,101 @@
-# WMS Project Template
+# WMS — Warehouse Management System
 
-Template Warehouse Management System (WMS) menggunakan perpaduan **Next.js**, **NestJS**, **Mantine UI**, dan **PostgreSQL**.
+Sistem Manajemen Gudang berbasis web dengan arsitektur monolitik terpisah (Frontend + Backend + Database).
 
 ## Tech Stack
-- **Frontend**: Next.js 15 (App Router), Mantine UI 7, Axios, Tabler Icons.
-- **Backend**: NestJS 11, TypeORM, PostgreSQL, Config Service.
-- **Database**: PostgreSQL 15.
-- **DevOps**: Docker Compose.
 
-## Fitur
-- [x] CRUD Inventory Items (Backend & Frontend)
-- [x] Login UI Sederhana (Mantine)
-- [x] Database Sync (Auto Table Creation)
-- [x] Docker Containerization
-- [x] CORS Enabled
-- [x] Modern & Premium UI dengan Mantine Shell
+| Layer      | Teknologi                                                              |
+|------------|------------------------------------------------------------------------|
+| **Frontend** | Next.js 15 (App Router), React 19, Mantine UI 7, Axios, Tabler Icons  |
+| **Backend**  | NestJS 11, TypeORM, PostgreSQL, Passport JWT, bcrypt, Class-Validator |
+| **Database** | PostgreSQL 15 Alpine                                                   |
+| **DevOps**   | Docker Compose, Multi-stage Build                                      |
+
+## Fitur & Modul
+
+### Backend Modules (`backend/src/`)
+| Modul         | Fungsi                              |
+|---------------|-------------------------------------|
+| `auth`        | Autentikasi JWT (Login/Register)    |
+| `users`       | Manajemen user & role               |
+| `barang`      | Master barang / produk              |
+| `items`       | Item inventory                      |
+| `inventory`   | Stok inventory & pergerakan         |
+| `gudang`      | Master lokasi / gudang              |
+| `customers`   | Master pelanggan                    |
+| `suplayers`   | Master supplier                     |
+| `shifts`      | Manajemen shift kerja               |
+| `hardware`    | Manajemen perangkat keras           |
+| `transaksi`   | Transaksi inbound/outbound          |
+
+### Frontend Pages (`frontend/app/`)
+| Route                        | Halaman                  |
+|------------------------------|--------------------------|
+| `/login`                     | Login user               |
+| `/barang`                    | Master barang            |
+| `/wms/dashboard`             | Dashboard utama WMS      |
+| `/wms/inbound`               | Penerimaan barang        |
+| `/wms/inventory`             | Data inventory           |
+| `/wms/master-produk`         | Master produk            |
+| `/wms/master-customer`       | Master customer          |
+| `/wms/master-lokasi`         | Master lokasi gudang     |
+| `/wms/picking`               | Proses picking           |
+| `/wms/putaway`               | Proses putaway           |
+| `/wms/relocation`            | Relokasi stok            |
+| `/wms/stock-opname`          | Stock opname             |
+| `/wms/report-inbound`        | Report inbound           |
+| `/wms/report-outbound`       | Report outbound          |
+| `/wms/report-opname`         | Report stock opname      |
 
 ## Cara Menjalankan
 
-### 1. Clone & Setup
-Pastikan Anda memiliki Docker dan Docker Compose terinstal.
+### Prasyarat
+- Docker & Docker Compose terinstal
+- Clone repository ini
 
-### 2. Jalankan dengan Docker Compose
+### Jalankan dengan Docker Compose
 ```bash
 docker-compose up --build
 ```
 
 Setelah build selesai:
-- **Frontend**: [http://localhost:3000](http://localhost:3000)
-- **Backend API**: [http://localhost:3001](http://localhost:3001)
-- **Database**: Port 5432
+| Service    | URL                                    |
+|------------|----------------------------------------|
+| **Frontend**  | [http://localhost:3001](http://localhost:3001) |
+| **Backend API** | [http://localhost:3002](http://localhost:3002) |
+| **Database**   | `localhost:4321` (PostgreSQL 15)        |
 
-### 3. Struktur Folder
-- `/frontend`: Next.js application dengan Mantine.
-- `/backend`: NestJS application logic.
-- `docker-compose.yml`: konfigurasi orkestrasi container.
-- `.env`: konfigurasi environment variables.
+> ⚠️ **Catatan Port:** Frontend di `:3001`, Backend di `:3002`, Database di `:4321`.
+
+## Struktur Folder
+```
+/backend          — NestJS application (auth, users, barang, inventory, dll)
+/frontend         — Next.js App Router dengan Mantine UI
+/deploy           — File dan script deploy (Docker, batch, PowerShell)
+/ui               — Asset UI tambahan
+docker-compose.yml — Orkestrasi container (db, backend, frontend)
+.env              — Environment variables (DB, JWT, dll.)
+```
 
 ## Konfigurasi
-Anda dapat mengubah kredensial database dan JWT Secret di file `.env`.
+Edit file `.env` untuk mengubah:
+- Kredensial database (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`)
+- Secret key JWT (`JWT_SECRET`)
+- Port service
+
+### Akun Default
+| Username    | Password      | Role         |
+|-------------|---------------|--------------|
+| `foreman1`  | `foreman123`  | Foreman      |
+| `admin1`    | `admin123`    | Admin        |
+| `superadmin`| `super123`    | Super Admin  |
+
+## Deployment
+Lihat file di folder `deploy/`:
+- `deploy_server.sh` — deploy ke server Linux
+- `deploy_local.bat` — deploy lokal Windows
+- `export_deploy.bat` / `export_deploy.ps1` — export container
+- `push_to_dockerhub.bat` — push image ke Docker Hub
 
 ---
-*Dibuat untuk mempercepat inisialisasi project WMS.*
-Username: foreman1 / Password: foreman123 (Role: Foreman)
-Username: admin1 / Password: admin123 (Role: Admin)
-Username: superadmin / Password: super123 (Role: Super Admin)
+*WMS — Warehouse Management System | Built with Next.js, NestJS, Mantine UI & PostgreSQL*

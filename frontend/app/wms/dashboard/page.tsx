@@ -107,38 +107,44 @@ export default function DashboardPage() {
         );
     };
 
-    const isForeman = userRole === 1;
-    const isAdmin = userRole === 2;
-    const isSuperAdmin = userRole === 3;
+    const roleLabels: Record<number, string> = {
+        1: 'CHECKER IB - INBOUND & INVENTORY',
+        2: 'CHECKER OB - OUTBOUND & INVENTORY',
+        3: 'KOORDINATOR - OPERASIONAL GUDANG',
+        4: 'SUPERVISOR - FULL SYSTEM OVERVIEW',
+    };
 
-    let titleText = "MONITORING STOCK REALTIME";
-    if (isForeman) titleText = "DASHBOARD FOREMAN - OPRASIONAL GUDANG";
-    if (isAdmin) titleText = "DASHBOARD ADMIN - INVENTORY & UTILIZATION";
-    if (isSuperAdmin) titleText = "DASHBOARD SUPER ADMIN - FULL SYSTEM OVERVIEW";
+    const isSupervisor = userRole === 4;
+    const isCheckerIB = userRole === 1;
+    const isCheckerOB = userRole === 2;
+    const isKoordinator = userRole === 3;
+    const canViewStats = isSupervisor || isCheckerIB || isCheckerOB || isKoordinator;
+
+    let titleText = roleLabels[userRole] || "MONITORING STOCK REALTIME";
 
     return (
         <Box>
             <Box style={{ background: '#fff', borderBottom: '1px solid #ddd', padding: '12px 20px' }}>
-                <Title order={3} style={{ color: isSuperAdmin ? '#d9480f' : isAdmin ? '#1c7ed6' : '#e6921e', fontWeight: 900 }}>
+                <Title order={3} style={{ color: isSupervisor ? '#d9480f' : '#e6921e', fontWeight: 900 }}>
                     {titleText}
                 </Title>
             </Box>
 
             <Box p="md">
-                {isSuperAdmin && (
+                {isSupervisor && (
                     <Paper withBorder p="sm" mb="md" style={{ background: '#fff5f5', borderLeft: '4px solid #fa5252' }}>
                         <Group justify="space-between">
                             <Box>
                                 <Text fw={700} color="red">System Health & Alert</Text>
                                 <Text size="sm" color="dimmed">Status sistem berjalan normal. Tidak ada error log pada WMS.</Text>
                             </Box>
-                            <Button color="red" variant="light">Manage Users</Button>
+                            <Button color="red" variant="light" onClick={() => window.location.href = '/wms/users'}>Manage Users</Button>
                         </Group>
                     </Paper>
                 )}
 
-                {/* Stat cards - Hidden for Foreman */}
-                {!isForeman && (
+                {/* Stat cards */}
+                {canViewStats && (
                     <Grid mb="md" gutter="md">
                         <Grid.Col span={3}>{statCard('Total SKU', s.totalSku || 0, '#ff6600')}</Grid.Col>
                         <Grid.Col span={3}>{statCard('Total Stok', s.totalStock || 0, '#40c057')}</Grid.Col>
@@ -147,8 +153,8 @@ export default function DashboardPage() {
                     </Grid>
                 )}
 
-                {/* Utilization - Hidden for Foreman */}
-                {!isForeman && (
+                {/* Utilization */}
+                {canViewStats && (
                     <Paper withBorder p="sm" mb="md">
                         <Group justify="space-between" mb="xs">
                             <Text fw={700}>Utilisasi Gudang</Text>
@@ -164,11 +170,6 @@ export default function DashboardPage() {
                 )}
 
                 {/* Stock tables - Visible to all */}
-                {isForeman && (
-                    <Paper withBorder p="xs" mb="md" style={{ background: '#e7f5ff', borderLeft: '4px solid #339af0' }}>
-                        <Text fw={600} size="sm">Fokuskan pada pengecekan stok harian. Laporkan segera jika ada discrepancy (selisih stok).</Text>
-                    </Paper>
-                )}
 
                 <Group align="flex-start" gap="md">
                     <TblSection title="STOK GUDANG DRY" rows={dryStocks} />
