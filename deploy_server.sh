@@ -32,15 +32,8 @@ docker compose up -d
 echo "--- [4/5] Pruning unused Docker images ---"
 docker image prune -f
 
-echo "--- [5/5] Cleaning up source directory ---"
-# Menghapus semua file kecuali yang esensial untuk running
-# Daftar file yang dipertahankan: .env, docker-compose.yml, deploy_server.sh, .git
-find . -maxdepth 1 ! -name '.env' \
-               ! -name 'docker-compose.yml' \
-               ! -name 'deploy_server.sh' \
-               ! -name '.git' \
-               ! -name '.' \
-               -exec rm -rf {} +
+echo "--- [5/5] Cleaning up Docker build cache ---"
+docker builder prune -f
 
 echo "========================================================"
 echo "   DEPLOYMENT SELESAI!"
