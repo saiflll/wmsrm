@@ -18,10 +18,10 @@ jobs:
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
 
-      - name: Stop and Remove existing Frontend and Backend Containers
+      - name: Stop and Remove existing Containers (including DB to resolve conflicts)
         run: |
-          docker stop wms_frontend wms_backend || true
-          docker rm wms_frontend wms_backend || true
+          docker stop wms_frontend wms_backend wms_db || true
+          docker rm wms_frontend wms_backend wms_db || true
 
       - name: Build and Run Docker Containers
         run: |
