@@ -35,14 +35,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:3002
     container_name: wms_frontend_local
     restart: always
     env_file:
       - .env.local
     environment:
       - PORT=3001
+      - BACKEND_API_URL=http://backend:3002
     ports:
       - "3001:3001"
     depends_on:

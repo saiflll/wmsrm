@@ -7,8 +7,8 @@ import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { fetchUsers, createUser, updateUser, deleteUser } from '../lib/api';
 
-const roleLabel: Record<number, string> = { 1: 'Checker IB', 2: 'Checker OB', 3: 'Koordinator', 4: 'Supervisor' };
-const roleColor: Record<number, string> = { 1: 'blue', 2: 'cyan', 3: 'grape', 4: 'red' };
+const roleLabel: Record<number, string> = { 1: 'Checker IB', 2: 'Checker OB', 3: 'Koordinator', 4: 'Supervisor', 5: 'Super Admin' };
+const roleColor: Record<number, string> = { 1: 'blue', 2: 'cyan', 3: 'grape', 4: 'orange', 5: 'red' };
 
 export default function UsersPage() {
     const [users, setUsers] = useState<any[]>([]);
@@ -144,6 +144,7 @@ export default function UsersPage() {
                         { value: '2', label: 'Checker OB' },
                         { value: '3', label: 'Koordinator' },
                         { value: '4', label: 'Supervisor' },
+                        { value: '5', label: 'Super Admin' },
                     ]} value={form.role} onChange={(v) => setForm({ ...form, role: v || '1' })} />
                     <Group justify="flex-end" mt="md">
                         <Button variant="default" onClick={close}>Batal</Button>

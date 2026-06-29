@@ -27,7 +27,7 @@ export class AuthController {
 
     @Get('login-logs')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.SUPERVISOR)
+    @Roles(UserRole.SUPER_ADMIN)
     async getLoginLogs(
         @Query('page') page: number = 1,
         @Query('limit') limit: number = 50,

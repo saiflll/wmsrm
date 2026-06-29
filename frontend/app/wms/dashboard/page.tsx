@@ -111,27 +111,29 @@ export default function DashboardPage() {
         1: 'CHECKER IB - INBOUND & INVENTORY',
         2: 'CHECKER OB - OUTBOUND & INVENTORY',
         3: 'KOORDINATOR - OPERASIONAL GUDANG',
-        4: 'SUPERVISOR - FULL SYSTEM OVERVIEW',
+        4: 'SUPERVISOR - SYSTEM MONITORING',
+        5: 'SUPER ADMIN - FULL SYSTEM ACCESS',
     };
 
     const isSupervisor = userRole === 4;
+    const isSuperAdmin = userRole === 5;
     const isCheckerIB = userRole === 1;
     const isCheckerOB = userRole === 2;
     const isKoordinator = userRole === 3;
-    const canViewStats = isSupervisor || isCheckerIB || isCheckerOB || isKoordinator;
+    const canViewStats = isSupervisor || isSuperAdmin || isCheckerIB || isCheckerOB || isKoordinator;
 
     let titleText = roleLabels[userRole] || "MONITORING STOCK REALTIME";
 
     return (
         <Box>
             <Box style={{ background: '#fff', borderBottom: '1px solid #ddd', padding: '12px 20px' }}>
-                <Title order={3} style={{ color: isSupervisor ? '#d9480f' : '#e6921e', fontWeight: 900 }}>
+                <Title order={3} style={{ color: isSuperAdmin ? '#e60000' : isSupervisor ? '#d9480f' : '#e6921e', fontWeight: 900 }}>
                     {titleText}
                 </Title>
             </Box>
 
             <Box p="md">
-                {isSupervisor && (
+                {isSuperAdmin && (
                     <Paper withBorder p="sm" mb="md" style={{ background: '#fff5f5', borderLeft: '4px solid #fa5252' }}>
                         <Group justify="space-between">
                             <Box>

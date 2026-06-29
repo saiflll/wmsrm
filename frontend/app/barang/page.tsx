@@ -34,7 +34,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.100.11:3002';
+const API_URL = '/api';
 
 interface Barang {
     id: number;

@@ -1,0 +1,30 @@
+name: Deploy WMS to Server
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .env file from Secret
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+
+      - name: Build and Run Docker Containers
+        run: |
+          docker compose down
+          docker compose build --no-cache
+          docker compose up -d
+
+      - name: Prune unused Docker images and builders
+        run: |
+          docker image prune -f
+          docker builder prune -f

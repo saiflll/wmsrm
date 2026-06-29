@@ -9,6 +9,7 @@ const roleLabel: Record<number, string> = {
     2: 'Checker OB',
     3: 'Koordinator',
     4: 'Supervisor',
+    5: 'Super Admin',
 };
 
 const roleLineColor: Record<number, string> = {
@@ -16,24 +17,25 @@ const roleLineColor: Record<number, string> = {
     2: '#1565c0',
     3: '#6a1b9a',
     4: '#1c1c1c',
+    5: '#e60000',
 };
 
 const menuPermissions: Record<string, number[]> = {
-    '/wms/dashboard': [1, 2, 3, 4],
-    '/wms/inbound': [1, 4],
-    '/wms/putaway': [2, 4],
-    '/wms/relocation': [3, 4],
-    '/wms/picking': [2, 3, 4],
-    '/wms/stock-opname': [3, 4],
-    '/wms/inventory': [1, 2, 3, 4],
-    '/wms/report-inbound': [1, 4],
-    '/wms/report-outbound': [2, 4],
-    '/wms/report-opname': [3, 4],
-    '/wms/master-produk': [4],
-    '/wms/master-lokasi': [4],
-    '/wms/master-customer': [4],
-    '/wms/users': [4],
-    '/wms/login-logs': [4],
+    '/wms/dashboard': [1, 2, 3, 4, 5],
+    '/wms/inbound': [1, 4, 5],
+    '/wms/putaway': [2, 4, 5],
+    '/wms/relocation': [3, 4, 5],
+    '/wms/picking': [2, 3, 4, 5],
+    '/wms/stock-opname': [3, 4, 5],
+    '/wms/inventory': [1, 2, 3, 4, 5],
+    '/wms/report-inbound': [1, 4, 5],
+    '/wms/report-outbound': [2, 4, 5],
+    '/wms/report-opname': [3, 4, 5],
+    '/wms/master-produk': [4, 5],
+    '/wms/master-lokasi': [4, 5],
+    '/wms/master-customer': [4, 5],
+    '/wms/users': [5],
+    '/wms/login-logs': [5],
 };
 
 const menuGroups: { label: string; links: { label: string; href: string; c: string }[] }[] = [

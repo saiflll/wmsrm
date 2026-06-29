@@ -17,7 +17,7 @@ import ReportInboundPage from './wms/report-inbound/page';
 import ReportOutboundPage from './wms/report-outbound/page';
 import StockOpnamePage from './wms/stock-opname/page';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://172.20.100.11:3002';
+const API = '/api';
 
 const NAV = [
   { id: 'dashboard', label: 'DASHBOARD' },

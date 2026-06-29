@@ -5,6 +5,7 @@ export enum UserRole {
     CHECKER_OB = 2,
     KOORDINATOR = 3,
     SUPERVISOR = 4,
+    SUPER_ADMIN = 5,
 }
 
 @Entity()

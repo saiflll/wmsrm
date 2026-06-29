@@ -12,31 +12,31 @@ export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
     @Get()
-    @Roles(UserRole.SUPERVISOR)
+    @Roles(UserRole.SUPER_ADMIN)
     findAll() {
         return this.usersService.findAll();
     }
 
     @Get(':id')
-    @Roles(UserRole.SUPERVISOR)
+    @Roles(UserRole.SUPER_ADMIN)
     findOne(@Param('id', ParseIntPipe) id: number) {
         return this.usersService.findOne(id);
     }
 
     @Post()
-    @Roles(UserRole.SUPERVISOR)
+    @Roles(UserRole.SUPER_ADMIN)
     create(@Body() dto: CreateUserDto) {
         return this.usersService.create(dto);
     }
 
     @Patch(':id')
-    @Roles(UserRole.SUPERVISOR)
+    @Roles(UserRole.SUPER_ADMIN)
     update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
         return this.usersService.update(id, dto);
     }
 
     @Delete(':id')
-    @Roles(UserRole.SUPERVISOR)
+    @Roles(UserRole.SUPER_ADMIN)
     remove(@Param('id', ParseIntPipe) id: number) {
         return this.usersService.remove(id);
     }
