@@ -18,11 +18,15 @@ jobs:
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
 
+      - name: Stop and Remove existing Frontend and Backend Containers
+        run: |
+          docker stop wms_frontend wms_backend || true
+          docker rm wms_frontend wms_backend || true
+
       - name: Build and Run Docker Containers
         run: |
-          docker compose down
           docker compose build --no-cache
-          docker compose up -d
+          docker compose up -d --no-recreate
 
       - name: Prune unused Docker images and builders
         run: |
