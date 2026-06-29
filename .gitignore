@@ -61,3 +61,30 @@ temp/
 *.exe
 *.pdf
 *.7z
+*.rar
+*.gz
+
+# Excel and CSV files
+*.xlsx
+*.xls
+*.csv
+
+# Log and text files
+*.txt
+*.log
+backend_logs.txt
+db_logs.txt
+build_frontend.log
+build_log.txt
+
+# Database and network dumps
+*.sql
+db_inspect.json
+db_inspect_utf8.json
+wms_network.json
+
+# Tooling and caching
+.nyx/
+r/
+send.md
+poin.md
