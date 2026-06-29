@@ -90,12 +90,26 @@ Edit file `.env` untuk mengubah:
 | `admin1`    | `admin123`    | Admin        |
 | `superadmin`| `super123`    | Super Admin  |
 
-## Deployment
-Lihat file di folder `deploy/`:
-- `deploy_server.sh` — deploy ke server Linux
-- `deploy_local.bat` — deploy lokal Windows
-- `export_deploy.bat` / `export_deploy.ps1` — export container
-- `push_to_dockerhub.bat` — push image ke Docker Hub
+## Deployment & CI/CD
+
+Projek ini dikonfigurasi untuk melakukan deployment otomatis ke server melalui **GitHub Actions** dengan **Self-hosted Runner**:
+
+### 1. Arsitektur API Universal (Next.js Rewrites)
+Frontend telah dikonfigurasi untuk memanggil API secara relatif (`/api`). Next.js menggunakan fitur `rewrites` untuk meneruskan request dari `/api/*` ke URL backend (container `backend:3002`) secara internal. Ini meniadakan kebutuhan hardcode alamat IP server di frontend.
+
+### 2. GitHub Actions Workflow (`.github/workflows/deploy.yml`)
+Setiap kali Anda melakukan `git push` ke branch `master` atau `main`, GitHub Actions akan memicu runner mandiri di server untuk:
+1. Menulis file `.env` secara otomatis dari GitHub Secret (`ENV_FILE`).
+2. Menghentikan dan menghapus container `wms_frontend` dan `wms_backend` yang sedang berjalan agar terhindar dari konflik nama.
+3. Melakukan rebuild frontend dan backend.
+4. Menjalankan Docker compose dengan bendera `--no-recreate` agar container database `wms_db` **tetap dipertahankan (tidak dihapus/dibuat ulang)**. Dengan cara ini, data lama Anda di database tetap aman dan utuh.
+5. Seeding data baru secara otomatis saat backend baru menyala.
+6. Membersihkan Docker cache yang tidak terpakai (`prune`).
+
+### 3. Setup Awal di GitHub
+Sebelum melakukan push pertama kali, pastikan Anda telah mengatur hal berikut di repositori GitHub Anda (`ppa-project/wms`):
+- **GitHub Secret**: Masuk ke **Settings > Secrets and variables > Actions > New repository secret**. Tambahkan secret bernama `ENV_FILE` dan isi dengan nilai konfigurasi `.env` produksi Anda.
+- **Runner**: Pastikan self-hosted runner di server Anda (`dt-svr-ck3` di folder `~/ren`) sudah berjalan menggunakan perintah `nohup ./run.sh &`.
 
 ---
 *WMS — Warehouse Management System | Built with Next.js, NestJS, Mantine UI & PostgreSQL*
