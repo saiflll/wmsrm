@@ -7,7 +7,7 @@ import { GlobalExceptionFilter } from './common/exception.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: ['http://172.20.100.11:3001', 'http://172.20.100.11:3002', 'http://localhost:3001'],
+    origin: true, // Izinkan semua origin (aman karena diakses via Next.js proxy, bukan langsung dari publik)
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });

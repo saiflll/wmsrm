@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
-const BACKEND_URL = process.env.BACKEND_API_URL || 'http://localhost:3002';
+// URL backend di-hardcode karena next.config.mjs dibaca saat BUILD,
+// bukan saat runtime container, sehingga env var tidak tersedia.
+// Dalam Docker Compose, 'backend' adalah nama service yang selalu bisa diakses.
+const BACKEND_URL = process.env.BACKEND_API_URL || 'http://backend:3002';
 
 const nextConfig = {
     async rewrites() {
