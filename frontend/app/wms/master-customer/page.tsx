@@ -41,7 +41,10 @@ export default function MasterCustomerPage() {
 
     const downloadTemplate = () => {
         const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet([['Nama', 'Alamat', 'Telp']]);
+        const ws = XLSX.utils.aoa_to_sheet([
+            ['Nama', 'Alamat', 'Telp'],
+            ['PT. Sumber Makmur', 'Jl. Merdeka No. 45, Jakarta', '081234567890']
+        ]);
         XLSX.utils.book_append_sheet(wb, ws, 'Template');
         saveXlsx(XLSX, wb, 'Template_Customer.xlsx');
     };
@@ -66,13 +69,13 @@ export default function MasterCustomerPage() {
         load();
     };
 
-    const del = async (id) => {
+    const del = async (id: any) => {
         if (!confirm('Hapus?')) return;
         try { await api().delete(`/customers/${id}`); load(); } catch (e) { console.error(e); }
     };
 
     const filtered = search ? list.filter((l: any) => l.nama?.toLowerCase().includes(search.toLowerCase())) : list;
-    const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
+    const f = (k: any, v: any) => setForm(p => ({ ...p, [k]: v }));
 
     const handleEdit = (item: any) => {
         setEditId(item.id);

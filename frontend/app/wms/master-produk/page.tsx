@@ -55,7 +55,10 @@ export default function MasterProdukPage() {
 
     const downloadTemplate = () => {
         const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet([['SKU', 'Nama', 'Satuan', 'Kategori', 'Min Stok']]);
+        const ws = XLSX.utils.aoa_to_sheet([
+            ['SKU', 'Nama', 'Satuan', 'Kategori', 'Min Stok'],
+            ['BRG999', 'Ayam Fillet Premium', 'Kg', 'Wet', 10]
+        ]);
         XLSX.utils.book_append_sheet(wb, ws, 'Template');
         saveXlsx(XLSX, wb, 'Template_Produk.xlsx');
     };

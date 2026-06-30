@@ -32,15 +32,6 @@ export const statusColor = (d: string | Date) => isExpired(d) ? 'red' : isNearEx
 // Helper: unwrap response wrapped by TransformInterceptor
 export const unwrap = (res: any) => res?.data?.data ?? res?.data ?? res;
 
-/**
- * Download workbook sebagai file .xlsx di browser.
- * Menggunakan data: URI base64 — paling reliable karena:
- * - Tidak ada timing issue (tidak pakai blob URL yang bisa expire sebelum download mulai)
- * - Tidak perlu library eksternal seperti file-saver
- * - Browser langsung pakai attribute `download` sebagai nama file
- *
- * Usage: saveXlsx(XLSX, wb, 'NamaFile.xlsx')
- */
 export const fetchUsers = async () => {
     const res = await axios.get(`${API}/users`, { headers: { Authorization: `Bearer ${getToken()}` } });
     return unwrap(res);
@@ -80,3 +71,37 @@ export const saveXlsx = (XLSXLib: any, wb: any, filename: string) => {
     a.click();
     document.body.removeChild(a);
 };
+
+export const parseExcelDate = (val: any): string | null => {
+    if (!val) return null;
+    if (val instanceof Date) {
+        if (isNaN(val.getTime())) return null;
+        return val.toISOString().split('T')[0];
+    }
+    if (typeof val === 'number') {
+        const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+        if (isNaN(date.getTime())) return null;
+        return date.toISOString().split('T')[0];
+    }
+    if (typeof val === 'string') {
+        const cleaned = val.trim();
+        if (!cleaned) return null;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+            return cleaned;
+        }
+        const parts = cleaned.split(/[-/]/);
+        if (parts.length === 3) {
+            if (parts[0].length === 4) {
+                return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+            } else if (parts[2].length === 4) {
+                return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+        }
+        const parsed = new Date(cleaned);
+        if (!isNaN(parsed.getTime())) {
+            return parsed.toISOString().split('T')[0];
+        }
+    }
+    return null;
+};
+

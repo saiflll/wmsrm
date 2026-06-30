@@ -42,7 +42,10 @@ export default function MasterLokasiPage() {
 
     const downloadTemplate = () => {
         const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet([['Nama Rak', 'Zone', 'Kolom', 'Level', 'Type']]);
+        const ws = XLSX.utils.aoa_to_sheet([
+            ['Nama Rak', 'Zone', 'Kolom', 'Level', 'Type'],
+            ['A13.1', 'CS FROZEN', 'A', 1, 'Single Deep']
+        ]);
         XLSX.utils.book_append_sheet(wb, ws, 'Template');
         saveXlsx(XLSX, wb, 'Template_Lokasi.xlsx');
     };
@@ -74,12 +77,12 @@ export default function MasterLokasiPage() {
         load();
     };
 
-    const del = async (id) => {
+    const del = async (id: any) => {
         if (!confirm('Hapus lokasi?')) return;
         try { await api().delete(`/gudang/${id}`); load(); } catch (e) { console.error(e); }
     };
 
-    const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
+    const f = (k: any, v: any) => setForm(p => ({ ...p, [k]: v }));
     const filtered = search ? locs.filter((l: any) => l.name?.toLowerCase().includes(search.toLowerCase())) : locs;
 
     const handleEdit = (item: any) => {

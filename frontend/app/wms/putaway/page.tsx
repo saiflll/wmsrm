@@ -73,42 +73,84 @@ export default function PutawayPage() {
 
     const downloadTemplate = () => {
         const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet([['NoPO', 'Item', 'Rak Asal', 'Rak Tujuan', 'Qty', 'Batch']]);
+        const ws = XLSX.utils.aoa_to_sheet([
+            ['NoPO', 'Item', 'Rak Asal', 'Rak Tujuan', 'Qty', 'Batch'],
+            ['PO-12345', 'Ayam Dada Fillet Chilled - Cp', 'A1.1', 'A1.2', 50, 'LOT-WET-2601']
+        ]);
         XLSX.utils.book_append_sheet(wb, ws, 'Template');
         saveXlsx(XLSX, wb, 'Template_Outbound.xlsx');
     };
 
     const handleImport = async (file: File | null) => {
         if (!file) return;
-        const data = await file.arrayBuffer();
-        const wb = XLSX.read(data, { type: 'array' });
-        const rows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        let success = 0, fail = 0;
-        for (const row of rows) {
-            try {
-                const itemName = String(row.Item || '');
-                const brg = barangs.find((b: any) => b.nama?.toLowerCase() === itemName.toLowerCase() || b.sku?.toLowerCase() === itemName.toLowerCase());
-                const rakAsal = allGudangs.find((g: any) => g.name?.toLowerCase() === String(row['Rak Asal'] || '').toLowerCase());
-                const rakTujuan = allGudangs.find((g: any) => g.name?.toLowerCase() === String(row['Rak Tujuan'] || '').toLowerCase());
-                const stock = stocks.find((s: any) =>
-                    s.barang?.id === brg?.id &&
-                    s.gudang?.id === rakAsal?.id &&
-                    (!row.Batch || s.batch_no === String(row.Batch))
-                );
-                if (stock && rakTujuan) {
-                    await api().post('/inventory/relocation', {
-                        stock_id: stock.id,
-                        gudang_tujuan_id: rakTujuan.id,
-                        qty: Number(row.Qty) || stock.qty,
-                    });
-                    success++;
-                } else {
+        try {
+            const data = await file.arrayBuffer();
+            const wb = XLSX.read(data, { type: 'array', cellDates: true });
+            const rows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+
+            // Fetch the complete stocks and gudangs list, independent of current side tab
+            const [allStocksRes, allGudangsRes] = await Promise.all([
+                api().get('/inventory/stock'),
+                api().get('/gudang'),
+            ]);
+            const fullStocks = unwrap(allStocksRes);
+            const fullGudangs = unwrap(allGudangsRes);
+
+            let success = 0, fail = 0;
+            for (const row of rows) {
+                try {
+                    const itemName = String(row.Item || '').trim();
+                    const brg = barangs.find((b: any) => b.nama?.toLowerCase().trim() === itemName.toLowerCase() || b.sku?.toLowerCase().trim() === itemName.toLowerCase());
+                    const rakAsalStr = String(row['Rak Asal'] || '').trim();
+                    const rakTujuanStr = String(row['Rak Tujuan'] || '').trim();
+                    const rakAsal = fullGudangs.find((g: any) => g.name?.toLowerCase().trim() === rakAsalStr.toLowerCase());
+                    const rakTujuan = fullGudangs.find((g: any) => g.name?.toLowerCase().trim() === rakTujuanStr.toLowerCase());
+
+                    if (!brg) {
+                        console.error(`Item not found in master product: "${itemName}"`);
+                        fail++;
+                        continue;
+                    }
+                    if (!rakAsal) {
+                        console.error(`Rak Asal not found: "${rakAsalStr}"`);
+                        fail++;
+                        continue;
+                    }
+                    if (!rakTujuan) {
+                        console.error(`Rak Tujuan not found: "${rakTujuanStr}"`);
+                        fail++;
+                        continue;
+                    }
+
+                    const batchStr = String(row.Batch || '').trim();
+                    const stock = fullStocks.find((s: any) =>
+                        s.barang?.id === brg?.id &&
+                        s.gudang?.id === rakAsal?.id &&
+                        (!row.Batch || s.batch_no?.trim() === batchStr)
+                    );
+
+                    if (stock) {
+                        await api().post('/inventory/relocation', {
+                            stock_id: stock.id,
+                            gudang_tujuan_id: rakTujuan.id,
+                            qty: Number(row.Qty) || stock.qty,
+                        });
+                        success++;
+                    } else {
+                        console.error(`Stock position not found for item "${itemName}" at rack "${rakAsalStr}" with batch "${batchStr}"`);
+                        fail++;
+                    }
+                } catch (e: any) {
+                    console.error("Relocation row failed:", e?.response?.data || e);
                     fail++;
                 }
-            } catch { fail++; }
+            }
+            notifications.show({ title: 'Import Selesai', message: `${success} berhasil, ${fail} gagal`, color: fail > 0 ? 'yellow' : 'green' });
+            load();
+        } catch (e) {
+            console.error("Import process failed:", e);
+            notifications.show({ title: 'Error', message: 'Gagal memproses file Excel', color: 'red' });
         }
-        notifications.show({ title: 'Import Selesai', message: `${success} berhasil, ${fail} gagal`, color: fail > 0 ? 'yellow' : 'green' });
-        load();
     };
 
     const relocate = async () => {
