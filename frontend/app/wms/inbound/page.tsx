@@ -543,7 +543,7 @@ export default function InboundPage() {
                   placeholder="Ketik nama item manual..."
                   value={form.item_manual || ""}
                   onChange={(v: string) => f("item_manual", v)}
-                  data={barangs.map((b: any) => b.nama).filter(Boolean)}
+                  data={[...new Set(barangs.map((b: any) => b.nama).filter(Boolean))]}
                   styles={{ input: { background: "#fdfbc8" } }}
                   limit={10}
                 />
