@@ -378,9 +378,9 @@ export default function InboundPage() {
     value: String(s.id),
     label: s.sku ? `[${s.kategori}] ${s.sku} - ${s.nama}` : `[${s.kategori}] ${s.nama}`,
   }));
-  const customerOpts = customers
+  const customerOpts = [...new Set(customers
     .map((c: any) => c.nama || c.name)
-    .filter(Boolean);
+    .filter(Boolean))];
   const shiftOpts = shifts.map((s: any) => ({
     value: String(s.id),
     label: s.name,
