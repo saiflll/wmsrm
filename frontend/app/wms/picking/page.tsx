@@ -99,7 +99,8 @@ export default function PickingPage() {
     const barangOpts = barangs.map((b: any) => ({ value: String(b.id), label: b.sku ? `${b.sku} - ${b.nama}` : b.nama }));
     const zoneOpts = zones.map((z: any) => ({ value: z, label: z }));
 
-    const customerOpts = ['Prod', 'Premix', 'PDI', ...customers.map((c: any) => c.nama || c.name).filter(Boolean)];
+    const customerNames = customers.map((c: any) => c.nama || c.name).filter(Boolean);
+    const customerOpts = [...new Set(['Prod', 'Premix', 'PDI', ...customerNames])];
     const shiftOpts = shifts.map((s: any) => ({ value: String(s.id), label: s.name }));
 
     const batchOpts = Array.from(new Set(stocks.map((s: any) => s.batch_no).filter(Boolean)));

@@ -325,12 +325,8 @@ export default function OutboundPage() {
       label: b.sku ? `${b.sku} - ${b.nama}` : b.nama,
     }));
 
-  const customerOpts = [
-    "Prod",
-    "Premix",
-    "PDI",
-    ...customers.map((c: any) => c.nama || c.name).filter(Boolean),
-  ];
+  const customerNames = customers.map((c: any) => c.nama || c.name).filter(Boolean);
+  const customerOpts = [...new Set(["Prod", "Premix", "PDI", ...customerNames])];
 
   const shiftOpts = shifts.map((s: any) => ({
     value: String(s.id),
