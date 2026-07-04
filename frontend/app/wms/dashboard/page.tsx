@@ -147,11 +147,12 @@ export default function DashboardPage() {
 
                 {/* Stat cards */}
                 {canViewStats && (
-                    <Grid mb="md" gutter="md">
-                        <Grid.Col span={3}>{statCard('Total SKU', s.totalSku || 0, '#ff6600')}</Grid.Col>
-                        <Grid.Col span={3}>{statCard('Total Stok', s.totalStock || 0, '#40c057')}</Grid.Col>
-                        <Grid.Col span={3}>{statCard('Transaksi Inbound', s.inboundCount || 0, '#1c7ed6')}</Grid.Col>
-                        <Grid.Col span={3}>{statCard('Transaksi Outbound', s.outboundCount || 0, '#f06595')}</Grid.Col>
+                    <Grid mb="md" gutter="md" columns={5}>
+                        <Grid.Col span={1}>{statCard('Total SKU', s.totalSku || 0, '#ff6600')}</Grid.Col>
+                        <Grid.Col span={1}>{statCard('Total Stok', s.totalStock || 0, '#40c057')}</Grid.Col>
+                        <Grid.Col span={1}>{statCard('Transaksi Inbound', s.inboundCount || 0, '#1c7ed6')}</Grid.Col>
+                        <Grid.Col span={1}>{statCard('Transaksi Outbound', s.outboundCount || 0, '#f06595')}</Grid.Col>
+                        <Grid.Col span={1}>{statCard('Picking Pending', s.pickingPendingCount || 0, '#7c3aed')}</Grid.Col>
                     </Grid>
                 )}
 

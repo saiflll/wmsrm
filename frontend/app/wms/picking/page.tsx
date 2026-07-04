@@ -13,9 +13,15 @@ const renderColorfulOption: any = ({ option }: any) => {
     if (option.locName) {
         return (
             <Group gap={6} wrap="nowrap">
-                <Badge color="green" variant="filled" style={{ textTransform: 'none' }}>{option.locName}</Badge>
-                <Badge color="orange" variant="filled" style={{ textTransform: 'none' }}>{option.itemNames}</Badge>
-                <Badge color="blue" variant="filled" style={{ textTransform: 'none' }}>{option.qtyStr}</Badge>
+                <Badge color="green" variant="filled" size="xs" style={{ textTransform: 'none' }}>{option.locName}</Badge>
+                {option.itemNames && (
+                    <Badge color="orange" variant="light" size="xs" style={{ textTransform: 'none', maxWidth: 150 }}>
+                        {option.itemNames.length > 25 ? option.itemNames.slice(0, 25) + '...' : option.itemNames}
+                    </Badge>
+                )}
+                {option.qtyStr && (
+                    <Text size="xs" c="blue" fw={600}>{option.qtyStr}</Text>
+                )}
             </Group>
         );
     }
@@ -56,7 +62,7 @@ export default function PickingPage() {
             const side = type === 'dry';
             const [s, l, c, sh, g, b] = await Promise.all([
                 api().get(`/inventory/stock?side=${side}`),
-                api().get('/inventory/logs/outbound'),
+                api().get('/inventory/logs/picking'),
                 api().get('/customers'),
                 api().get('/shifts'),
                 api().get(`/gudang?side=${side}`),
@@ -78,13 +84,17 @@ export default function PickingPage() {
         .filter((s: any) => !selectedBarangId || String(s.barang?.id) === String(selectedBarangId));
 
     // Group stocks per rak lalu buat label lengkap: [Zone X] Rak Y — Produk A, Produk B (Total: Z qty)
-    const stockOpts = zoneStocks.map((s: any) => ({
-        value: String(s.id),
-        label: `[${s.gudang?.zone}] Rak ${s.gudang?.name} — ${s.barang?.nama || 'Unknown'} (Tersedia: ${s.qty} ${s.satuan || 'qty'}, Exp: ${s.expiry_date ? new Date(s.expiry_date).toLocaleDateString('id-ID') : '-'})`,
-        locName: `[${s.gudang?.zone}] Rak ${s.gudang?.name}`,
-        itemNames: s.barang?.nama || 'Unknown',
-        qtyStr: `Tersedia: ${s.qty} ${s.satuan || 'qty'}`
-    }));
+    const stockOpts = zoneStocks.map((s: any) => {
+        const available = s.qty - (s.reserved_qty || 0);
+        return {
+            value: String(s.id),
+            label: `[${s.gudang?.zone}] Rak ${s.gudang?.name} — ${s.barang?.nama || 'Unknown'} (Tersedia: ${available} ${s.satuan || 'qty'}, Reserved: ${s.reserved_qty || 0}, Exp: ${s.expiry_date ? new Date(s.expiry_date).toLocaleDateString('id-ID') : '-'})`,
+            locName: `[${s.gudang?.zone}] Rak ${s.gudang?.name}`,
+            itemNames: s.barang?.nama || 'Unknown',
+            qtyStr: `Tersedia: ${available} ${s.satuan || 'qty'}`,
+            disabled: available <= 0
+        };
+    });
 
     const barangOpts = barangs.map((b: any) => ({ value: String(b.id), label: b.sku ? `${b.sku} - ${b.nama}` : b.nama }));
     const zoneOpts = zones.map((z: any) => ({ value: z, label: z }));
@@ -126,8 +136,8 @@ export default function PickingPage() {
                 shift_id: d.shift_id,
                 batch_no: d.nomor_batch,
             }));
-            await api().post('/inventory/outbound', { items });
-            notifications.show({ title: 'Sukses', message: `${items.length} item berhasil dipicking (ID: ${transId})`, color: 'green' });
+            await api().post('/inventory/picking', { items });
+            notifications.show({ title: 'Sukses', message: `${items.length} item berhasil disimpan ke Picking Plan (ID: ${transId})`, color: 'green' });
             setDrafts([]);
             load();
         } catch (e: any) {
@@ -214,20 +224,20 @@ export default function PickingPage() {
     };
 
     const deleteTrans = async (transId: string) => {
-        if (!confirm('Yakin ingin menghapus transaksi ini? Stok akan dikembalikan ke master rak gudang.')) return;
+        if (!confirm('Yakin ingin membatalkan Picking Plan ini? Stok reserved akan dibebaskan kembali.')) return;
         try {
-            await api().delete('/inventory/outbound/' + encodeURIComponent(transId));
-            notifications.show({ title: 'Sukses', message: 'Transaksi dihapus & stok dikembalikan', color: 'green' });
+            await api().delete('/inventory/picking/' + encodeURIComponent(transId));
+            notifications.show({ title: 'Sukses', message: 'Picking plan dibatalkan & stok reserved dilepas', color: 'green' });
             load();
         } catch (e: any) {
-            notifications.show({ title: 'Error', message: unwrap(e.response)?.message || 'Gagal menghapus', color: 'red' });
+            notifications.show({ title: 'Error', message: unwrap(e.response)?.message || 'Gagal membatalkan', color: 'red' });
         }
     };
 
     const editTrans = async (transId: string, items: any[]) => {
-        if (!confirm('Edit transaksi akan merevert stok ke rak lalu menaruh data ke tabel draft kiri. Lanjutkan?')) return;
+        if (!confirm('Edit picking plan akan membatalkan reservasi rak lalu menaruh data ke tabel draft kiri. Lanjutkan?')) return;
         try {
-            await api().delete('/inventory/outbound/' + encodeURIComponent(transId));
+            await api().delete('/inventory/picking/' + encodeURIComponent(transId));
             const newDrafts = items.map((r: any) => ({
                 id: Date.now() + Math.random(),
                 stock_id: '', // Empty because we don't map stock easily back, user will just submit new ones directly
@@ -287,7 +297,9 @@ export default function PickingPage() {
                                 data={stockOpts}
                                 value={form.stock_id}
                                 onChange={v => {
-                                    setForm(p => ({ ...p, stock_id: v || '', qty: stocks.find((s: any) => String(s.id) === String(v))?.qty || 0 }));
+                                    const sObj = stocks.find((s: any) => String(s.id) === String(v));
+                                    const avail = sObj ? sObj.qty - (sObj.reserved_qty || 0) : 1;
+                                    setForm(p => ({ ...p, stock_id: v || '', qty: avail > 0 ? 1 : 0 }));
                                 }}
                                 placeholder="Pilih rak yg berisi produk..."
                                 mb="xs"
@@ -299,11 +311,20 @@ export default function PickingPage() {
                                 <Box style={{ background: '#f8f9fa', borderRadius: 6, padding: '6px 8px', fontSize: 11 }}>
                                     <Text size="xs" c="dimmed">Nama Item: <b>{selStock.barang?.nama}</b></Text>
                                     <Text size="xs" c="dimmed">Tgl Expired: <b>{selStock.expiry_date ? fmt(selStock.expiry_date) : '-'}</b></Text>
-                                    <Text size="xs" c="dimmed">Stok: <b>{selStock.qty} {selStock.satuan}</b></Text>
+                                    <Text size="xs" c="dimmed">Stok Fisik: <b>{selStock.qty} {selStock.satuan}</b></Text>
+                                    <Text size="xs" c="orange" fw={600}>Stok Tersedia: <b>{selStock.qty - (selStock.reserved_qty || 0)} {selStock.satuan}</b></Text>
                                 </Box>
                             )}
 
-                            <NumberInput label="Qty" size="xs" value={form.qty} onChange={v => setForm(p => ({ ...p, qty: Number(v) }))} min={1} />
+                            <NumberInput
+                                label="Qty"
+                                size="xs"
+                                value={form.qty}
+                                onChange={v => setForm(p => ({ ...p, qty: Number(v) }))}
+                                min={1}
+                                max={selStock ? selStock.qty - (selStock.reserved_qty || 0) : undefined}
+                                disabled={!form.stock_id}
+                            />
                             <Autocomplete label="Nomor Batch" size="xs" data={batchOpts} value={form.nomor_batch} onChange={v => setForm(p => ({ ...p, nomor_batch: v }))} placeholder="Pilih/Ketik Nomor Batch" />
                             <Autocomplete label="Tujuan" size="xs" data={customerOpts} value={form.tujuan} onChange={v => setForm(p => ({ ...p, tujuan: v }))} placeholder="Produksi AP / Customer..." />
                             <TextInput label="Tanggal Permintaan" size="xs" type="date" value={form.tanggal_permintaan} onChange={e => setForm(p => ({ ...p, tanggal_permintaan: e.target.value }))} />
@@ -363,7 +384,7 @@ export default function PickingPage() {
                             <Button size="xs" color="gray" variant="outline">Reset</Button>
                         </Group>
 
-                        <Text fw={700} size="sm" mb="xs">RIWAYAT OUTBOUND ({Object.keys(groupedLogs).length} transaksi)</Text>
+                        <Text fw={700} size="sm" mb="xs">RIWAYAT PICKING PLAN ({Object.keys(groupedLogs).length} transaksi)</Text>
                         {loading ? <Loader /> : (
                             <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
                                 <Table.Thead style={{ background: '#1a1a1a' }}>
@@ -386,7 +407,12 @@ export default function PickingPage() {
                                                 <Table.Td>{r.shift?.name || '-'}</Table.Td>
                                                 <Table.Td ta="right">{r.qty} {r.satuan}</Table.Td>
                                                 <Table.Td><Badge size="xs" color="blue">{r.gudang?.name}</Badge></Table.Td>
-                                                <Table.Td><Badge size="xs" color={statusColor(r.expiry_date)}>{statusLabel(r.expiry_date)}</Badge></Table.Td>
+                                                <Table.Td>
+                                                    <Group gap={4} wrap="nowrap">
+                                                        <Badge size="xs" color={statusColor(r.expiry_date)}>{statusLabel(r.expiry_date)}</Badge>
+                                                        <Badge size="xs" color={r.status === 'RESERVED' ? 'yellow' : 'green'}>{r.status || 'CONFIRMED'}</Badge>
+                                                    </Group>
+                                                </Table.Td>
                                                 {idx === 0 && (
                                                     <Table.Td rowSpan={items.length}>
                                                         <Group gap={6} wrap="nowrap">

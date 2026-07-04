@@ -112,3 +112,42 @@ export class OpnameDto {
     @IsOptional() @IsNumber()
     shift_id?: number;
 }
+
+export class PickingItemDto {
+    @IsOptional() @IsString()
+    no_ref?: string;
+
+    @IsNotEmpty() @IsNumber()
+    barang_id: number;
+
+    @IsNotEmpty() @IsNumber()
+    gudang_id: number;
+
+    @IsNotEmpty() @IsNumber()
+    qty: number;
+
+    @IsOptional() @IsString()
+    satuan?: string;
+
+    @IsOptional() @IsString()
+    tujuan?: string;
+
+    @IsOptional() @IsNumber()
+    shift_id?: number;
+
+    @IsOptional() @IsString()
+    batch_no?: string;
+}
+
+export class PickingPostDto {
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => PickingItemDto)
+    items: PickingItemDto[];
+}
+
+export class ConfirmPickingDto {
+    @IsNotEmpty() @IsString()
+    no_ref: string;
+}
+

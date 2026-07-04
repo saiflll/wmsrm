@@ -10,6 +10,7 @@ export enum LogType {
     RELOCATION = 'RELOCATION',
     ADJUST = 'ADJUST',
     OPNAME = 'OPNAME',
+    PICKING = 'PICKING',
 }
 
 @Entity()
@@ -55,6 +56,9 @@ export class StockLog {
 
     @Column({ nullable: true })
     tujuan: string; // picking destination
+
+    @Column({ nullable: true })
+    status: string; // 'RESERVED' | 'CONFIRMED' for picking logs
 
     @ManyToOne(() => Shift, { eager: true, nullable: true })
     shift: Shift;

@@ -23,7 +23,7 @@ const roleLineColor: Record<number, string> = {
 const menuPermissions: Record<string, number[]> = {
     '/wms/dashboard': [1, 2, 3, 4, 5],
     '/wms/inbound': [1, 4, 5],
-    '/wms/putaway': [2, 4, 5],
+    '/wms/outbound': [2, 3, 4, 5],
     '/wms/relocation': [3, 4, 5],
     '/wms/picking': [2, 3, 4, 5],
     '/wms/stock-opname': [3, 4, 5],
@@ -51,7 +51,7 @@ const menuGroups: { label: string; links: { label: string; href: string; c: stri
         links: [
             { label: 'Dashboard', href: '/wms/dashboard', c: 'blue' },
             { label: 'Inbound', href: '/wms/inbound', c: 'green' },
-            { label: 'Outbound', href: '/wms/putaway', c: 'red' },
+            { label: 'Outbound', href: '/wms/outbound', c: 'red' },
             { label: 'Relocation', href: '/wms/relocation', c: 'orange' },
             { label: 'Picking Plan', href: '/wms/picking', c: 'red' },
             { label: 'Stock Opname', href: '/wms/stock-opname', c: 'grape' },

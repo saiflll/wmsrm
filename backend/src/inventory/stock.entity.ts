@@ -23,6 +23,9 @@ export class Stock {
     @Column({ type: 'float', default: 0 })
     qty: number;
 
+    @Column({ type: 'float', default: 0 })
+    reserved_qty: number; // qty yang sudah di-picking plan tapi belum dikonfirmasi keluar
+
     @Column({ type: 'timestamp', nullable: true })
     expiry_date: Date;
 

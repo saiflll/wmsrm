@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user.entity';
-import { InboundPostDto, OutboundPostDto, RelocationDto, OpnameDto } from './inventory.dto';
+import { InboundPostDto, OutboundPostDto, RelocationDto, OpnameDto, PickingPostDto, ConfirmPickingDto } from './inventory.dto';
 import { LogType } from './stock-log.entity';
 
 @Controller('inventory')
@@ -56,6 +56,31 @@ export class InventoryController {
     @Roles(UserRole.SUPERVISOR)
     revertOutbound(@Param('id') id: string) {
         return this.svc.revertOutbound(id);
+    }
+
+    // ========== PICKING ==========
+    @Post('picking')
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB, UserRole.KOORDINATOR)
+    postPicking(@Body() dto: PickingPostDto) {
+        return this.svc.postPicking(dto.items);
+    }
+
+    @Post('outbound/confirm')
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB)
+    confirmPicking(@Body() dto: ConfirmPickingDto) {
+        return this.svc.confirmPicking(dto.no_ref);
+    }
+
+    @Delete('picking/:id')
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB)
+    cancelPicking(@Param('id') id: string) {
+        return this.svc.cancelPicking(id);
+    }
+
+    @Get('picking/pending')
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB, UserRole.KOORDINATOR)
+    getPendingPickings() {
+        return this.svc.getPendingPickings();
     }
 
     // ========== RELOCATION ==========
@@ -116,6 +141,12 @@ export class InventoryController {
     @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB)
     getOutboundLogs(@Query('from') from?: string, @Query('to') to?: string, @Query('shift_id') shift_id?: string) {
         return this.svc.findLogs({ type: LogType.OUTBOUND, from, to, shift_id: shift_id ? +shift_id : undefined });
+    }
+
+    @Get('logs/picking')
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB, UserRole.KOORDINATOR)
+    getPickingLogs(@Query('from') from?: string, @Query('to') to?: string, @Query('shift_id') shift_id?: string) {
+        return this.svc.findLogs({ type: LogType.PICKING, from, to, shift_id: shift_id ? +shift_id : undefined });
     }
 
     @Get('logs/opname')

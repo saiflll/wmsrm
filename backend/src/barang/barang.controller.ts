@@ -11,7 +11,24 @@ export class BarangController {
     constructor(@InjectRepository(Barang) private readonly repo: Repository<Barang>) { }
 
     @Get()
-    findAll(@Query('side') side?: string, @Query('search') search?: string, @Query('kategori') kategori?: string) {
+    async findAll(@Query('side') side?: string, @Query('search') search?: string, @Query('kategori') kategori?: string) {
+        // Self-heal records on request to fix any historic casing mismatches
+        try {
+            const all = await this.repo.find();
+            for (const b of all) {
+                const kat = b.kategori ? b.kategori.trim().toLowerCase() : '';
+                const expectedSide = !(kat === 'wet' || kat === 'waste');
+                const expectedKatName = kat === 'wet' ? 'Wet' : kat === 'waste' ? 'Waste' : 'Dry';
+                if (b.side !== expectedSide || b.kategori !== expectedKatName) {
+                    b.side = expectedSide;
+                    b.kategori = expectedKatName as any;
+                    await this.repo.save(b);
+                }
+            }
+        } catch (e) {
+            console.error('Self-heal failed:', e);
+        }
+
         const where: any = {};
         if (side === 'true') where.side = true;
         if (side === 'false') where.side = false;
@@ -29,8 +46,14 @@ export class BarangController {
     create(@Body() dto: CreateBarangDto) {
         // Auto-set side based on kategori
         const data: any = { ...dto };
-        if (dto.kategori === 'Wet' || dto.kategori === 'Waste') data.side = false;
-        else data.side = true;
+        const kat = dto.kategori ? dto.kategori.trim().toLowerCase() : '';
+        if (kat === 'wet' || kat === 'waste') {
+            data.side = false;
+            data.kategori = (kat === 'wet' ? 'Wet' : 'Waste') as any;
+        } else {
+            data.side = true;
+            data.kategori = 'Dry' as any;
+        }
         if (!dto.sku) data.sku = `BRG${String(Date.now()).slice(-6)}`;
         return this.repo.save(this.repo.create(data));
     }
@@ -38,8 +61,16 @@ export class BarangController {
     @Put(':id')
     async update(@Param('id') id: number, @Body() dto: UpdateBarangDto) {
         const data: any = { ...dto };
-        if (dto.kategori === 'Wet' || dto.kategori === 'Waste') data.side = false;
-        else if (dto.kategori) data.side = true;
+        if (dto.kategori) {
+            const kat = dto.kategori.trim().toLowerCase();
+            if (kat === 'wet' || kat === 'waste') {
+                data.side = false;
+                data.kategori = (kat === 'wet' ? 'Wet' : 'Waste') as any;
+            } else {
+                data.side = true;
+                data.kategori = 'Dry' as any;
+            }
+        }
         await this.repo.update(id, data);
         return this.repo.findOneBy({ id });
     }
