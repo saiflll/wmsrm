@@ -1,0 +1,31 @@
+# FG (Finished Goods) Subsystem
+# Add this to the main docker-compose.yml
+
+services:
+  fg-backend:
+    build: ./fg/backend
+    container_name: fg-backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://wms_user:wms_password@db:5432/wms_db
+      - JWT_SECRET=fg_super_secret_key_change_me
+      - PORT=3003
+    ports:
+      - "3003:3003"
+    depends_on:
+      - db
+    networks:
+      - wms-network
+
+  fg-frontend:
+    build: ./fg/frontend
+    container_name: fg-frontend
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_API_URL=http://fg-backend:3003
+    ports:
+      - "3004:3004"
+    depends_on:
+      - fg-backend
+    networks:
+      - wms-network

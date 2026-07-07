@@ -1,51 +1,86 @@
-version: "3.8"
-
 services:
   db:
     image: postgres:15-alpine
     container_name: wms_db
     restart: always
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-wms_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wms_password}
+      POSTGRES_DB: ${POSTGRES_DB:-wms_db}
     ports:
       - "4321:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - wms-network
 
-  backend:
-    image: wms-backend:latest
+  fg-backend:
     build:
-      context: ./backend
+      context: ./fg/backend
       dockerfile: Dockerfile
-    container_name: wms_backend
-    restart: always
-    env_file:
-      - .env
+    container_name: fg-backend
+    restart: unless-stopped
     environment:
-      - PORT=3002
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-wms_user}:${POSTGRES_PASSWORD:-wms_password}@db:5432/${POSTGRES_DB:-wms_db}
+      - JWT_SECRET=${JWT_SECRET:-fg_super_secret_key_change_me}
+      - PORT=3003
     ports:
-      - "3002:3002"
+      - "3003:3003"
     depends_on:
       - db
+    networks:
+      - wms-network
 
-  frontend:
-    image: wms-frontend:latest
+  fg-frontend:
     build:
-      context: ./frontend
+      context: ./fg/frontend
       dockerfile: Dockerfile
-    container_name: wms_frontend
-    restart: always
-    env_file:
-      - .env
+      args:
+        NEXT_PUBLIC_API_URL: http://fg-backend:3003
+    container_name: fg-frontend
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    depends_on:
+      - fg-backend
+    networks:
+      - wms-network
+
+  rm-backend:
+    build:
+      context: ./rm/backend
+      dockerfile: Dockerfile
+    container_name: rm-backend
+    restart: unless-stopped
     environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-wms_user}:${POSTGRES_PASSWORD:-wms_password}@db:5432/${POSTGRES_DB:-wms_db}
+      - JWT_SECRET=${JWT_SECRET:-rm_super_secret_key_change_me}
       - PORT=3001
-      - BACKEND_API_URL=http://backend:3002
     ports:
       - "3001:3001"
     depends_on:
-      - backend
+      - db
+    networks:
+      - wms-network
+
+  rm-frontend:
+    build:
+      context: ./rm/frontend
+      dockerfile: Dockerfile
+      args:
+        BACKEND_API_URL: http://rm-backend:3001
+    container_name: rm-frontend
+    restart: unless-stopped
+    ports:
+      - "3005:3000"
+    depends_on:
+      - rm-backend
+    networks:
+      - wms-network
 
 volumes:
   postgres_data:
+
+networks:
+  wms-network:
+    driver: bridge
