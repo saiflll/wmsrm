@@ -168,6 +168,12 @@ export class InventoryController {
         return this.svc.getInOutChartData();
     }
 
+    @Get('dashboard/stock-chart')
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    getStockChart(@Query('barang_id') barangId?: string) {
+        return this.svc.getStockChartData(barangId ? +barangId : undefined);
+    }
+
     // ========== INVENTORY MATRIX ==========
     @Get('matrix')
     @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)

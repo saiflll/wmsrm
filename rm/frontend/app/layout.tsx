@@ -1,6 +1,7 @@
 import React from 'react';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
+import './table-resize.css';
 import { ColorSchemeScript, MantineProvider, createTheme } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 
@@ -11,6 +12,7 @@ export const metadata = {
 const theme = createTheme({
     primaryColor: 'blue',
     fontFamily: 'Inter, sans-serif',
+    defaultRadius: 'sm',
 });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

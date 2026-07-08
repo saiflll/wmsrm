@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, Between, ILike } from 'typeorm';
+import { Repository, DataSource, Between, ILike, In } from 'typeorm';
 import { Stock } from './stock.entity';
 import { StockLog, LogType } from './stock-log.entity';
 import { Barang } from '../barang/barang.entity';
@@ -864,6 +864,92 @@ export class InventoryService {
       inbound: Math.round(weeklyData[weekStr].inbound),
       outbound: Math.round(weeklyData[weekStr].outbound),
     }));
+  }
+
+  // Stock chart data - daily stock levels per product (last 30 days)
+  async getStockChartData(barangId?: number) {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const today = new Date();
+
+    // Generate date range
+    const dates: string[] = [];
+    for (let d = new Date(thirtyDaysAgo); d <= today; d.setDate(d.getDate() + 1)) {
+      dates.push(d.toISOString().split('T')[0]);
+    }
+
+    // Get all products
+    const where: any = {};
+    if (barangId) where.id = barangId;
+    const barangs = await this.barangRepo.find({ where });
+
+    // Get logs in date range (only INBOUND/OUTBOUND)
+    const logs = await this.logRepo.find({
+      where: {
+        created_at: Between(thirtyDaysAgo, new Date(today.getTime() + 86400000)),
+        type: In([LogType.INBOUND, LogType.OUTBOUND]),
+        ...(barangId ? { barang: { id: barangId } } : {}),
+      },
+      relations: ['barang'],
+      order: { created_at: 'ASC' },
+    });
+
+    // Group net changes by barang_id and date
+    const changes: Record<number, Record<string, number>> = {};
+    for (const log of logs) {
+      if (!log.barang) continue;
+      const bid = log.barang.id;
+      const dt = log.created_at.toISOString().split('T')[0];
+      if (!changes[bid]) changes[bid] = {};
+      changes[bid][dt] = (changes[bid][dt] || 0) + (log.type === LogType.INBOUND ? log.qty : -log.qty);
+    }
+
+    // Get current stock per product
+    const currentStocks: Record<number, number> = {};
+    const stockRows = await this.stockRepo
+      .createQueryBuilder('s')
+      .select('s.barang_id', 'barang_id')
+      .addSelect('SUM(s.qty)', 'qty')
+      .groupBy('s.barang_id')
+      .getRawMany();
+    for (const row of stockRows) {
+      currentStocks[row.barang_id] = parseFloat(row.qty) || 0;
+    }
+
+    // Build series: work backwards from current stock
+    const series: any[] = [];
+    for (const brg of barangs) {
+      const curStock = currentStocks[brg.id] || 0;
+      // Compute cumulative forward stock
+      let running = 0;
+      const dataPoints = dates.map((dt) => {
+        const net = changes[brg.id]?.[dt] || 0;
+        running += net;
+        return { date: dt, net };
+      });
+
+      // Current stock = sum of all net changes up to today + starting stock
+      // starting stock = curStock - total net change
+      const totalNet = dataPoints.reduce((s, d) => s + d.net, 0);
+      const startingStock = Math.max(0, curStock - totalNet);
+
+      // Compute cumulative stock level
+      let cum = startingStock;
+      const stockData = dataPoints.map((d) => {
+        cum += d.net;
+        return { date: d.date, stock: Math.round(cum * 10) / 10 };
+      });
+
+      series.push({
+        id: brg.id,
+        nama: brg.nama,
+        satuan: brg.satuan,
+        color: brg.kategori === 'Wet' ? '#fcc419' : brg.kategori === 'Waste' ? '#845ef7' : '#1c7ed6',
+        data: stockData,
+      });
+    }
+
+    return { dates, series };
   }
 
   // Inventory matrix data (daily in/out/balance per item)

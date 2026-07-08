@@ -1,25 +1,8 @@
 "use client";
 // @ts-nocheck
 import React, { useState, useEffect, useRef, Suspense } from "react";
-import {
-  Box,
-  Group,
-  Button,
-  Title,
-  Text,
-  Table,
-  Badge,
-  Paper,
-  Stack,
-  TextInput,
-  Select,
-  NumberInput,
-  Divider,
-  ActionIcon,
-  Autocomplete,
-  Loader,
-  Grid,
-} from "@mantine/core";
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, NumberInput, Divider, ActionIcon, Autocomplete, Loader, Grid } from "@mantine/core";
+import { Table } from '../components/Table';
 import {
   IconPlus,
   IconTrash,
@@ -94,7 +77,15 @@ function InboundContent() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [shifts, setShifts] = useState<any[]>([]);
   const [stocks, setStocks] = useState<any[]>([]);
-  const [drafts, setDrafts] = useState<any[]>([]);
+  const [drafts, setDrafts] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("wms_inbound_drafts");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [];
+  });
   const [logs, setLogs] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const barcodeRef = useRef<any>(null);
@@ -153,20 +144,15 @@ function InboundContent() {
       .get("/shifts")
       .then((r) => setShifts(unwrap(r)));
     loadLogs();
-
-    // Persist draft loads
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("wms_inbound_drafts");
-      if (saved) {
-        try {
-          setDrafts(JSON.parse(saved));
-        } catch (e) {}
-      }
-    }
   }, []);
 
-  // Save drafts to LocalStorage on change
+  // Save drafts to LocalStorage on change (skip initial write, already in sync from lazy init)
+  const initialWrite = useRef(true);
   useEffect(() => {
+    if (initialWrite.current) {
+      initialWrite.current = false;
+      return;
+    }
     localStorage.setItem("wms_inbound_drafts", JSON.stringify(drafts));
   }, [drafts]);
 

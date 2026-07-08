@@ -1,22 +1,8 @@
 // @ts-nocheck
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Box,
-  Group,
-  Button,
-  Title,
-  Text,
-  Badge,
-  Paper,
-  Stack,
-  TextInput,
-  Modal,
-  NumberInput,
-  Loader,
-  Table,
-  Select,
-} from "@mantine/core";
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Modal, NumberInput, Loader, Select } from "@mantine/core";
+import { Table } from '../components/Table';
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { IconFileTypePdf, IconFileSpreadsheet } from "@tabler/icons-react";

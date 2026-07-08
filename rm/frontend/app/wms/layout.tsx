@@ -24,7 +24,7 @@ const roleLineColor: Record<number, string> = {
 
 const menuPermissions: Record<string, number[]> = {
     '/wms/dashboard': [1, 2, 3, 4, 5, 6],
-    '/wms/driver-planning': [1, 3, 4, 5, 6],
+    '/wms/driver-planning': [1, 3, 4, 5],
     '/wms/inbound': [1, 4, 5],
     '/wms/outbound': [2, 3, 4, 5],
     '/wms/relocation': [3, 4, 5],
@@ -37,6 +37,7 @@ const menuPermissions: Record<string, number[]> = {
     '/wms/master-produk': [4, 5],
     '/wms/master-lokasi': [4, 5],
     '/wms/master-customer': [4, 5],
+    '/wms/import': [5],
     '/wms/users': [5],
     '/wms/login-logs': [5],
 };
@@ -47,6 +48,7 @@ const menuGroups: { label: string; links: { label: string; href: string; c: stri
         links: [
             { label: 'Manajemen User', href: '/wms/users', c: 'pink' },
             { label: 'Riwayat Login', href: '/wms/login-logs', c: 'pink' },
+            { label: 'Import Data', href: '/wms/import', c: 'teal' },
         ],
     },
     {

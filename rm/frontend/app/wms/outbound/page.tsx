@@ -1,28 +1,8 @@
 "use client";
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Group,
-  Button,
-  Title,
-  Text,
-  Table,
-  Badge,
-  Paper,
-  Stack,
-  TextInput,
-  Select,
-  Loader,
-  NumberInput,
-  Divider,
-  Autocomplete,
-  Tooltip,
-  ActionIcon,
-  Card,
-  Grid,
-  ThemeIcon,
-} from "@mantine/core";
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, Loader, NumberInput, Divider, Autocomplete, Tooltip, ActionIcon, Card, Grid, ThemeIcon } from "@mantine/core";
+import { Table } from '../components/Table';
 import {
   IconTrash,
   IconCheck,

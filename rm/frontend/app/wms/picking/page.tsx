@@ -39,7 +39,16 @@ export default function PickingPage() {
     const [customers, setCustomers] = useState<any[]>([]);
     const [shifts, setShifts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [drafts, setDrafts] = useState<any[]>([]);
+    const [drafts, setDrafts] = useState<any[]>(() => {
+        if (typeof window !== "undefined") {
+            try {
+                const saved = localStorage.getItem("wms_picking_drafts");
+                return saved ? JSON.parse(saved) : [];
+            } catch (e) {}
+        }
+        return [];
+    });
+    const draftSavedRef = useRef(false);
 
     // Zone & Product filter for Rak Selector
     const [selectedZone, setSelectedZone] = useState('');
@@ -61,20 +70,9 @@ export default function PickingPage() {
 
     useEffect(() => { load(); }, [type]);
 
+    // Save drafts to localStorage on change (skip initial render)
     useEffect(() => {
-        // Load drafts from localStorage on mount
-        if (typeof window !== "undefined") {
-            const saved = localStorage.getItem("wms_picking_drafts");
-            if (saved) {
-                try {
-                    setDrafts(JSON.parse(saved));
-                } catch (e) {}
-            }
-        }
-    }, []);
-
-    // Save drafts to localStorage on change
-    useEffect(() => {
+        if (!draftSavedRef.current) { draftSavedRef.current = true; return; }
         localStorage.setItem("wms_picking_drafts", JSON.stringify(drafts));
     }, [drafts]);
 
