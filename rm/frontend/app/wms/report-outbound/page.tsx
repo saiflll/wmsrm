@@ -87,7 +87,8 @@ export default function ReportOutboundPage() {
 
     // Dropdown opts dari master
     const shiftOpts = [{ value: '', label: 'Semua Shift' }, ...shifts.filter((s: any) => s?.name).map((s: any) => ({ value: s.name, label: s.name }))];
-    const tujuanOpts = [{ value: '', label: 'Semua Tujuan' }, ...customers.filter((c: any) => c?.name).map((c: any) => ({ value: c.name, label: c.name }))];
+    const uniqueCustomers = Array.from(new Map(customers.filter((c: any) => c?.name).map((c: any) => [c.name, c])).values());
+    const tujuanOpts = [{ value: '', label: 'Semua Tujuan' }, ...uniqueCustomers.map((c: any) => ({ value: c.name, label: c.name }))];
 
     const filtered = logs
         .filter((r: any) => !search || r.barang?.nama?.toLowerCase().includes(search.toLowerCase()) || r.no_ref?.includes(search) || String(r.id) === search)

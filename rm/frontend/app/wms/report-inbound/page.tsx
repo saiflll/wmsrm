@@ -94,7 +94,8 @@ export default function ReportInboundPage() {
 
     // Opts dari master (mencegah error value missing)
     const shiftOpts = [{ value: '', label: 'Semua Shift' }, ...shifts.filter((s: any) => s?.name).map((s: any) => ({ value: s.name, label: s.name }))];
-    const supplierOpts = [{ value: '', label: 'Semua Supplier' }, ...customers.filter((c: any) => c?.name).map((c: any) => ({ value: c.name, label: c.name }))];
+    const uniqueCustomers = Array.from(new Map(customers.filter((c: any) => c?.name).map((c: any) => [c.name, c])).values());
+    const supplierOpts = [{ value: '', label: 'Semua Supplier' }, ...uniqueCustomers.map((c: any) => ({ value: c.name, label: c.name }))];
     const barangOpts = [{ value: '', label: 'Semua Item' }, ...barangs.filter((b: any) => b?.id).map((b: any) => ({ value: String(b.id), label: b.nama }))];
 
     const filtered = logs

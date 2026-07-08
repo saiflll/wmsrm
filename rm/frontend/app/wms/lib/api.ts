@@ -4,10 +4,24 @@ export const API = '/api';
 
 export const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-export const api = () => axios.create({
-    baseURL: API,
-    headers: { Authorization: `Bearer ${getToken()}` },
-});
+export const api = () => {
+    const instance = axios.create({
+        baseURL: API,
+        headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    instance.interceptors.response.use(
+        (res) => res,
+        (error) => {
+            if (error.response?.status === 401 && typeof window !== 'undefined') {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+            }
+            return Promise.reject(error);
+        }
+    );
+    return instance;
+};
 
 export const fmt = (d: string | Date) => {
     if (!d) return '-';

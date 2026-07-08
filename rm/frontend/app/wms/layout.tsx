@@ -86,15 +86,7 @@ export default function WMSLayout({ children }: { children: React.ReactNode }) {
     const [opened, { toggle }] = useDisclosure();
     const pathname = usePathname();
     const router = useRouter();
-    const [userRole, setUserRole] = useState<number>(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                const u = JSON.parse(localStorage.getItem('user') || '{}');
-                return u?.role || 4;
-            } catch { }
-        }
-        return 4;
-    });
+    const [userRole, setUserRole] = useState<number>(4);
 
     useEffect(() => {
         if (!localStorage.getItem('token')) {
