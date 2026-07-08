@@ -1,17 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import {
-  Title,
-  Button,
-  Group,
-  Text,
-  Box,
-  Paper,
-  Stack,
-  Select,
-  Badge,
-  TextInput,
-} from "@mantine/core";
+import { Title, Button, Group, Text, Box, Paper, Stack, Select, Badge, TextInput } from "@mantine/core";
+import { Table } from '../components/Table';
 import { notifications } from "@mantine/notifications";
 import { IconScan, IconCamera, IconCameraOff } from "@tabler/icons-react";
 import { Html5Qrcode } from "html5-qrcode";

@@ -1,17 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import {
-  Title,
-  Group,
-  Text,
-  Badge,
-  Box,
-  Paper,
-  SimpleGrid,
-  Table,
-  Progress,
-  Stack,
-} from "@mantine/core";
+import { Title, Group, Text, Badge, Box, Paper, SimpleGrid, Progress, Stack } from "@mantine/core";
+import { Table } from '../components/Table';
 import {
   IconBuildingWarehouse,
   IconPercentage,

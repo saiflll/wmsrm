@@ -1,24 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import {
-  Title,
-  Table,
-  Group,
-  TextInput,
-  Button,
-  Stack,
-  Select,
-  Textarea,
-  Text,
-  Box,
-  Badge,
-  Modal,
-  Loader,
-  Paper,
-  Tabs,
-  FileInput,
-  ActionIcon,
-} from "@mantine/core";
+import { Title, Group, TextInput, Button, Stack, Select, Textarea, Text, Box, Badge, Modal, Loader, Paper, Tabs, FileInput, ActionIcon } from "@mantine/core";
+import { Table } from '../components/Table';
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import {

@@ -1,19 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import {
-  Title,
-  Table,
-  Group,
-  TextInput,
-  Select,
-  Stack,
-  Text,
-  Badge,
-  Box,
-  Paper,
-  Tabs,
-  Button,
-} from "@mantine/core";
+import { Title, Group, TextInput, Select, Stack, Text, Badge, Box, Paper, Tabs, Button } from "@mantine/core";
+import { Table } from '../components/Table';
 import {
   IconArrowsExchange,
   IconArrowUp,

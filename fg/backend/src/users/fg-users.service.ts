@@ -135,6 +135,27 @@ export class FgUsersService {
         status: "AKTIF",
         shift: "All",
       },
+      {
+        username: "superadmin",
+        password: await bcrypt.hash("superadmin123", 10),
+        namaUser: "Super Admin",
+        role: "SUPER_ADMIN",
+        aksesBarangMasuk: "YA",
+        aksesBarangKeluar: "YA",
+        aksesOtdr: "YA",
+        aksesLokasi: "YA",
+        aksesSupervisor: "YA",
+        status: "AKTIF",
+        shift: "All",
+      },
+      {
+        username: "reviewer",
+        password: await bcrypt.hash("reviewer123", 10),
+        namaUser: "Reviewer",
+        role: "REVIEWER",
+        status: "AKTIF",
+        shift: "All",
+      },
     ];
 
     await this.userRepo.save(this.userRepo.create(defaults));

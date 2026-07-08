@@ -208,6 +208,34 @@ export class FgStockService {
     return Object.values(map).sort((a, b) => b.totalQty - a.totalQty);
   }
 
+  async getDailyStock(area?: string) {
+    const stocks = await this.findAll(true);
+    const map: Record<string, { namaBarang: string; satuan: string; release: number; hold: number; waste: number; total: number }> = {};
+    const areas = new Set<string>();
+
+    for (const s of stocks) {
+      const rackArea = (s.lokasiRak || '').split(/[-\s]/)[0]?.toUpperCase() || 'UNKNOWN';
+      areas.add(rackArea);
+      if (area && rackArea !== area.toUpperCase()) continue;
+
+      if (!map[s.namaBarang]) {
+        map[s.namaBarang] = { namaBarang: s.namaBarang, satuan: s.satuan, release: 0, hold: 0, waste: 0, total: 0 };
+      }
+      const status = (s.status || '').toUpperCase();
+      if (['RELEASE', 'GOOD'].includes(status)) map[s.namaBarang].release += s.stockOnhand;
+      else if (status === 'HOLD') map[s.namaBarang].hold += s.stockOnhand;
+      else map[s.namaBarang].waste += s.stockOnhand;
+      map[s.namaBarang].total += s.stockOnhand;
+    }
+
+    return {
+      date: new Date().toISOString().split('T')[0],
+      area: area || 'ALL',
+      areas: Array.from(areas).sort(),
+      items: Object.values(map).sort((a, b) => a.namaBarang.localeCompare(b.namaBarang)),
+    };
+  }
+
   async importCsv(csvText: string, namaUser: string) {
     const lines = csvText
       .split("\n")

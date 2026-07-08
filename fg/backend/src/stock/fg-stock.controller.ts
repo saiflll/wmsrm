@@ -33,6 +33,11 @@ export class FgStockController {
     return stocks.filter(s => s.lokasiRak === rak);
   }
 
+  @Get('daily-stock')
+  async getDailyStock(@Query('area') area?: string) {
+    return this.stockService.getDailyStock(area);
+  }
+
   @Post('import-csv')
   async importCsv(@Body() body: any, @Request() req) {
     return this.stockService.importCsv(body.csvText || '', req.user.username);

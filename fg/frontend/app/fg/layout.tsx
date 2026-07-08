@@ -29,6 +29,7 @@ import {
   IconPackage,
   IconScan,
   IconArrowsShuffle,
+  IconPackages,
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -45,112 +46,119 @@ const menuItems = [
     label: "Barang Masuk",
     href: "/fg/barang-masuk",
     icon: IconArrowDown,
-    roles: ["KOORDINATOR_IN", "SUPERVISOR"],
+    roles: ["KOORDINATOR_IN", "SUPERVISOR", "SUPER_ADMIN"],
     color: "green",
   },
   {
     label: "Barang Keluar",
     href: "/fg/barang-keluar",
     icon: IconArrowUp,
-    roles: ["KOORDINATOR_OUT", "SUPERVISOR"],
+    roles: ["KOORDINATOR_OUT", "SUPERVISOR", "SUPER_ADMIN"],
     color: "red",
   },
   {
     label: "OTDR",
     href: "/fg/otdr",
     icon: IconTruck,
-    roles: ["KOORDINATOR_OUT", "SUPERVISOR"],
+    roles: ["KOORDINATOR_OUT", "SUPERVISOR", "SUPER_ADMIN"],
     color: "orange",
   },
   {
     label: "Picking List",
     href: "/fg/picking-list",
     icon: IconClipboardList,
-    roles: ["KOORDINATOR_OUT", "SUPERVISOR", "ADMIN"],
+    roles: ["KOORDINATOR_OUT", "SUPERVISOR", "SUPER_ADMIN"],
     color: "red",
   },
   {
     label: "Mutasi",
     href: "/fg/mutasi",
     icon: IconTransfer,
-    roles: ["KOORDINATOR_IN", "KOORDINATOR_OUT", "SUPERVISOR"],
+    roles: ["KOORDINATOR_IN", "KOORDINATOR_OUT", "SUPERVISOR", "SUPER_ADMIN"],
     color: "grape",
   },
   {
     label: "QC FIFO",
     href: "/fg/qc-fifo",
     icon: IconShieldCheck,
-    roles: ["QUALITY_CONTROL", "SUPERVISOR"],
+    roles: ["QUALITY_CONTROL", "SUPER_ADMIN"],
     color: "teal",
   },
   {
     label: "Stock",
     href: "/fg/stock",
     icon: IconPackage,
-    roles: [],
+    roles: ["KOORDINATOR_IN", "KOORDINATOR_OUT", "INVENTORY", "QUALITY_CONTROL", "SUPERVISOR", "SUPER_ADMIN", "ADMIN"],
     color: "blue",
+  },
+  {
+    label: "Daily Stock",
+    href: "/fg/daily-stock",
+    icon: IconPackages,
+    roles: ["KOORDINATOR_IN", "KOORDINATOR_OUT", "INVENTORY", "QUALITY_CONTROL", "SUPERVISOR", "SUPER_ADMIN", "ADMIN"],
+    color: "cyan",
   },
   {
     label: "Scanner",
     href: "/fg/scan",
     icon: IconScan,
-    roles: [],
+    roles: ["KOORDINATOR_IN", "KOORDINATOR_OUT", "INVENTORY", "SUPERVISOR", "SUPER_ADMIN", "ADMIN"],
     color: "violet",
   },
   {
     label: "Update Lokasi",
     href: "/fg/stock-opname",
     icon: IconMapPin,
-    roles: ["INVENTORY", "SUPERVISOR"],
+    roles: ["INVENTORY", "SUPERVISOR", "SUPER_ADMIN"],
     color: "grape",
   },
   {
     label: "Relocation",
     href: "/fg/relocation",
     icon: IconArrowsShuffle,
-    roles: ["INVENTORY", "SUPERVISOR"],
+    roles: ["INVENTORY", "SUPERVISOR", "SUPER_ADMIN"],
     color: "orange",
   },
   {
     label: "Admin IT",
     href: "/fg/admin-it",
     icon: IconUsers,
-    roles: ["ADMIN", "SUPERVISOR"],
+    roles: ["ADMIN", "SUPER_ADMIN"],
     color: "pink",
   },
   {
     label: "Report",
     href: "/fg/report",
     icon: IconFileReport,
-    roles: ["SUPERVISOR"],
+    roles: ["SUPERVISOR", "SUPER_ADMIN"],
     color: "gray",
   },
   {
     label: "Master Barang",
     href: "/fg/master-barang",
     icon: IconBuilding,
-    roles: ["SUPERVISOR"],
+    roles: ["SUPERVISOR", "SUPER_ADMIN"],
     color: "dark",
   },
   {
     label: "Master Rak",
     href: "/fg/master-rak",
     icon: IconBuilding,
-    roles: ["SUPERVISOR"],
+    roles: ["SUPERVISOR", "SUPER_ADMIN"],
     color: "dark",
   },
   {
     label: "Master Resto",
     href: "/fg/master-resto",
     icon: IconBuilding,
-    roles: ["SUPERVISOR"],
+    roles: ["SUPERVISOR", "SUPER_ADMIN"],
     color: "dark",
   },
   {
     label: "Users",
     href: "/fg/users",
     icon: IconUsers,
-    roles: ["SUPERVISOR", "ADMIN"],
+    roles: ["SUPER_ADMIN"],
     color: "pink",
   },
 ];
@@ -177,9 +185,10 @@ export default function FgLayout({ children }: { children: React.ReactNode }) {
   };
 
   const userRole = user?.role || "";
-  const isSpv = userRole === "SUPERVISOR";
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const isReviewer = userRole === "REVIEWER";
   const filteredMenu = menuItems.filter(
-    (item) => item.roles.length === 0 || item.roles.includes(userRole) || isSpv,
+    (item) => (isSuperAdmin || item.roles.includes(userRole)) && (!isReviewer || item.roles.length === 0),
   );
 
   if (!user) return null;

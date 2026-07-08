@@ -1,16 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import {
-  SimpleGrid,
-  Text,
-  Title,
-  Group,
-  Table,
-  Badge,
-  Box,
-  Paper,
-  Tabs,
-} from "@mantine/core";
+import { SimpleGrid, Text, Title, Group, Badge, Box, Paper, Tabs } from "@mantine/core";
+import { Table } from '../components/Table';
 import {
   IconPackages,
   IconAlertTriangle,
