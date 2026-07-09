@@ -116,14 +116,14 @@ export default function WMSLayout({ children }: { children: React.ReactNode }) {
     return (
         <AppShell
             header={{ height: 60 }}
-            navbar={{ width: 250, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+            navbar={{ width: 250, breakpoint: 'sm', collapsed: { desktop: !opened, mobile: !opened } }}
             padding="md"
             style={{ background: '#f8f9fa' }}
         >
             <AppShell.Header>
                 <Group h="100%" px="md" justify="space-between" style={{ background: '#1c1c1c', color: 'white', borderBottom: `3px solid ${roleLineColor[userRole] || '#1c1c1c'}` }}>
                     <Group>
-                        <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="white" />
+                        <Burger opened={opened} onClick={toggle} size="sm" color="white" />
                         <Title order={3} style={{ color: '#e6921e' }}>WMS PRO</Title>
                         <Text size="xs" c="dimmed" ml="sm">| {roleLabel[userRole] || 'User'}</Text>
                     </Group>
