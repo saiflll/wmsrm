@@ -17,6 +17,15 @@ export class InboundPlanning {
     @Column({ nullable: true })
     supplier: string;
 
+    @Column({ type: 'float', nullable: true })
+    qty: number; // planned qty
+
+    @Column({ type: 'float', nullable: true })
+    qty_diterima: number; // actual received qty
+
+    @Column({ type: 'simple-json', nullable: true })
+    alokasi: { tujuan: string; qty: number }[];
+
     @Column({ type: 'timestamp', nullable: true })
     estimasi_datang: Date; // Planned ETA
 

@@ -1,7 +1,7 @@
 "use client";
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, Autocomplete, Grid, ActionIcon } from "@mantine/core";
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, Autocomplete, Grid, ActionIcon, Modal, NumberInput, Textarea, Divider } from "@mantine/core";
 import { Table } from '../components/Table';
 import {
   IconPlus,
@@ -31,10 +31,14 @@ export default function DriverPlanningPage() {
     driver_name: "",
     plat_nomor: "",
     supplier: "",
+    qty: 0,
     estimasi_datang: "",
     status: "WAIT",
     note: "",
   });
+
+  const [koreksiModal, setKoreksiModal] = useState<{ open: boolean; plan: any }>({ open: false, plan: null });
+  const [koreksiForm, setKoreksiForm] = useState<any>({ qty_diterima: 0, alokasi: [], keterangan: '' });
 
   const pf = (k: string, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
 
@@ -53,7 +57,7 @@ export default function DriverPlanningPage() {
       setCustomers(unwrap(cRes));
       setLogs(unwrap(lRes));
     } catch (e) {
-      console.error("Load driver planning data failed:", e);
+      console.error("Load planning inbound data failed:", e);
     }
   };
 
@@ -74,6 +78,7 @@ export default function DriverPlanningPage() {
         driver_name: "",
         plat_nomor: "",
         supplier: "",
+        qty: 0,
         estimasi_datang: "",
         status: "WAIT",
         note: "",
@@ -86,7 +91,7 @@ export default function DriverPlanningPage() {
   };
 
   const deletePlan = async (id: number) => {
-    if (!confirm("Hapus jadwal planning driver ini?")) return;
+    if (!confirm("Hapus jadwal planning inbound ini?")) return;
     try {
       await api().delete(`/inbound-planning/${id}`);
       notifications.show({ title: "Sukses", message: "Planning dihapus", color: "orange" });
@@ -96,8 +101,31 @@ export default function DriverPlanningPage() {
     }
   };
 
-  const processInbound = (p: any) => {
-    router.push(`/wms/inbound?no_po=${encodeURIComponent(p.no_po)}&supplier=${encodeURIComponent(p.supplier || "")}`);
+  const openKoreksiModal = (p: any) => {
+    setKoreksiModal({ open: true, plan: p });
+    setKoreksiForm({ qty_diterima: p.qty || 0, alokasi: p.alokasi || [], keterangan: p.note || '' });
+  };
+
+  const closeKoreksiModal = () => {
+    setKoreksiModal({ open: false, plan: null });
+    setKoreksiForm({ qty_diterima: 0, alokasi: [], keterangan: '' });
+  };
+
+  const submitKoreksi = async () => {
+    const p = koreksiModal.plan;
+    if (!p) return;
+    try {
+      await api().put(`/inbound-planning/${p.id}`, {
+        qty_diterima: koreksiForm.qty_diterima,
+        alokasi: koreksiForm.alokasi,
+        note: koreksiForm.keterangan,
+      });
+      notifications.show({ title: 'Sukses', message: 'Koreksi planning inbound disimpan', color: 'green' });
+      closeKoreksiModal();
+      router.push(`/wms/inbound?no_po=${encodeURIComponent(p.no_po)}&supplier=${encodeURIComponent(p.supplier || "")}`);
+    } catch (e: any) {
+      notifications.show({ title: 'Error', message: unwrap(e.response)?.message || 'Gagal menyimpan koreksi', color: 'red' });
+    }
   };
 
   // Option lists
@@ -163,7 +191,7 @@ export default function DriverPlanningPage() {
       >
         <Title order={4} style={{ color: "#111827", fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
           <IconBuildingWarehouse size={20} style={{ color: "#4f46e5" }} />
-          PLANNING DRIVER INBOUND
+          PLANNING INBOUND
         </Title>
       </Box>
 
@@ -174,7 +202,7 @@ export default function DriverPlanningPage() {
             <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
               <Stack gap="xs">
                 <Text fw={800} size="sm" c="indigo" mb={4} style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: 4 }}>
-                  {editPlanId ? "EDIT JADWAL DRIVER" : "TAMBAH JADWAL DRIVER"}
+                  {editPlanId ? "EDIT PLANNING INBOUND" : "TAMBAH PLANNING INBOUND"}
                 </Text>
                 
                 <Autocomplete
@@ -212,6 +240,15 @@ export default function DriverPlanningPage() {
                   data={supplierOpts}
                   value={form.supplier}
                   onChange={(v) => pf("supplier", v)}
+                />
+
+                <NumberInput
+                  label="Qty Planning"
+                  size="xs"
+                  placeholder="Jumlah qty yang diplanning..."
+                  value={form.qty}
+                  onChange={(v) => pf("qty", Number(v))}
+                  min={0}
                 />
 
                 <TextInput
@@ -382,7 +419,7 @@ export default function DriverPlanningPage() {
                                   size="xs"
                                   color="blue"
                                   variant="light"
-                                  onClick={() => processInbound(p)}
+                                  onClick={() => openKoreksiModal(p)}
                                   style={{ padding: "0 6px", fontSize: 10 }}
                                 >
                                   Proses Inbound
@@ -409,6 +446,7 @@ export default function DriverPlanningPage() {
                                     driver_name: p.driver_name || "",
                                     plat_nomor: p.plat_nomor || "",
                                     supplier: p.supplier || "",
+                                    qty: p.qty || 0,
                                     estimasi_datang: dStr,
                                     status: p.status,
                                     note: p.note || "",
@@ -434,7 +472,7 @@ export default function DriverPlanningPage() {
                       <Table.Tr>
                         <Table.Td colSpan={10} align="center">
                           <Text size="xs" c="dimmed">
-                            Tidak ada jadwal planning driver.
+                            Tidak ada jadwal planning inbound.
                           </Text>
                         </Table.Td>
                       </Table.Tr>
@@ -446,6 +484,57 @@ export default function DriverPlanningPage() {
           </Grid.Col>
         </Grid>
       </Box>
+
+      <Modal opened={koreksiModal.open} onClose={closeKoreksiModal} title="Koreksi Planning Inbound" size="md">
+        {koreksiModal.plan && (
+          <Stack gap="xs">
+            <Box style={{ background: '#f8f9fa', borderRadius: 6, padding: '8px 10px', fontSize: 12 }}>
+              <Text size="xs">No PO: <b>{koreksiModal.plan.no_po}</b></Text>
+              <Text size="xs">Supplier: <b>{koreksiModal.plan.supplier || '-'}</b></Text>
+              <Text size="xs">Qty Planning: <b>{koreksiModal.plan.qty || 0}</b></Text>
+            </Box>
+            <NumberInput
+              label="Qty Diterima"
+              size="xs"
+              value={koreksiForm.qty_diterima}
+              onChange={(v) => setKoreksiForm((p: any) => ({ ...p, qty_diterima: Number(v) }))}
+              min={0}
+            />
+            <Text size="xs" c="dimmed">
+              Selisih: <b>{(koreksiModal.plan.qty || 0) - koreksiForm.qty_diterima}</b>
+            </Text>
+            <Divider label="Alokasi Selisih (opsional)" labelPosition="center" />
+            {['Waste', 'Reject', 'Retur Supplier'].map((t) => (
+              <NumberInput
+                key={t}
+                label={t}
+                size="xs"
+                value={koreksiForm.alokasi.find((a: any) => a.tujuan === t)?.qty || 0}
+                onChange={(v) => {
+                  const val = Number(v) || 0;
+                  setKoreksiForm((p: any) => {
+                    const existing = p.alokasi.filter((a: any) => a.tujuan !== t);
+                    if (val > 0) existing.push({ tujuan: t, qty: val });
+                    return { ...p, alokasi: existing };
+                  });
+                }}
+                min={0}
+              />
+            ))}
+            <Textarea
+              label="Keterangan"
+              size="xs"
+              value={koreksiForm.keterangan}
+              onChange={(e) => setKoreksiForm((p: any) => ({ ...p, keterangan: e.target.value }))}
+              minRows={2}
+            />
+            <Group justify="flex-end" mt="sm">
+              <Button size="xs" color="gray" variant="outline" onClick={closeKoreksiModal}>Batal</Button>
+              <Button size="xs" color="blue" onClick={submitKoreksi}>Simpan & Lanjut ke Inbound</Button>
+            </Group>
+          </Stack>
+        )}
+      </Modal>
     </Box>
   );
 }

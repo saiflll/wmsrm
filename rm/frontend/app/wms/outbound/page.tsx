@@ -129,7 +129,7 @@ export default function OutboundPage() {
       await api().post("/inventory/outbound/confirm", { no_ref: noRef });
       notifications.show({
         title: "Sukses",
-        message: `Picking plan ${noRef} berhasil dicheckout dari gudang`,
+        message: `Planning Outbound ${noRef} berhasil dicheckout dari gudang`,
         color: "green",
       });
       load();
@@ -143,12 +143,12 @@ export default function OutboundPage() {
   };
 
   const cancelPicking = async (noRef: string) => {
-    if (!confirm(`Apakah Anda yakin ingin membatalkan Picking Plan ${noRef}? Stok reserved akan dibebaskan kembali.`)) return;
+    if (!confirm(`Apakah Anda yakin ingin membatalkan Planning Outbound ${noRef}? Stok reserved akan dibebaskan kembali.`)) return;
     try {
       await api().delete(`/inventory/picking/${encodeURIComponent(noRef)}`);
       notifications.show({
         title: "Sukses",
-        message: `Picking plan ${noRef} berhasil dibatalkan`,
+        message: `Planning Outbound ${noRef} berhasil dibatalkan`,
         color: "green",
       });
       load();
@@ -560,13 +560,13 @@ export default function OutboundPage() {
                   <IconClipboardCheck size={16} />
                 </ThemeIcon>
                 <Text fw={800} size="sm" c="blue">
-                  ANTREAN PICKING PLAN ({filteredPending.length})
+                  ANTREAN PLANNING OUTBOUND ({filteredPending.length})
                 </Text>
               </Group>
 
               {filteredPending.length === 0 ? (
                 <Box p="md" style={{ textAlign: "center", border: "1px dashed #cbd5e1", borderRadius: 8 }}>
-                  <Text c="dimmed" size="xs">Tidak ada Picking Plan pending checkout.</Text>
+                  <Text c="dimmed" size="xs">Tidak ada Planning Outbound pending checkout.</Text>
                 </Box>
               ) : (
                 <Grid gutter="xs">

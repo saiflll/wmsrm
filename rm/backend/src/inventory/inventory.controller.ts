@@ -174,6 +174,24 @@ export class InventoryController {
         return this.svc.getStockChartData(barangId ? +barangId : undefined);
     }
 
+    @Get('dashboard/occupancy')
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    getDashboardOccupancy() {
+        return this.svc.getOccupancyData();
+    }
+
+    @Get('dashboard/ofti')
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    getDashboardOFTI(@Query('from') from?: string, @Query('to') to?: string) {
+        return this.svc.getOFTIData(from, to);
+    }
+
+    @Get('dashboard/serapan-ayam')
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    getDashboardSerapanAyam(@Query('from') from?: string, @Query('to') to?: string) {
+        return this.svc.getSerapanAyamData(from, to);
+    }
+
     // ========== INVENTORY MATRIX ==========
     @Get('matrix')
     @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)

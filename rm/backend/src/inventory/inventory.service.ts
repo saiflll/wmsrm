@@ -11,6 +11,8 @@ import { Barang } from '../barang/barang.entity';
 import { Gudang } from '../gudang/gudang.entity';
 import { Shift } from '../shifts/shift.entity';
 import { InboundPlanning } from '../inbound-planning/inbound-planning.entity';
+import { PlanningAyam } from '../planning-ayam/planning-ayam.entity';
+import { OutboundAyam } from '../outbound-ayam/outbound-ayam.entity';
 import {
   InboundItemDto,
   OutboundItemDto,
@@ -27,6 +29,9 @@ export class InventoryService {
     @InjectRepository(Barang) private barangRepo: Repository<Barang>,
     @InjectRepository(Gudang) private gudangRepo: Repository<Gudang>,
     @InjectRepository(Shift) private shiftRepo: Repository<Shift>,
+    @InjectRepository(InboundPlanning) private inboundPlanningRepo: Repository<InboundPlanning>,
+    @InjectRepository(PlanningAyam) private planningAyamRepo: Repository<PlanningAyam>,
+    @InjectRepository(OutboundAyam) private outboundAyamRepo: Repository<OutboundAyam>,
     private dataSource: DataSource,
   ) {}
 
@@ -260,15 +265,16 @@ export class InventoryService {
           );
         }
 
+        const actualQty = item.actual_qty !== undefined && item.actual_qty !== null ? item.actual_qty : item.qty;
         const availableQty = stock.qty - stock.reserved_qty;
-        if (availableQty < item.qty) {
+        if (availableQty < actualQty) {
           throw new BadRequestException(
-            `Stok tersedia tidak cukup untuk ${barang.nama} di ${gudang.name} (Tersedia: ${availableQty}, Diminta: ${item.qty})`,
+            `Stok tersedia tidak cukup untuk ${barang.nama} di ${gudang.name} (Tersedia: ${availableQty}, Diminta: ${actualQty})`,
           );
         }
 
-        // Increment reserved_qty
-        stock.reserved_qty += item.qty;
+        // Increment reserved_qty by actual qty
+        stock.reserved_qty += actualQty;
         await manager.save(Stock, stock);
 
         const shift = item.shift_id
@@ -282,6 +288,9 @@ export class InventoryService {
           barang,
           gudang,
           qty: item.qty,
+          actual_qty: actualQty,
+          alokasi: item.alokasi || [],
+          keterangan: item.keterangan,
           satuan: item.satuan || barang.satuan,
           tujuan: item.tujuan,
           shift: shift || undefined,
@@ -320,13 +329,14 @@ export class InventoryService {
           throw new BadRequestException(`Stok tidak ditemukan untuk ${log.barang.nama} di ${log.gudang.name}`);
         }
 
-        if (stock.qty < log.qty) {
+        const actualQty = log.actual_qty !== undefined && log.actual_qty !== null ? log.actual_qty : log.qty;
+        if (stock.qty < actualQty) {
           throw new BadRequestException(`Stok fisik tidak cukup untuk ${log.barang.nama} di ${log.gudang.name}`);
         }
 
         // Deduct physical qty and reserved_qty
-        stock.qty -= log.qty;
-        stock.reserved_qty = Math.max(0, stock.reserved_qty - log.qty);
+        stock.qty -= actualQty;
+        stock.reserved_qty = Math.max(0, stock.reserved_qty - actualQty);
 
         if (stock.qty <= 0) {
           await manager.remove(Stock, stock);
@@ -367,7 +377,8 @@ export class InventoryService {
         });
 
         if (stock) {
-          stock.reserved_qty = Math.max(0, stock.reserved_qty - log.qty);
+          const actualQty = log.actual_qty !== undefined && log.actual_qty !== null ? log.actual_qty : log.qty;
+          stock.reserved_qty = Math.max(0, stock.reserved_qty - actualQty);
           await manager.save(Stock, stock);
         }
 
@@ -950,6 +961,181 @@ export class InventoryService {
     }
 
     return { dates, series };
+  }
+
+  // Occupancy data: capacity usage per warehouse (gudang)
+  async getOccupancyData() {
+    const gudangs = await this.gudangRepo.find({ order: { id: 'ASC' } });
+    const stocks = await this.stockRepo.find({ relations: ['gudang'] });
+
+    const gudangStockMap: Record<number, number> = {};
+    for (const s of stocks) {
+      if (!s.gudang) continue;
+      gudangStockMap[s.gudang.id] = (gudangStockMap[s.gudang.id] || 0) + s.qty;
+    }
+
+    const gauges = gudangs.map((g) => {
+      const used = gudangStockMap[g.id] || 0;
+      const cap = g.capacity || 1000;
+      const pct = cap > 0 ? Math.min(100, Math.round((used / cap) * 100)) : 0;
+      let color = '#2b8a3e'; // green
+      if (pct >= 90) color = '#e03131'; // red
+      else if (pct >= 75) color = '#f76707'; // orange
+      else if (pct >= 50) color = '#f59f00'; // yellow
+      return {
+        id: g.id,
+        name: g.name,
+        zone: g.zone || '-',
+        used,
+        capacity: cap,
+        pct,
+        color,
+      };
+    });
+
+    // Weekly occupancy summary (last 4 weeks) grouped by zone
+    const today = new Date();
+    const weeks: string[] = [];
+    for (let i = 3; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i * 7);
+      const mon = new Date(d);
+      mon.setDate(mon.getDate() - mon.getDay() + 1);
+      weeks.push(mon.toISOString().split('T')[0]);
+    }
+
+    const zoneGroups: Record<string, { label: string; color: string; data: number[] }> = {};
+    const zoneColor: Record<string, string> = {
+      'CS FROZEN': '#228be6',
+      'CHILL': '#40c057',
+      'DRY A': '#fd7e14',
+      'DRY B': '#be4bdb',
+      'DRY FG': '#1098ad',
+      'WASTE': '#868e96',
+    };
+
+    for (let w = 0; w < weeks.length; w++) {
+      const weekEnd = new Date(weeks[w]);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      const weekLogs = await this.logRepo.find({
+        where: {
+          created_at: Between(new Date(weeks[w]), weekEnd),
+          type: In([LogType.INBOUND, LogType.OUTBOUND]),
+        },
+        relations: ['gudang'],
+      });
+      const zoneQty: Record<string, number> = {};
+      for (const log of weekLogs) {
+        const zone = log.gudang?.zone || 'UNKNOWN';
+        zoneQty[zone] = (zoneQty[zone] || 0) + log.qty;
+      }
+      for (const [zone, qty] of Object.entries(zoneQty)) {
+        if (!zoneGroups[zone]) {
+          zoneGroups[zone] = { label: zone, color: zoneColor[zone] || '#868e96', data: new Array(weeks.length).fill(0) };
+        }
+        zoneGroups[zone].data[w] = Math.round(qty);
+      }
+    }
+
+    return {
+      gauges,
+      weeks: weeks.map((w, i) => ({ key: w, label: `Minggu ${i + 1}` })),
+      series: Object.values(zoneGroups),
+    };
+  }
+
+  // OFTI data: inbound planning vs actual (on-time vs late)
+  async getOFTIData(from?: string, to?: string) {
+    const start = from ? new Date(from) : new Date();
+    start.setDate(start.getDate() - 30);
+    const end = to ? new Date(to + 'T23:59:59') : new Date();
+
+    const plans = await this.inboundPlanningRepo.find({
+      where: { estimasi_datang: Between(start, end) },
+      order: { estimasi_datang: 'ASC' },
+    });
+
+    const dayNames = ['M', 'Se', 'R', 'K', 'J', 'Sb', 'M'];
+    const daily: Record<string, { ontime: number; late: number; label: string }> = {};
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().split('T')[0];
+      daily[key] = { ontime: 0, late: 0, label: dayNames[d.getDay()] };
+    }
+
+    const weekly: Record<string, { ontime: number; late: number; label: string }> = {};
+
+    for (const p of plans) {
+      if (!p.estimasi_datang) continue;
+      const planDate = new Date(p.estimasi_datang);
+      const key = planDate.toISOString().split('T')[0];
+      if (p.status === 'DONE' && p.tanggal_realisasi) {
+        const real = new Date(p.tanggal_realisasi);
+        const isLate = p.selisih_menit !== null && p.selisih_menit > 0;
+        if (daily[key]) {
+          if (isLate) daily[key].late += 1;
+          else daily[key].ontime += 1;
+        }
+        // weekly bucket by ISO week number
+        const tmp = new Date(real);
+        tmp.setHours(0, 0, 0, 0);
+        tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
+        const yearStart = new Date(tmp.getFullYear(), 0, 1);
+        const weekNo = Math.ceil((((tmp.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+        const wKey = `W${String(weekNo).padStart(2, '0')}`;
+        if (!weekly[wKey]) weekly[wKey] = { ontime: 0, late: 0, label: wKey };
+        if (isLate) weekly[wKey].late += 1;
+        else weekly[wKey].ontime += 1;
+      } else if (p.status === 'WAIT') {
+        // still planned, count as planned (not actual)
+      }
+    }
+
+    const dailyArray = Object.entries(daily).map(([date, v]) => ({ date, ...v })).sort((a, b) => a.date.localeCompare(b.date));
+    const weeklyArray = Object.entries(weekly).map(([week, v]) => ({ week, ...v })).sort((a, b) => a.week.localeCompare(b.week));
+
+    // OTIF weekly percentages
+    const otifSeries = weeklyArray.map((w) => {
+      const total = w.ontime + w.late;
+      const otif = total > 0 ? Math.round((w.ontime / total) * 10000) / 100 : 0;
+      const notOtif = total > 0 ? Math.round((w.late / total) * 10000) / 100 : 0;
+      return { week: w.week, otif, notOtif };
+    });
+
+    return { daily: dailyArray.slice(-7), weekly: otifSeries };
+  }
+
+  // Serapan Ayam data: planned vs actual outbound ayam
+  async getSerapanAyamData(from?: string, to?: string) {
+    const start = from ? new Date(from) : new Date();
+    start.setDate(start.getDate() - 7);
+    const end = to ? new Date(to + 'T23:59:59') : new Date();
+
+    const plans = await this.planningAyamRepo.find({
+      where: { tanggal_planning: Between(start, end) },
+      relations: ['barang'],
+    });
+    const outbounds = await this.outboundAyamRepo.find({
+      where: { created_at: Between(start, end) },
+      relations: ['planning_ayam', 'planning_ayam.barang'],
+    });
+
+    const dayNames = ['M', 'Se', 'R', 'K', 'J', 'Sb', 'M'];
+    const map: Record<string, { date: string; label: string; planning: number; serapan: number }> = {};
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().split('T')[0];
+      map[key] = { date: key, label: dayNames[d.getDay()], planning: 0, serapan: 0 };
+    }
+
+    for (const p of plans) {
+      const key = new Date(p.tanggal_planning).toISOString().split('T')[0];
+      if (map[key]) map[key].planning += p.qty;
+    }
+    for (const o of outbounds) {
+      const key = o.created_at.toISOString().split('T')[0];
+      if (map[key]) map[key].serapan += o.qty_aktual;
+    }
+
+    return { data: Object.values(map).sort((a, b) => a.date.localeCompare(b.date)) };
   }
 
   // Inventory matrix data (daily in/out/balance per item)

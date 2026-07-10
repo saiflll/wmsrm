@@ -1,4 +1,13 @@
-import { IsNotEmpty, IsOptional, IsString, IsDateString, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsDateString, IsNumber, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class AlokasiItemDto {
+    @IsString()
+    tujuan: string;
+
+    @IsNumber()
+    qty: number;
+}
 
 export class CreateInboundPlanningDto {
     @IsNotEmpty() @IsString()
@@ -12,6 +21,15 @@ export class CreateInboundPlanningDto {
 
     @IsOptional() @IsString()
     supplier?: string;
+
+    @IsOptional() @IsNumber()
+    qty?: number;
+
+    @IsOptional() @IsNumber()
+    qty_diterima?: number;
+
+    @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => AlokasiItemDto)
+    alokasi?: AlokasiItemDto[];
 
     @IsOptional() @IsDateString()
     estimasi_datang?: string;
@@ -35,6 +53,15 @@ export class UpdateInboundPlanningDto {
 
     @IsOptional() @IsString()
     supplier?: string;
+
+    @IsOptional() @IsNumber()
+    qty?: number;
+
+    @IsOptional() @IsNumber()
+    qty_diterima?: number;
+
+    @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => AlokasiItemDto)
+    alokasi?: AlokasiItemDto[];
 
     @IsOptional() @IsDateString()
     estimasi_datang?: string;

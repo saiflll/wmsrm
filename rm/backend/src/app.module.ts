@@ -16,6 +16,8 @@ import { Stock } from './inventory/stock.entity';
 import { StockLog } from './inventory/stock-log.entity';
 import { Customer } from './customers/customer.entity';
 import { InboundPlanning } from './inbound-planning/inbound-planning.entity';
+import { PlanningAyam } from './planning-ayam/planning-ayam.entity';
+import { OutboundAyam } from './outbound-ayam/outbound-ayam.entity';
 
 // Modules
 import { AuthModule } from './auth/auth.module';
@@ -27,6 +29,8 @@ import { InventoryModule } from './inventory/inventory.module';
 import { CustomersModule } from './customers/customers.module';
 import { HardwareModule } from './hardware/hardware.module';
 import { InboundPlanningModule } from './inbound-planning/inbound-planning.module';
+import { PlanningAyamModule } from './planning-ayam/planning-ayam.module';
+import { OutboundAyamModule } from './outbound-ayam/outbound-ayam.module';
 import { ShiftsController } from './shifts/shifts.controller';
 
 import { SeedService } from './seed.service';
@@ -39,12 +43,12 @@ import { SeedService } from './seed.service';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get('DATABASE_URL'),
-        entities: [User, LoginLog, Shift, Suplayer, Barang, Gudang, Transaksi, Stock, StockLog, Customer, InboundPlanning],
+        entities: [User, LoginLog, Shift, Suplayer, Barang, Gudang, Transaksi, Stock, StockLog, Customer, InboundPlanning, PlanningAyam, OutboundAyam],
         synchronize: true,
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, LoginLog, Shift, Suplayer, Barang, Gudang, Transaksi, Stock, StockLog, Customer, InboundPlanning]),
+    TypeOrmModule.forFeature([User, LoginLog, Shift, Suplayer, Barang, Gudang, Transaksi, Stock, StockLog, Customer, InboundPlanning, PlanningAyam, OutboundAyam]),
     AuthModule,
     UsersModule,
     BarangModule,
@@ -52,9 +56,11 @@ import { SeedService } from './seed.service';
     GudangModule,
     InventoryModule,
     CustomersModule,
-    HardwareModule,
-    InboundPlanningModule,
-  ],
+        HardwareModule,
+        InboundPlanningModule,
+        PlanningAyamModule,
+        OutboundAyamModule,
+    ],
   controllers: [AppController, ShiftsController],
   providers: [AppService, SeedService],
 })

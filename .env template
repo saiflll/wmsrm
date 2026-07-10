@@ -4,5 +4,5 @@ POSTGRES_DB=wms_db
 DATABASE_URL=postgresql://wms_user:wms_password@db:5432/wms_db
 
 JWT_SECRET=super_secret_key_change_me
-PORT=3001
-NEXT_PUBLIC_API_URL=http://localhost:3001
+PORT=3011
+NEXT_PUBLIC_API_URL=http://localhost:3011

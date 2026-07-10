@@ -1,6 +1,14 @@
 import { IsNotEmpty, IsOptional, IsNumber, IsString, IsArray, ValidateNested, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
 
+class AlokasiItemDto {
+    @IsString()
+    tujuan: string;
+
+    @IsNumber()
+    qty: number;
+}
+
 export class InboundItemDto {
     @IsNotEmpty() @IsString()
     no_po: string;
@@ -140,6 +148,15 @@ export class PickingItemDto {
 
     @IsOptional() @IsString()
     batch_no?: string;
+
+    @IsOptional() @IsNumber()
+    actual_qty?: number;
+
+    @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => AlokasiItemDto)
+    alokasi?: AlokasiItemDto[];
+
+    @IsOptional() @IsString()
+    keterangan?: string;
 }
 
 export class PickingPostDto {

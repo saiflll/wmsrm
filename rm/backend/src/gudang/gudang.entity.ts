@@ -41,6 +41,9 @@ export class Gudang {
     @Column({ nullable: true })
     kolom: string; // A, B, C ...
 
+    @Column({ type: 'float', default: 1000, nullable: true })
+    capacity: number; // kapasitas maksimal gudang/rak
+
     @ManyToOne(() => Barang, { nullable: true, eager: true })
     barang: Barang;
 

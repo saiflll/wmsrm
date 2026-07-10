@@ -60,6 +60,15 @@ export class StockLog {
     @Column({ nullable: true })
     status: string; // 'RESERVED' | 'CONFIRMED' for picking logs
 
+    @Column({ type: 'float', nullable: true })
+    actual_qty: number;
+
+    @Column({ type: 'simple-json', nullable: true })
+    alokasi: { tujuan: string; qty: number }[];
+
+    @Column({ type: 'text', nullable: true })
+    keterangan: string;
+
     @ManyToOne(() => Shift, { eager: true, nullable: true })
     shift: Shift;
 
