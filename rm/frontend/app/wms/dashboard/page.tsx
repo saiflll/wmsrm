@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Box, Group, Paper, Stack, Text, Title, Badge, Button, Loader, TextInput
 } from '@mantine/core';
+import { DateInput } from '@mantine/dates';
 import {
     IconPackage, IconTrendingUp, IconTrendingDown, IconRefresh, IconCalendarStats,
     IconBuildingWarehouse, IconAlertTriangle, IconChartBar, IconChartLine,
@@ -223,6 +224,58 @@ const HorizontalBarChart = ({ data, leftKey, rightKey, leftColor, rightColor }) 
     );
 };
 
+const ReportChart = ({ data }) => {
+    if (!data?.length) return <Text size="xs" c="dimmed" ta="center" py="md">Tidak ada data.</Text>;
+    const labelWidth = 60;
+    const width = Math.max(760, data.length * labelWidth);
+    const height = 240;
+    const pad = { top: 30, right: 30, bottom: 50, left: 60 };
+    const chartW = width - pad.left - pad.right;
+    const chartH = height - pad.top - pad.bottom;
+    const maxVal = Math.max(...data.flatMap((d) => [d.inbound || 0, d.outbound || 0]), 1);
+    const groupW = chartW / data.length;
+    const barW = Math.min(24, (groupW - 16) / 2);
+
+    return (
+        <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
+            <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
+                {[0, 0.25, 0.5, 0.75, 1].map((p, i) => {
+                    const y = pad.top + chartH * p;
+                    const val = Math.round(maxVal * (1 - p));
+                    return (
+                        <g key={i}>
+                            <line x1={pad.left} y1={y} x2={width - pad.right} y2={y} stroke="#e9ecef" strokeDasharray="3,3" />
+                            <text x={pad.left - 8} y={y + 4} textAnchor="end" fontSize={10} fill="#868e96">{val >= 1000 ? `${(val/1000).toFixed(1)}k` : val}</text>
+                        </g>
+                    );
+                })}
+                {data.map((d, wIdx) => {
+                    const inH = ((d.inbound || 0) / maxVal) * chartH;
+                    const outH = ((d.outbound || 0) / maxVal) * chartH;
+                    const x = pad.left + wIdx * groupW + (groupW - barW * 2 - 4) / 2;
+                    return (
+                        <g key={wIdx}>
+                            <rect x={x} y={pad.top + chartH - inH} width={barW} height={inH} rx={3} fill="#40c057" opacity={0.9} />
+                            <rect x={x + barW + 4} y={pad.top + chartH - outH} width={barW} height={outH} rx={3} fill="#e03131" opacity={0.9} />
+                            <text x={pad.left + wIdx * groupW + groupW / 2} y={height - 30} textAnchor="middle" fontSize={9} fill="#495057" fontWeight={600}>{d.week?.slice(5) || `W${wIdx+1}`}</text>
+                        </g>
+                    );
+                })}
+                <g transform={`translate(${width - pad.right + 8}, ${pad.top})`}>
+                    <g transform={`translate(0, 0)`}>
+                        <rect x={0} y={0} width={12} height={12} rx={2} fill="#40c057" />
+                        <text x={18} y={10} fontSize={10} fill="#495057">Inbound</text>
+                    </g>
+                    <g transform={`translate(0, 20)`}>
+                        <rect x={0} y={0} width={12} height={12} rx={2} fill="#e03131" />
+                        <text x={18} y={10} fontSize={10} fill="#495057">Outbound</text>
+                    </g>
+                </g>
+            </svg>
+        </Box>
+    );
+};
+
 export default function DashboardPage() {
     const [activeTab, setActiveTab] = useState('occupancy');
     const [stats, setStats] = useState(null);
@@ -233,6 +286,10 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [tableSearch, setTableSearch] = useState('');
     const [selectedZone, setSelectedZone] = useState(null);
+    const [exportFrom, setExportFrom] = useState<Date | null>(null);
+    const [exportTo, setExportTo] = useState<Date | null>(null);
+    const [showExportFilter, setShowExportFilter] = useState(false);
+    const [reportData, setReportData] = useState(null);
 
     useEffect(() => {
         loadBaseData();
@@ -242,6 +299,7 @@ export default function DashboardPage() {
         if (activeTab === 'occupancy' && !occupancyData) loadOccupancy();
         if (activeTab === 'ofti' && !oftiData) loadOFTI();
         if (activeTab === 'serapan' && !serapanData) loadSerapan();
+        if (activeTab === 'report' && !reportData) loadReport();
     }, [activeTab]);
 
     const loadBaseData = async () => {
@@ -293,6 +351,15 @@ export default function DashboardPage() {
             setSerapanData(unwrap(res));
         } catch (e) {
             console.error('Serapan load error', e);
+        }
+    };
+
+    const loadReport = async () => {
+        try {
+            const res = await api().get('/inventory/dashboard/inout-chart');
+            setReportData(unwrap(res));
+        } catch (e) {
+            console.error('Report load error', e);
         }
     };
 
@@ -548,12 +615,18 @@ export default function DashboardPage() {
                                     </Box>
                                     <div>
                                         <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>Planning Inbound vs Actual Inbound</Title>
-                                        <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>On Time (hijau) vs Late (merah) - Scroll 1 tahun</Text>
+                                        <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>On Time (hijau) vs Late (merah) - 1 tahun</Text>
                                     </div>
                                 </Group>
                                 <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
-                                    <Box style={{ minWidth: oftiData?.daily?.length * 40 || 400 }}>
-                                        <StackedBarChart data={oftiData?.daily} keys={['ontime', 'late']} colors={['#40c057', '#e03131']} />
+                                    <Box style={{ minWidth: (oftiData?.weekly?.length || 0) * 60 || 400 }}>
+                                        <SimpleBarChart 
+                                            series={[
+                                                { label: 'On Time', color: '#40c057', data: oftiData?.weekly?.map((d) => d.ontime) || [] },
+                                                { label: 'Late', color: '#e03131', data: oftiData?.weekly?.map((d) => d.late) || [] },
+                                            ]} 
+                                            labels={oftiData?.weekly?.map((d) => ({ key: d.week, label: d.week })) || []} 
+                                        />
                                     </Box>
                                 </Box>
                             </Paper>
@@ -565,11 +638,11 @@ export default function DashboardPage() {
                                     </Box>
                                     <div>
                                         <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>OTIF INBOUND CP3</Title>
-                                        <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>% OTIF vs NOT OTIF per minggu - Scroll 1 tahun</Text>
+                                        <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>% OTIF vs NOT OTIF per minggu - 1 tahun</Text>
                                     </div>
                                 </Group>
                                 <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
-                                    <Box style={{ minWidth: oftiData?.weekly?.length * 80 || 400 }}>
+                                    <Box style={{ minWidth: (oftiData?.weekly?.length || 0) * 80 || 400 }}>
                                         <HorizontalBarChart data={oftiData?.weekly} leftKey="otif" rightKey="notOtif" leftColor="#228be6" rightColor="#e03131" />
                                     </Box>
                                 </Box>
@@ -585,7 +658,7 @@ export default function DashboardPage() {
                                 </Box>
                                 <div>
                                     <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>Serapan Ayam</Title>
-                                    <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>Planning vs Serapan per minggu - Scroll 1 tahun</Text>
+                                    <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>Planning vs Serapan per minggu - 1 tahun</Text>
                                 </div>
                             </Group>
                             <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
@@ -595,7 +668,7 @@ export default function DashboardPage() {
                                             { label: 'Planning', color: '#4c6ef5', data: serapanData?.data?.map((d) => d.planning) || [] },
                                             { label: 'Serapan', color: '#be4bdb', data: serapanData?.data?.map((d) => d.serapan) || [] },
                                         ]} 
-                                        labels={serapanData?.data?.map((d) => ({ key: d.date, label: d.label })) || []} 
+                                        labels={serapanData?.data?.map((d) => ({ key: d.week, label: d.week })) || []} 
                                     />
                                 </Box>
                             </Box>
@@ -603,11 +676,20 @@ export default function DashboardPage() {
                     )}
 
                     {activeTab === 'report' && (
-                        <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow, textAlign: 'center' }}>
-                            <IconChartBar size={32} color="#adb5bd" />
-                            <Title order={6} c="dimmed">Report Dashboard</Title>
-                            <Text size="xs" c="dimmed">Fitur report lengkap akan menyusul.</Text>
-                        </Paper>
+                        <>
+                            <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
+                                <Group gap="xs" mb={6}>
+                                    <Box style={{ background: '#e7f5ff', borderRadius: 8, padding: 5 }}>
+                                        <IconChartBar size={18} color="#228be6" />
+                                    </Box>
+                                    <div>
+                                        <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>Inbound vs Outbound (1 Tahun)</Title>
+                                        <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>Scroll horizontal untuk data mingguan</Text>
+                                    </div>
+                                </Group>
+                                <ReportChart data={reportData} />
+                            </Paper>
+                        </>
                     )}
 
                     {/* Common mutation table */}
@@ -623,10 +705,23 @@ export default function DashboardPage() {
                                 </div>
                             </Group>
                             <Group gap={4}>
-                                <TextInput placeholder="Cari PO, Item..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 160 }} />
+                                <TextInput placeholder="Cari PO, Item..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 140 }} />
+                                <Button size="xs" variant={showExportFilter ? 'filled' : 'light'} color="gray" onClick={() => setShowExportFilter(!showExportFilter)}>
+                                    Filter
+                                </Button>
                                 <Button size="xs" variant="light" color="blue" leftSection={<IconDownload size={12} />} onClick={() => {
+                                    let exportLogs = filteredLogs;
+                                    if (exportFrom) {
+                                        const fromDate = new Date(exportFrom);
+                                        exportLogs = exportLogs.filter(log => new Date(log.created_at) >= fromDate);
+                                    }
+                                    if (exportTo) {
+                                        const toDate = new Date(exportTo);
+                                        toDate.setHours(23, 59, 59);
+                                        exportLogs = exportLogs.filter(log => new Date(log.created_at) <= toDate);
+                                    }
                                     const csv = ['Tipe,No PO/Ref,Item,Qty,Satuan,Batch,Expired,Rak,Tanggal,Supplier/Tujuan,Keterangan'].concat(
-                                        filteredLogs.slice(0, 100).map(log => [
+                                        exportLogs.map(log => [
                                             log.type,
                                             log.no_po || log.no_ref || '-',
                                             log.barang?.nama || '-',
@@ -644,12 +739,21 @@ export default function DashboardPage() {
                                     const url = URL.createObjectURL(blob);
                                     const a = document.createElement('a');
                                     a.href = url;
-                                    a.download = `mutasi_${new Date().toISOString().split('T')[0]}.csv`;
+                                    const fromStr = exportFrom ? exportFrom.toISOString().split('T')[0] : 'all';
+                                    const toStr = exportTo ? exportTo.toISOString().split('T')[0] : 'now';
+                                    a.download = `mutasi_${fromStr}_to_${toStr}.csv`;
                                     a.click();
                                     URL.revokeObjectURL(url);
                                 }}>Export CSV</Button>
                             </Group>
                         </Group>
+                        {showExportFilter && (
+                            <Group gap="xs" mb="sm">
+                                <DateInput label="Dari" size="xs" value={exportFrom} onChange={setExportFrom} style={{ width: 140 }} />
+                                <DateInput label="Sampai" size="xs" value={exportTo} onChange={setExportTo} style={{ width: 140 }} />
+                                <Button size="xs" variant="light" color="red" onClick={() => { setExportFrom(null); setExportTo(null); }} mt={18}>Reset</Button>
+                            </Group>
+                        )}
                         <Box style={{ overflowX: 'auto', maxHeight: 400 }}>
                             <Box component="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 900 }}>
                                 <Box component="thead" style={{ background: 'linear-gradient(90deg, #1a1a1a, #343a40)', position: 'sticky', top: 0, zIndex: 1 }}>

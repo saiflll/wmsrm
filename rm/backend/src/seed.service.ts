@@ -9,6 +9,9 @@ import { Gudang, GudangType, GudangZone } from './gudang/gudang.entity';
 import { Customer } from './customers/customer.entity';
 import { Stock } from './inventory/stock.entity';
 import { StockLog, LogType } from './inventory/stock-log.entity';
+import { InboundPlanning } from './inbound-planning/inbound-planning.entity';
+import { PlanningAyam } from './planning-ayam/planning-ayam.entity';
+import { OutboundAyam } from './outbound-ayam/outbound-ayam.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -22,6 +25,9 @@ export class SeedService implements OnApplicationBootstrap {
         @InjectRepository(Customer) private customerRepo: Repository<Customer>,
         @InjectRepository(Stock) private stockRepo: Repository<Stock>,
         @InjectRepository(StockLog) private logRepo: Repository<StockLog>,
+        @InjectRepository(InboundPlanning) private inboundPlanningRepo: Repository<InboundPlanning>,
+        @InjectRepository(PlanningAyam) private planningAyamRepo: Repository<PlanningAyam>,
+        @InjectRepository(OutboundAyam) private outboundAyamRepo: Repository<OutboundAyam>,
     ) { }
 
     async onApplicationBootstrap() {
@@ -31,6 +37,8 @@ export class SeedService implements OnApplicationBootstrap {
         await this.seedBarang();
         await this.seedCustomers();
         await this.seedStock();
+        await this.seedInboundPlanning();
+        await this.seedPlanningAyam();
     }
 
     private async seedUsers() {
@@ -167,6 +175,10 @@ export class SeedService implements OnApplicationBootstrap {
         const stocks: Partial<Stock>[] = [];
         const logs: Partial<StockLog>[] = [];
 
+        const now = new Date();
+        const oneYearAgo = new Date(now);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
         for (const brg of barangs) {
             const racks = brg.side ? dryRacks : wetRacks;
             if (!racks.length) continue;
@@ -185,6 +197,9 @@ export class SeedService implements OnApplicationBootstrap {
 
                 const batchNo = `LOT-${brg.sku?.slice(-3) || 'X'}-${2600 + Math.floor(Math.random() * 5)}`;
 
+                // Spread inbound log date across 1 year
+                const inboundDate = new Date(oneYearAgo.getTime() + Math.random() * (now.getTime() - oneYearAgo.getTime()));
+
                 stocks.push({
                     barang: brg, gudang: gdg,
                     batch_no: batchNo, qty,
@@ -194,7 +209,7 @@ export class SeedService implements OnApplicationBootstrap {
 
                 logs.push({
                     type: LogType.INBOUND,
-                    no_po: `PO-${String(Date.now()).slice(-6)}${i}`,
+                    no_po: `PO-${String(Math.floor(Math.random() * 900000) + 100000)}${i}`,
                     barang: brg, gudang: gdg,
                     qty: qty + Math.floor(Math.random() * 50),
                     satuan: brg.satuan,
@@ -202,18 +217,22 @@ export class SeedService implements OnApplicationBootstrap {
                     expiry_date: expDate,
                     supplier: ['JAPFA', 'PT. BINA SAN PRIMA', 'Kunci Mas'][Math.floor(Math.random() * 3)],
                     shift: shifts[Math.floor(Math.random() * shifts.length)],
+                    created_at: inboundDate,
                 });
 
-                if (Math.random() > 0.4) {
+                // Outbound log spread across 1 year
+                if (Math.random() > 0.3) {
+                    const outDate = new Date(inboundDate.getTime() + Math.random() * (now.getTime() - inboundDate.getTime()));
                     logs.push({
                         type: LogType.OUTBOUND,
-                        no_ref: `PICK-${String(Date.now()).slice(-5)}${Math.floor(Math.random() * 99)}`,
+                        no_ref: `PICK-${String(Math.floor(Math.random() * 90000) + 10000)}${Math.floor(Math.random() * 99)}`,
                         barang: brg, gudang: gdg,
                         qty: Math.floor(Math.random() * 30 + 10),
                         satuan: brg.satuan,
                         batch_no: batchNo,
                         tujuan: ['Gudang FG', 'Produksi Internal', 'Customer Ekstra'][Math.floor(Math.random() * 3)],
                         shift: shifts[Math.floor(Math.random() * shifts.length)],
+                        created_at: outDate,
                     });
                 }
 
@@ -221,6 +240,7 @@ export class SeedService implements OnApplicationBootstrap {
                     const extraRacks = racks.filter(r => r.id !== gdg.id);
                     if (extraRacks.length > 0) {
                         const targetGdg = extraRacks[Math.floor(Math.random() * extraRacks.length)];
+                        const relDate = new Date(inboundDate.getTime() + Math.random() * (now.getTime() - inboundDate.getTime()));
                         logs.push({
                             type: LogType.RELOCATION,
                             barang: brg, gudang: targetGdg, gudang_tujuan: gdg,
@@ -229,11 +249,13 @@ export class SeedService implements OnApplicationBootstrap {
                             batch_no: batchNo,
                             expiry_date: expDate,
                             shift: shifts[Math.floor(Math.random() * shifts.length)],
+                            created_at: relDate,
                         });
                     }
                 }
 
                 if (Math.random() > 0.7) {
+                    const opnameDate = new Date(inboundDate.getTime() + Math.random() * (now.getTime() - inboundDate.getTime()));
                     logs.push({
                         type: LogType.OPNAME,
                         barang: brg, gudang: gdg,
@@ -241,6 +263,7 @@ export class SeedService implements OnApplicationBootstrap {
                         satuan: brg.satuan,
                         batch_no: batchNo,
                         shift: shifts[Math.floor(Math.random() * shifts.length)],
+                        created_at: opnameDate,
                     });
                 }
             }
@@ -253,5 +276,101 @@ export class SeedService implements OnApplicationBootstrap {
             await this.logRepo.save(this.logRepo.create(logs.slice(i, i + 20)));
         }
         console.log(`✅ Seed stock (${stocks.length} positions) + mixed logs (In, Out, Move, Opname)`);
+    }
+
+    private async seedInboundPlanning() {
+        if (await this.inboundPlanningRepo.count() > 0) return;
+
+        const barangs = await this.barangRepo.find();
+        const now = new Date();
+        const oneYearAgo = new Date(now);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        const plans: Partial<InboundPlanning>[] = [];
+        const suppliers = ['JAPFA', 'PT. BINA SAN PRIMA', 'Kunci Mas', 'MUI Foods', 'CV Logistik Jaya'];
+
+        // Create ~100 planning records spread across 1 year
+        for (let i = 0; i < 100; i++) {
+            const planDate = new Date(oneYearAgo.getTime() + Math.random() * (now.getTime() - oneYearAgo.getTime()));
+            const isDone = Math.random() > 0.2;
+            const isLate = Math.random() > 0.6;
+            const selisih = isDone ? (isLate ? Math.floor(Math.random() * 120 + 10) : -Math.floor(Math.random() * 60)) : null;
+
+            const realisasi = isDone ? new Date(planDate.getTime() + (selisih || 0) * 60000) : null;
+
+            plans.push({
+                no_po: `PO-${String(Math.floor(Math.random() * 900000) + 100000)}`,
+                driver_name: `Driver ${Math.floor(Math.random() * 20) + 1}`,
+                plat_nomor: `B ${Math.floor(Math.random() * 9000) + 1000} XX`,
+                supplier: suppliers[Math.floor(Math.random() * suppliers.length)],
+                qty: Math.floor(Math.random() * 500 + 100),
+                qty_diterima: isDone ? Math.floor(Math.random() * 500 + 100) : null,
+                estimasi_datang: planDate,
+                status: isDone ? 'DONE' : 'WAIT',
+                tanggal_realisasi: realisasi,
+                selisih_menit: selisih,
+            });
+        }
+
+        for (let i = 0; i < plans.length; i += 20) {
+            await this.inboundPlanningRepo.save(this.inboundPlanningRepo.create(plans.slice(i, i + 20)));
+        }
+        console.log(`✅ Seed inbound planning (${plans.length} records)`);
+    }
+
+    private async seedPlanningAyam() {
+        if (await this.planningAyamRepo.count() > 0) return;
+
+        const ayamItems = await this.barangRepo.find({ where: { kategori: KategoriBarang.WET } });
+        if (!ayamItems.length) return;
+
+        const now = new Date();
+        const oneYearAgo = new Date(now);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        const plans: Partial<PlanningAyam>[] = [];
+        const outbounds: Partial<OutboundAyam>[] = [];
+        const shifts = await this.shiftRepo.find();
+
+        // Create weekly planning for 1 year (~52 weeks)
+        for (let week = 0; week < 52; week++) {
+            const planDate = new Date(oneYearAgo);
+            planDate.setDate(planDate.getDate() + week * 7);
+
+            for (const item of ayamItems.slice(0, 3)) {
+                const qty = Math.floor(Math.random() * 200 + 100);
+                const plan = this.planningAyamRepo.create({
+                    barang: item,
+                    qty,
+                    satuan: item.satuan,
+                    tanggal_planning: planDate,
+                    shift: shifts[Math.floor(Math.random() * shifts.length)],
+                    tujuan: 'Produksi Internal',
+                    status: 'DONE',
+                });
+                plans.push(plan);
+
+                // Create outbound with ~80% serapan rate
+                if (Math.random() > 0.1) {
+                    const serapanPct = 0.7 + Math.random() * 0.3;
+                    outbounds.push({
+                        planning_ayam: plan,
+                        qty_aktual: Math.floor(qty * serapanPct),
+                        satuan: item.satuan,
+                        tujuan: 'Produksi Internal',
+                        shift: shifts[Math.floor(Math.random() * shifts.length)],
+                        created_at: planDate,
+                    });
+                }
+            }
+        }
+
+        for (let i = 0; i < plans.length; i += 20) {
+            await this.planningAyamRepo.save(plans.slice(i, i + 20));
+        }
+        for (let i = 0; i < outbounds.length; i += 20) {
+            await this.outboundAyamRepo.save(outbounds.slice(i, i + 20));
+        }
+        console.log(`✅ Seed planning ayam (${plans.length} plans, ${outbounds.length} outbounds)`);
     }
 }

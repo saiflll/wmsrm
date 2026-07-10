@@ -1100,7 +1100,7 @@ export class InventoryService {
 
     return {
       gauges,
-      weeks: weeks.map((w, i) => ({ key: w, label: `Minggu ${i + 1}` })),
+      weeks: weeks.map((w, i) => ({ key: w, label: `W${i + 1}` })),
       series: Object.values(zoneGroups),
       range: { from: startDate.toISOString().split('T')[0], to: endDate.toISOString().split('T')[0] },
     };
@@ -1163,13 +1163,13 @@ export class InventoryService {
       return { week: w.week, otif, notOtif };
     });
 
-    return { daily: dailyArray.slice(-7), weekly: otifSeries };
+    return { daily: dailyArray, weekly: otifSeries };
   }
 
-  // Serapan Ayam data: planned vs actual outbound ayam
+  // Serapan Ayam data: planned vs actual outbound ayam (weekly for 1 year)
   async getSerapanAyamData(from?: string, to?: string) {
     const start = from ? new Date(from) : new Date();
-    start.setDate(start.getDate() - 7);
+    start.setFullYear(start.getFullYear() - 1);
     const end = to ? new Date(to + 'T23:59:59') : new Date();
 
     const plans = await this.planningAyamRepo.find({
@@ -1181,23 +1181,31 @@ export class InventoryService {
       relations: ['planning_ayam', 'planning_ayam.barang'],
     });
 
-    const dayNames = ['M', 'Se', 'R', 'K', 'J', 'Sb', 'M'];
-    const map: Record<string, { date: string; label: string; planning: number; serapan: number }> = {};
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const key = d.toISOString().split('T')[0];
-      map[key] = { date: key, label: dayNames[d.getDay()], planning: 0, serapan: 0 };
-    }
+    // Group by ISO week
+    const getWeekKey = (d: Date) => {
+      const tmp = new Date(d);
+      tmp.setHours(0, 0, 0, 0);
+      tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
+      const yearStart = new Date(tmp.getFullYear(), 0, 1);
+      const weekNo = Math.ceil((((tmp.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+      return `W${String(weekNo).padStart(2, '0')}`;
+    };
+
+    const weeklyMap: Record<string, { week: string; planning: number; serapan: number }> = {};
 
     for (const p of plans) {
-      const key = new Date(p.tanggal_planning).toISOString().split('T')[0];
-      if (map[key]) map[key].planning += p.qty;
+      const key = getWeekKey(new Date(p.tanggal_planning));
+      if (!weeklyMap[key]) weeklyMap[key] = { week: key, planning: 0, serapan: 0 };
+      weeklyMap[key].planning += p.qty;
     }
     for (const o of outbounds) {
-      const key = o.created_at.toISOString().split('T')[0];
-      if (map[key]) map[key].serapan += o.qty_aktual;
+      const key = getWeekKey(o.created_at);
+      if (!weeklyMap[key]) weeklyMap[key] = { week: key, planning: 0, serapan: 0 };
+      weeklyMap[key].serapan += o.qty_aktual;
     }
 
-    return { data: Object.values(map).sort((a, b) => a.date.localeCompare(b.date)) };
+    const data = Object.values(weeklyMap).sort((a, b) => a.week.localeCompare(b.week));
+    return { data };
   }
 
   // Inventory matrix data (daily in/out/balance per item)
