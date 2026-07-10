@@ -7,7 +7,10 @@ if [ ! -f "$PGDATA/PG_VERSION" ]; then
     echo "Initializing PostgreSQL..."
     mkdir -p "$PGDATA"
     chown -R postgres:postgres "$PGDATA"
-    su postgres -c "initdb --auth=md5 -D $PGDATA"
+    su postgres -c "initdb -D $PGDATA"
+    echo "local all all trust" >> "$PGDATA/pg_hba.conf"
+    echo "host all all 127.0.0.1/32 trust" >> "$PGDATA/pg_hba.conf"
+    echo "host all all 0.0.0.0/0 md5" >> "$PGDATA/pg_hba.conf"
     echo "listen_addresses = '*'" >> "$PGDATA/postgresql.conf"
     echo "port = 5432" >> "$PGDATA/postgresql.conf"
 
