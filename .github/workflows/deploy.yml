@@ -14,9 +14,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Stop existing stack
+      - name: Stop existing stack and clean volume
         run: |
-          docker compose down --remove-orphans || true
+          docker compose down -v --remove-orphans || true
+          docker volume rm cek_wms-test-postgres_data 2>/dev/null || true
 
       - name: Build and start all services
         run: |
