@@ -7,6 +7,19 @@ POSTGRES_BIN=/usr/bin
 mkdir -p /run/postgresql /var/log
 chown postgres:postgres /run/postgresql
 
+# Always ensure postgresql.conf has correct settings
+if [ -f "$PGDATA/PG_VERSION" ]; then
+    echo "=== Patching PostgreSQL config ==="
+    if ! grep -q "unix_socket_directories" "$PGDATA/postgresql.conf"; then
+        echo "unix_socket_directories = /run/postgresql" >> "$PGDATA/postgresql.conf"
+    fi
+    if ! grep -q "listen_addresses" "$PGDATA/postgresql.conf"; then
+        echo "listen_addresses = '*'" >> "$PGDATA/postgresql.conf"
+    fi
+    chown postgres:postgres "$PGDATA/postgresql.conf"
+fi
+
+# Initialize if fresh
 if [ ! -f "$PGDATA/PG_VERSION" ]; then
     echo "=== Initializing PostgreSQL ==="
     mkdir -p "$PGDATA"
@@ -20,28 +33,25 @@ if [ ! -f "$PGDATA/PG_VERSION" ]; then
     echo "listen_addresses = '*'" >> "$PGDATA/postgresql.conf"
     echo "port = 5432" >> "$PGDATA/postgresql.conf"
     echo "unix_socket_directories = /run/postgresql" >> "$PGDATA/postgresql.conf"
+    chown postgres:postgres "$PGDATA/postgresql.conf" "$PGDATA/pg_hba.conf"
 
     echo "Starting PostgreSQL for initialization..."
     su postgres -c "$POSTGRES_BIN/pg_ctl -D $PGDATA -w -l /var/log/pg_init.log start"
-
     sleep 2
 
     echo "Creating user ${POSTGRES_USER}..."
     su postgres -c "$POSTGRES_BIN/psql -c \"CREATE USER ${POSTGRES_USER} WITH PASSWORD '${POSTGRES_PASSWORD}';\""
-
-    echo "Creating database ${POSTGRES_DB}..."
     su postgres -c "$POSTGRES_BIN/psql -c \"CREATE DATABASE ${POSTGRES_DB} OWNER ${POSTGRES_USER};\""
     su postgres -c "$POSTGRES_BIN/psql -c \"GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER};\""
 
-    echo "Stopping PostgreSQL..."
     su postgres -c "$POSTGRES_BIN/pg_ctl -D $PGDATA -w stop"
     echo "=== PostgreSQL initialized ==="
 fi
 
-# Ensure user exists even if volume was previously initialized but user creation failed
+# Ensure user exists
 echo "=== Ensuring database user exists ==="
 su postgres -c "$POSTGRES_BIN/pg_ctl -D $PGDATA -w -l /var/log/pg_ensure.log start" 2>/dev/null || true
-sleep 1
+sleep 2
 USER_EXISTS=$(su postgres -c "$POSTGRES_BIN/psql -t -c \"SELECT 1 FROM pg_roles WHERE rolname='${POSTGRES_USER}'\"" 2>/dev/null | tr -d ' ')
 if [ "$USER_EXISTS" != "1" ]; then
     echo "Creating user ${POSTGRES_USER}..."
