@@ -7,18 +7,6 @@ POSTGRES_BIN=/usr/bin
 mkdir -p /run/postgresql /var/log
 chown postgres:postgres /run/postgresql
 
-# Always ensure postgresql.conf has correct settings
-if [ -f "$PGDATA/PG_VERSION" ]; then
-    echo "=== Patching PostgreSQL config ==="
-    if ! grep -q "unix_socket_directories" "$PGDATA/postgresql.conf"; then
-        echo "unix_socket_directories = /run/postgresql" >> "$PGDATA/postgresql.conf"
-    fi
-    if ! grep -q "listen_addresses" "$PGDATA/postgresql.conf"; then
-        echo "listen_addresses = '*'" >> "$PGDATA/postgresql.conf"
-    fi
-    chown postgres:postgres "$PGDATA/postgresql.conf"
-fi
-
 # Initialize if fresh
 if [ ! -f "$PGDATA/PG_VERSION" ]; then
     echo "=== Initializing PostgreSQL ==="
@@ -27,12 +15,9 @@ if [ ! -f "$PGDATA/PG_VERSION" ]; then
 
     su postgres -c "$POSTGRES_BIN/initdb -D $PGDATA"
 
-    echo "local all all trust" >> "$PGDATA/pg_hba.conf"
-    echo "host all all 127.0.0.1/32 trust" >> "$PGDATA/pg_hba.conf"
-    echo "host all all 0.0.0.0/0 md5" >> "$PGDATA/pg_hba.conf"
-    echo "listen_addresses = '*'" >> "$PGDATA/postgresql.conf"
-    echo "port = 5432" >> "$PGDATA/postgresql.conf"
-    echo "unix_socket_directories = /run/postgresql" >> "$PGDATA/postgresql.conf"
+    # Overwrite config dengan yang sudah di-hardcode
+    cp /etc/postgresql/postgresql.conf "$PGDATA/postgresql.conf"
+    cp /etc/postgresql/pg_hba.conf "$PGDATA/pg_hba.conf"
     chown postgres:postgres "$PGDATA/postgresql.conf" "$PGDATA/pg_hba.conf"
 
     echo "Starting PostgreSQL for initialization..."
@@ -46,6 +31,12 @@ if [ ! -f "$PGDATA/PG_VERSION" ]; then
 
     su postgres -c "$POSTGRES_BIN/pg_ctl -D $PGDATA -w stop"
     echo "=== PostgreSQL initialized ==="
+else
+    # Volume sudah ada, tapi pastikan config benar
+    echo "=== Patching PostgreSQL config ==="
+    cp /etc/postgresql/postgresql.conf "$PGDATA/postgresql.conf"
+    cp /etc/postgresql/pg_hba.conf "$PGDATA/pg_hba.conf"
+    chown postgres:postgres "$PGDATA/postgresql.conf" "$PGDATA/pg_hba.conf"
 fi
 
 # Ensure user exists

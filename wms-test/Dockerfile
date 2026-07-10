@@ -34,6 +34,9 @@ COPY --from=rm-frontend-builder /build/ /app/rm-frontend/
 COPY wms-test/wrappers /app/wrappers
 RUN chmod +x /app/wrappers/*.sh
 
+COPY wms-test/postgresql.conf /etc/postgresql/postgresql.conf
+COPY wms-test/pg_hba.conf /etc/postgresql/pg_hba.conf
+
 COPY wms-test/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 COPY wms-test/entrypoint.sh /entrypoint.sh
