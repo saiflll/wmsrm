@@ -48,7 +48,7 @@ import { SeedService } from './seed.service';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, LoginLog, Shift, Suplayer, Barang, Gudang, Transaksi, Stock, StockLog, Customer, InboundPlanning, PlanningAyam, OutboundAyam]),
+    TypeOrmModule.forFeature([User]),
     AuthModule,
     UsersModule,
     BarangModule,
