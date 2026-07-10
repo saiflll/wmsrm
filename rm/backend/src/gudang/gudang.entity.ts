@@ -7,12 +7,11 @@ export enum GudangType {
 }
 
 export enum GudangZone {
-    CS_FROZEN = 'CS FROZEN',
-    CHILL = 'CHILL',
-    DRY_A = 'DRY A',
-    DRY_B = 'DRY B',
-    DRY_FG = 'DRY FG',
-    WASTE = 'WASTE',
+    A = 'A',
+    B = 'B',
+    C = 'C',
+    D = 'D',
+    E = 'E',
 }
 
 @Entity()

@@ -1,12 +1,12 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum UserRole {
-    CHECKER_IB = 1,
-    CHECKER_OB = 2,
+    CHECKER = 1,
+    ADMIN = 2,
     KOORDINATOR = 3,
     SUPERVISOR = 4,
     SUPER_ADMIN = 5,
-    REVIEWER = 6,
+    MANAGER = 6,
 }
 
 @Entity()
@@ -22,7 +22,7 @@ export class User {
 
     @Column({
         type: 'int',
-        default: UserRole.CHECKER_IB,
+        default: UserRole.CHECKER,
     })
     role: UserRole;
 }

@@ -25,8 +25,8 @@ const roleLineColor: Record<number, string> = {
 const menuPermissions: Record<string, number[]> = {
     '/wms/dashboard': [1, 2, 3, 4, 5, 6],
     '/wms/driver-planning': [1, 3, 4, 5],
-    '/wms/inbound': [1, 3, 4, 5],
-    '/wms/outbound': [1, 3, 4, 5],
+    '/wms/inbound': [1, 2, 3, 4, 5],
+    '/wms/outbound': [1, 2, 3, 4, 5],
     '/wms/picking': [1, 3, 4, 5],
     '/wms/planning-ayam': [3, 4, 5],
     '/wms/outbound-ayam': [3, 4, 5],

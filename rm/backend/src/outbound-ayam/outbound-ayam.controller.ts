@@ -12,19 +12,19 @@ export class OutboundAyamController {
     constructor(private readonly svc: OutboundAyamService) { }
 
     @Get()
-    @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.SUPER_ADMIN, UserRole.CHECKER_OB)
+    @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.SUPER_ADMIN, UserRole.CHECKER)
     findAll() {
         return this.svc.findAll();
     }
 
     @Get(':id')
-    @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.SUPER_ADMIN, UserRole.CHECKER_OB)
+    @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.SUPER_ADMIN, UserRole.CHECKER)
     findOne(@Param('id') id: number) {
         return this.svc.findOne(id);
     }
 
     @Post()
-    @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.SUPER_ADMIN, UserRole.CHECKER_OB)
+    @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.SUPER_ADMIN, UserRole.CHECKER)
     create(@Body() dto: CreateOutboundAyamDto) {
         return this.svc.create(dto);
     }

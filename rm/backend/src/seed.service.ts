@@ -25,43 +25,28 @@ export class SeedService implements OnApplicationBootstrap {
     ) { }
 
     async onApplicationBootstrap() {
-        // Hanya menyisakan master akun default dan shift agar sistem siap pakai (Production)
         await this.seedUsers();
         await this.seedShifts();
-
-        // Data Dummy pabrik di-nonaktifkan
-        // await this.seedSuplayers();
-        // await this.seedBarang();
-        // await this.seedGudang();
-        // await this.seedCustomers();
-        // await this.seedStock();
+        await this.seedGudang();
+        await this.seedBarang();
+        await this.seedCustomers();
+        await this.seedStock();
     }
 
     private async seedUsers() {
         const hasUsers = await this.userRepo.count() > 0;
         if (!hasUsers) {
             const users = [
-                // Checker IB (Inbound)
-                { username: 'checkerib1', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_IB },
-                { username: 'checkerib2', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_IB },
-                { username: 'checkerib3', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_IB },
-                // Checker OB (Outbound)
-                { username: 'checkerob1', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_OB },
-                { username: 'checkerob2', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_OB },
-                { username: 'checkerob3', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER_OB },
-                // Koordinator
-                { username: 'koordinator1', pass: await bcrypt.hash('koord123', 10), role: UserRole.KOORDINATOR },
-                { username: 'koordinator2', pass: await bcrypt.hash('koord123', 10), role: UserRole.KOORDINATOR },
-                { username: 'koordinator3', pass: await bcrypt.hash('koord123', 10), role: UserRole.KOORDINATOR },
-                // Supervisor
+                { username: 'checker', pass: await bcrypt.hash('checker123', 10), role: UserRole.CHECKER },
+                { username: 'admin', pass: await bcrypt.hash('admin123', 10), role: UserRole.ADMIN },
+                { username: 'koordinator', pass: await bcrypt.hash('koord123', 10), role: UserRole.KOORDINATOR },
                 { username: 'supervisor', pass: await bcrypt.hash('super123', 10), role: UserRole.SUPERVISOR },
-                // Super Admin (full access)
                 { username: 'superadmin', pass: await bcrypt.hash('super123', 10), role: UserRole.SUPER_ADMIN },
+                { username: 'manager', pass: await bcrypt.hash('manager123', 10), role: UserRole.MANAGER },
             ];
             await this.userRepo.save(this.userRepo.create(users));
             console.log('✅ Seed users');
         } else {
-            // Ensure superadmin exists even if database was already seeded
             const superadminExists = await this.userRepo.findOne({ where: { username: 'superadmin' } });
             if (!superadminExists) {
                 const sa = this.userRepo.create({
@@ -152,15 +137,13 @@ export class SeedService implements OnApplicationBootstrap {
         };
 
         const all = [
-            ...mkRacks('CS FROZEN', false, ['A', 'B'], 12, 3, GudangType.SINGLE_DEEP),
-            ...mkRacks('CHILL', false, ['A', 'B'], 8, 3, GudangType.SINGLE_DEEP),
-            ...mkRacks('DRY A', true, ['A', 'B'], 12, 3, GudangType.SINGLE_DEEP),
-            ...mkRacks('DRY B', true, ['A', 'B', 'C'], 12, 3, GudangType.DOUBLE_DEEP),
-            ...mkRacks('DRY FG', true, ['A', 'B', 'C', 'D'], 12, 3, GudangType.DOUBLE_DEEP),
-            ...mkRacks('WASTE', false, ['W'], 5, 1, GudangType.SINGLE_DEEP),
+            ...mkRacks('A', false, ['A', 'B'], 12, 3, GudangType.SINGLE_DEEP),
+            ...mkRacks('B', false, ['A', 'B'], 8, 3, GudangType.SINGLE_DEEP),
+            ...mkRacks('C', true, ['A', 'B'], 12, 3, GudangType.SINGLE_DEEP),
+            ...mkRacks('D', true, ['A', 'B', 'C'], 12, 3, GudangType.DOUBLE_DEEP),
+            ...mkRacks('E', true, ['A', 'B', 'C', 'D'], 12, 3, GudangType.DOUBLE_DEEP),
         ];
 
-        // Batch insert
         const chunkSize = 50;
         for (let i = 0; i < all.length; i += chunkSize) {
             const chunk = all.slice(i, i + chunkSize);
@@ -178,8 +161,8 @@ export class SeedService implements OnApplicationBootstrap {
 
         if (!barangs.length || !gudangs.length) return;
 
-        const dryRacks = gudangs.filter(g => g.side && g.zone !== 'WASTE');
-        const wetRacks = gudangs.filter(g => !g.side && g.zone !== 'WASTE');
+        const dryRacks = gudangs.filter(g => g.side);
+        const wetRacks = gudangs.filter(g => !g.side);
 
         const stocks: Partial<Stock>[] = [];
         const logs: Partial<StockLog>[] = [];
@@ -188,7 +171,6 @@ export class SeedService implements OnApplicationBootstrap {
             const racks = brg.side ? dryRacks : wetRacks;
             if (!racks.length) continue;
 
-            // Place in 3-5 random locations
             const count = Math.min(3 + Math.floor(Math.random() * 3), racks.length);
             const used = new Set<number>();
             for (let i = 0; i < count; i++) {
@@ -210,12 +192,11 @@ export class SeedService implements OnApplicationBootstrap {
                     satuan: brg.satuan,
                 });
 
-                // 1. INBOUND Log
                 logs.push({
                     type: LogType.INBOUND,
                     no_po: `PO-${String(Date.now()).slice(-6)}${i}`,
                     barang: brg, gudang: gdg,
-                    qty: qty + Math.floor(Math.random() * 50), // original inbound was higher
+                    qty: qty + Math.floor(Math.random() * 50),
                     satuan: brg.satuan,
                     batch_no: batchNo,
                     expiry_date: expDate,
@@ -223,7 +204,6 @@ export class SeedService implements OnApplicationBootstrap {
                     shift: shifts[Math.floor(Math.random() * shifts.length)],
                 });
 
-                // 2. OUTBOUND Log
                 if (Math.random() > 0.4) {
                     logs.push({
                         type: LogType.OUTBOUND,
@@ -237,7 +217,6 @@ export class SeedService implements OnApplicationBootstrap {
                     });
                 }
 
-                // 3. RELOCATION Log
                 if (Math.random() > 0.6) {
                     const extraRacks = racks.filter(r => r.id !== gdg.id);
                     if (extraRacks.length > 0) {
@@ -254,7 +233,6 @@ export class SeedService implements OnApplicationBootstrap {
                     }
                 }
 
-                // 4. STOCK OPNAME Log
                 if (Math.random() > 0.7) {
                     logs.push({
                         type: LogType.OPNAME,
@@ -268,7 +246,6 @@ export class SeedService implements OnApplicationBootstrap {
             }
         }
 
-        // Batch save
         for (let i = 0; i < stocks.length; i += 20) {
             await this.stockRepo.save(this.stockRepo.create(stocks.slice(i, i + 20)));
         }

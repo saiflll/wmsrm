@@ -1006,12 +1006,11 @@ export class InventoryService {
 
     const zoneGroups: Record<string, { label: string; color: string; data: number[] }> = {};
     const zoneColor: Record<string, string> = {
-      'CS FROZEN': '#228be6',
-      'CHILL': '#40c057',
-      'DRY A': '#fd7e14',
-      'DRY B': '#be4bdb',
-      'DRY FG': '#1098ad',
-      'WASTE': '#868e96',
+      'A': '#228be6',
+      'B': '#40c057',
+      'C': '#fd7e14',
+      'D': '#be4bdb',
+      'E': '#1098ad',
     };
 
     for (let w = 0; w < weeks.length; w++) {

@@ -20,34 +20,34 @@ export class InventoryController {
 
     // ========== STOCK ==========
     @Get('stock')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.CHECKER, UserRole.KOORDINATOR, UserRole.MANAGER)
     findAllStock(@Query('side') side?: string, @Query('search') search?: string) {
         const s = side === 'true' ? true : side === 'false' ? false : undefined;
         return this.svc.findAllStock(s, search);
     }
 
     @Get('stock/by-gudang')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.CHECKER, UserRole.KOORDINATOR)
     findStockByGudang(@Query('gudang_id') id: string) {
         return this.svc.findStockByGudang(+id);
     }
 
     @Get('stock/by-barang')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.CHECKER, UserRole.KOORDINATOR)
     findStockByBarang(@Query('barang_id') id: string) {
         return this.svc.findStockByBarang(+id);
     }
 
     // ========== INBOUND ==========
     @Post('inbound')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
     postInbound(@Body() dto: InboundPostDto) {
         return this.svc.postInbound(dto.items);
     }
 
     // ========== OUTBOUND ==========
     @Post('outbound')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
     postOutbound(@Body() dto: OutboundPostDto) {
         return this.svc.postOutbound(dto.items);
     }
@@ -60,25 +60,25 @@ export class InventoryController {
 
     // ========== PICKING ==========
     @Post('picking')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB, UserRole.KOORDINATOR)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.KOORDINATOR)
     postPicking(@Body() dto: PickingPostDto) {
         return this.svc.postPicking(dto.items);
     }
 
     @Post('outbound/confirm')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
     confirmPicking(@Body() dto: ConfirmPickingDto) {
         return this.svc.confirmPicking(dto.no_ref);
     }
 
     @Delete('picking/:id')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
     cancelPicking(@Param('id') id: string) {
         return this.svc.cancelPicking(id);
     }
 
     @Get('picking/pending')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB, UserRole.KOORDINATOR)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.KOORDINATOR)
     getPendingPickings() {
         return this.svc.getPendingPickings();
     }
@@ -132,19 +132,19 @@ export class InventoryController {
     }
 
     @Get('logs/inbound')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
     getInboundLogs(@Query('from') from?: string, @Query('to') to?: string, @Query('shift_id') shift_id?: string) {
         return this.svc.findLogs({ type: LogType.INBOUND, from, to, shift_id: shift_id ? +shift_id : undefined });
     }
 
     @Get('logs/outbound')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
     getOutboundLogs(@Query('from') from?: string, @Query('to') to?: string, @Query('shift_id') shift_id?: string) {
         return this.svc.findLogs({ type: LogType.OUTBOUND, from, to, shift_id: shift_id ? +shift_id : undefined });
     }
 
     @Get('logs/picking')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_OB, UserRole.KOORDINATOR)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.KOORDINATOR)
     getPickingLogs(@Query('from') from?: string, @Query('to') to?: string, @Query('shift_id') shift_id?: string) {
         return this.svc.findLogs({ type: LogType.PICKING, from, to, shift_id: shift_id ? +shift_id : undefined });
     }
@@ -157,44 +157,44 @@ export class InventoryController {
 
     // ========== DASHBOARD ==========
     @Get('dashboard')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.CHECKER, UserRole.KOORDINATOR, UserRole.MANAGER)
     getDashboard() {
         return this.svc.getDashboardStats();
     }
 
     @Get('dashboard/inout-chart')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.CHECKER, UserRole.KOORDINATOR, UserRole.MANAGER)
     getDashboardInOutChart() {
         return this.svc.getInOutChartData();
     }
 
     @Get('dashboard/stock-chart')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.CHECKER, UserRole.KOORDINATOR, UserRole.MANAGER)
     getStockChart(@Query('barang_id') barangId?: string) {
         return this.svc.getStockChartData(barangId ? +barangId : undefined);
     }
 
     @Get('dashboard/occupancy')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.CHECKER, UserRole.KOORDINATOR, UserRole.MANAGER)
     getDashboardOccupancy() {
         return this.svc.getOccupancyData();
     }
 
     @Get('dashboard/ofti')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.CHECKER, UserRole.KOORDINATOR, UserRole.MANAGER)
     getDashboardOFTI(@Query('from') from?: string, @Query('to') to?: string) {
         return this.svc.getOFTIData(from, to);
     }
 
     @Get('dashboard/serapan-ayam')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.CHECKER, UserRole.KOORDINATOR, UserRole.MANAGER)
     getDashboardSerapanAyam(@Query('from') from?: string, @Query('to') to?: string) {
         return this.svc.getSerapanAyamData(from, to);
     }
 
     // ========== INVENTORY MATRIX ==========
     @Get('matrix')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER_IB, UserRole.CHECKER_OB, UserRole.KOORDINATOR, UserRole.REVIEWER)
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.CHECKER, UserRole.KOORDINATOR, UserRole.MANAGER)
     getMatrix(@Query('side') side?: string, @Query('from') from?: string, @Query('to') to?: string) {
         const s = side !== 'false';
         return this.svc.getInventoryMatrix(s, from, to);
