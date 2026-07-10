@@ -7,7 +7,7 @@ import {
 import {
     IconPackage, IconTrendingUp, IconTrendingDown, IconRefresh, IconCalendarStats,
     IconBuildingWarehouse, IconAlertTriangle, IconChartBar, IconChartLine,
-    IconChartPie, IconTruckDelivery, IconMeat
+    IconChartPie, IconTruckDelivery, IconMeat, IconDownload
 } from '@tabler/icons-react';
 import { api, unwrap, fmt } from '../lib/api';
 
@@ -87,7 +87,8 @@ const OccupancyGauge = ({ pct, label, subLabel, color, onClick, selected }) => {
 
 const SimpleBarChart = ({ series, labels, title }) => {
     if (!series?.length) return <Text size="xs" c="dimmed" ta="center" py="xl">Tidak ada data.</Text>;
-    const width = 760;
+    const labelWidth = 50;
+    const width = Math.max(760, labels.length * labelWidth);
     const height = 320;
     const pad = { top: 40, right: 30, bottom: 60, left: 60 };
     const chartW = width - pad.left - pad.right;
@@ -97,7 +98,7 @@ const SimpleBarChart = ({ series, labels, title }) => {
     const barW = Math.min(28, (groupW - 24) / series.length);
 
     return (
-        <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
+        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
             {[0, 0.25, 0.5, 0.75, 1].map((p, i) => {
                 const y = pad.top + chartH * p;
                 const val = Math.round(maxVal * (1 - p));
@@ -419,9 +420,9 @@ export default function DashboardPage() {
                                         <Text size="xs" c="dimmed">Klik zone untuk melihat detail item & trend harian</Text>
                                     </div>
                                 </Group>
-                                <Grid gutter="md">
+                                <Box style={{ display: 'flex', justifyContent: 'space-between', gap: 'md', flexWrap: 'wrap' }}>
                                     {occupancyData?.gauges?.map((g) => (
-                                        <Grid.Col key={g.id} span={{ base: 6, sm: 4, md: 3, lg: 'content' }}>
+                                        <Box key={g.id} style={{ flex: '1 1 0', minWidth: 140, maxWidth: 200 }}>
                                             <OccupancyGauge 
                                                 pct={g.pct} 
                                                 label={g.name} 
@@ -430,10 +431,10 @@ export default function DashboardPage() {
                                                 selected={selectedZone === g.id}
                                                 onClick={() => handleZoneClick(g.id)}
                                             />
-                                        </Grid.Col>
+                                        </Box>
                                     ))}
-                                    {!occupancyData && <Grid.Col span={12}><Box py="xl" ta="center"><Loader size="sm" /></Box></Grid.Col>}
-                                </Grid>
+                                    {!occupancyData && <Box py="xl" ta="center" style={{ width: '100%' }}><Loader size="sm" /></Box>}
+                                </Box>
                             </Paper>
 
                             {selectedZone ? (
@@ -644,14 +645,40 @@ export default function DashboardPage() {
                                 </Box>
                                 <div>
                                     <Title order={5} style={{ color: '#2b2b2b' }}>Mutasi Terbaru</Title>
-                                    <Text size="xs" c="dimmed">Maks. 100 transaksi terbaru</Text>
+                                    <Text size="xs" c="dimmed">15 transaksi terbaru, scroll horizontal untuk detail</Text>
                                 </div>
                             </Group>
-                            <TextInput placeholder="Cari PO, Item, Supplier..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 260 }} />
+                            <Group gap="xs">
+                                <TextInput placeholder="Cari PO, Item, Supplier..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 200 }} />
+                                <Button size="xs" variant="light" color="blue" leftSection={<IconDownload size={14} />} onClick={() => {
+                                    const csv = ['Tipe,No PO/Ref,Item,Qty,Satuan,Batch,Expired,Rak,Tanggal,Supplier/Tujuan,Keterangan'].concat(
+                                        filteredLogs.slice(0, 100).map(log => [
+                                            log.type,
+                                            log.no_po || log.no_ref || '-',
+                                            log.barang?.nama || '-',
+                                            log.qty,
+                                            log.satuan || '-',
+                                            log.batch_no || '-',
+                                            log.expiry_date ? new Date(log.expiry_date).toISOString().split('T')[0] : '-',
+                                            log.gudang?.name || '-',
+                                            log.tanggal_income || fmt(log.created_at),
+                                            log.supplier || log.tujuan || '-',
+                                            log.note || '-'
+                                        ].join(','))
+                                    ).join('\n');
+                                    const blob = new Blob([csv], { type: 'text/csv' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `mutasi_${new Date().toISOString().split('T')[0]}.csv`;
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                }}>Export CSV</Button>
+                            </Group>
                         </Group>
-                        <Box style={{ overflowX: 'auto' }}>
+                        <Box style={{ overflowX: 'auto', maxHeight: 400 }}>
                             <Box component="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 900 }}>
-                                <Box component="thead" style={{ background: 'linear-gradient(90deg, #1a1a1a, #343a40)' }}>
+                                <Box component="thead" style={{ background: 'linear-gradient(90deg, #1a1a1a, #343a40)', position: 'sticky', top: 0, zIndex: 1 }}>
                                     <Box component="tr">
                                         {['Tipe', 'No PO/Ref', 'Item', 'Qty', 'Satuan', 'Batch', 'Expired', 'Rak', 'Tanggal', 'Supplier/Tujuan', 'Keterangan'].map((h) => (
                                             <Box component="th" key={h} style={{ color: '#fff', fontSize: 11, padding: '8px 10px', textAlign: 'left' }}>{h}</Box>
@@ -659,7 +686,7 @@ export default function DashboardPage() {
                                     </Box>
                                 </Box>
                                 <Box component="tbody">
-                                    {filteredLogs.slice(0, 100).map((log) => {
+                                    {filteredLogs.slice(0, 15).map((log) => {
                                         const typeColor = log.type === 'INBOUND' ? 'green' : log.type === 'OUTBOUND' ? 'red' : 'blue';
                                         return (
                                             <Box component="tr" key={log.id} style={{ borderBottom: '1px solid #eee' }}>
@@ -690,6 +717,9 @@ export default function DashboardPage() {
                                 </Box>
                             </Box>
                         </Box>
+                        {filteredLogs.length > 15 && (
+                            <Text size="xs" c="dimmed" mt="xs" ta="center">Menampilkan 15 dari {filteredLogs.length} transaksi. Export CSV untuk data lengkap.</Text>
+                        )}
                     </Paper>
                 </Stack>
             </Box>
