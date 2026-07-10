@@ -175,9 +175,9 @@ export class InventoryController {
     }
 
     @Get('dashboard/occupancy')
-    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.CHECKER, UserRole.KOORDINATOR, UserRole.MANAGER)
-    getDashboardOccupancy() {
-        return this.svc.getOccupancyData();
+    @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.KOORDINATOR, UserRole.MANAGER)
+    getDashboardOccupancy(@Query('zone') zone?: string, @Query('from') from?: string, @Query('to') to?: string) {
+        return this.svc.getOccupancyData(zone, from, to);
     }
 
     @Get('dashboard/ofti')

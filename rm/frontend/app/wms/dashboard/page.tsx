@@ -257,12 +257,23 @@ export default function DashboardPage() {
         setLoading(false);
     };
 
-    const loadOccupancy = async () => {
+    const loadOccupancy = async (zone?: string) => {
         try {
-            const res = await api().get('/inventory/dashboard/occupancy');
+            const params = zone ? `?zone=${zone}` : '';
+            const res = await api().get(`/inventory/dashboard/occupancy${params}`);
             setOccupancyData(unwrap(res));
         } catch (e) {
             console.error('Occupancy load error', e);
+        }
+    };
+
+    const handleZoneClick = (zone: string) => {
+        if (selectedZone === zone) {
+            setSelectedZone(null);
+            loadOccupancy();
+        } else {
+            setSelectedZone(zone);
+            loadOccupancy(zone);
         }
     };
 
@@ -404,8 +415,8 @@ export default function DashboardPage() {
                                         <IconChartPie size={22} color="#228be6" />
                                     </Box>
                                     <div>
-                                        <Title order={5} style={{ color: '#2b2b2b' }}>Okupansi Gudang</Title>
-                                        <Text size="xs" c="dimmed">Persentase penggunaan kapasitas per gudang/rak</Text>
+                                        <Title order={5} style={{ color: '#2b2b2b' }}>Okupansi per Zone</Title>
+                                        <Text size="xs" c="dimmed">Klik zone untuk melihat detail item & trend harian</Text>
                                     </div>
                                 </Group>
                                 <Grid gutter="md">
@@ -417,7 +428,7 @@ export default function DashboardPage() {
                                                 subLabel={`${Math.round(g.used)} / ${Math.round(g.capacity)} kg`} 
                                                 color={g.color}
                                                 selected={selectedZone === g.id}
-                                                onClick={() => setSelectedZone(selectedZone === g.id ? null : g.id)}
+                                                onClick={() => handleZoneClick(g.id)}
                                             />
                                         </Grid.Col>
                                     ))}
@@ -425,61 +436,131 @@ export default function DashboardPage() {
                                 </Grid>
                             </Paper>
 
-                            <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
-                                <Group gap="sm" mb="md">
-                                    <Box style={{ background: '#fff3bf', borderRadius: 10, padding: 8 }}>
-                                        <IconChartBar size={22} color="#f59f00" />
-                                    </Box>
-                                    <div>
-                                        <Title order={5} style={{ color: '#2b2b2b' }}>Okupansi per Zone (4 Minggu)</Title>
-                                        <Text size="xs" c="dimmed">Ringkasan transaksi per zone mingguan</Text>
-                                    </div>
-                                </Group>
-                                <SimpleBarChart series={occupancyData?.series} labels={occupancyData?.weeks} />
-                            </Paper>
-
-                            <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
-                                <Group justify="space-between" mb="sm">
-                                    <Group gap="sm">
-                                        <Box style={{ background: '#e7f5ff', borderRadius: 10, padding: 8 }}>
-                                            <IconBuildingWarehouse size={22} color="#228be6" />
-                                        </Box>
-                                        <div>
-                                            <Title order={5} style={{ color: '#2b2b2b' }}>Riwayat Okupansi Harian</Title>
-                                            <Text size="xs" c="dimmed">Max 1 bulan + fitur download akan menyusul</Text>
-                                        </div>
-                                    </Group>
-                                    <TextInput placeholder="Cari gudang..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 220 }} />
-                                </Group>
-                                <Box style={{ overflowX: 'auto' }}>
-                                    <Box component="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 700 }}>
-                                        <Box component="thead" style={{ background: 'linear-gradient(90deg, #1a1a1a, #343a40)' }}>
-                                            <Box component="tr">
-                                                {['Gudang', 'Zone', 'Terpakai', 'Kapasitas', 'Okupansi', 'Status'].map((h) => (
-                                                    <Box component="th" key={h} style={{ color: '#fff', fontSize: 11, padding: '8px 10px', textAlign: 'left' }}>{h}</Box>
-                                                ))}
+                            {selectedZone ? (
+                                <>
+                                    <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
+                                        <Group gap="sm" mb="md">
+                                            <Box style={{ background: '#fff3bf', borderRadius: 10, padding: 8 }}>
+                                                <IconChartBar size={22} color="#f59f00" />
+                                            </Box>
+                                            <div>
+                                                <Title order={5} style={{ color: '#2b2b2b' }}>Trend Harian - Zone {selectedZone}</Title>
+                                                <Text size="xs" c="dimmed">Scroll horizontal untuk melihat data 1 tahun</Text>
+                                            </div>
+                                        </Group>
+                                        <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
+                                            <Box style={{ minWidth: occupancyData?.dailySeries?.length * 30 || 400 }}>
+                                                <SimpleBarChart 
+                                                    series={[{ label: 'Qty', color: occupancyData?.gauges?.find(g => g.id === selectedZone)?.color || '#228be6', data: occupancyData?.dailySeries?.map(d => d.value) || [] }]} 
+                                                    labels={occupancyData?.dailySeries?.map((d, i) => ({ key: d.date, label: d.date.slice(5) })) || []} 
+                                                />
                                             </Box>
                                         </Box>
-                                        <Box component="tbody">
-                                            {occupancyData?.gauges?.filter((g) => !tableSearch || g.name.toLowerCase().includes(tableSearch.toLowerCase()) || g.zone.toLowerCase().includes(tableSearch.toLowerCase())).map((g) => (
-                                                <Box component="tr" key={g.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                    <Box component="td" style={{ padding: '6px 10px', fontWeight: 700 }}>{g.name}</Box>
-                                                    <Box component="td" style={{ padding: '6px 10px' }}><Badge size="xs" color="gray">{g.zone}</Badge></Box>
-                                                    <Box component="td" style={{ padding: '6px 10px', textAlign: 'right' }}>{Math.round(g.used).toLocaleString()}</Box>
-                                                    <Box component="td" style={{ padding: '6px 10px', textAlign: 'right' }}>{Math.round(g.capacity).toLocaleString()}</Box>
-                                                    <Box component="td" style={{ padding: '6px 10px' }}>
-                                                        <Badge size="xs" color={g.pct > 90 ? 'red' : g.pct > 75 ? 'orange' : g.pct > 50 ? 'yellow' : 'green'}>{g.pct}%</Badge>
-                                                    </Box>
-                                                    <Box component="td" style={{ padding: '6px 10px', fontSize: 11 }}>
-                                                        {g.pct > 90 ? 'Penuh' : g.pct > 75 ? 'Hampir Penuh' : g.pct > 50 ? 'Sedang' : 'Aman'}
+                                    </Paper>
+
+                                    <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
+                                        <Group justify="space-between" mb="sm">
+                                            <Group gap="sm">
+                                                <Box style={{ background: '#e7f5ff', borderRadius: 10, padding: 8 }}>
+                                                    <IconBuildingWarehouse size={22} color="#228be6" />
+                                                </Box>
+                                                <div>
+                                                    <Title order={5} style={{ color: '#2b2b2b' }}>Item di Zone {selectedZone}</Title>
+                                                    <Text size="xs" c="dimmed">{occupancyData?.items?.length || 0} item ditemukan</Text>
+                                                </div>
+                                            </Group>
+                                            <TextInput placeholder="Cari item..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 220 }} />
+                                        </Group>
+                                        <Box style={{ overflowX: 'auto' }}>
+                                            <Box component="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 700 }}>
+                                                <Box component="thead" style={{ background: 'linear-gradient(90deg, #1a1a1a, #343a40)' }}>
+                                                    <Box component="tr">
+                                                        {['Barang', 'Batch', 'Qty', 'Satuan', 'Expired', 'Rak'].map((h) => (
+                                                            <Box component="th" key={h} style={{ color: '#fff', fontSize: 11, padding: '8px 10px', textAlign: 'left' }}>{h}</Box>
+                                                        ))}
                                                     </Box>
                                                 </Box>
-                                            ))}
-                                            {!occupancyData && <Box component="tr"><Box component="td" colSpan={6} style={{ padding: 20, textAlign: 'center' }}><Loader size="sm" /></Box></Box>}
+                                                <Box component="tbody">
+                                                    {occupancyData?.items?.filter((item) => !tableSearch || item.barang.toLowerCase().includes(tableSearch.toLowerCase()) || item.batch.toLowerCase().includes(tableSearch.toLowerCase())).map((item) => (
+                                                        <Box component="tr" key={item.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                            <Box component="td" style={{ padding: '6px 10px', fontWeight: 700 }}>{item.barang}</Box>
+                                                            <Box component="td" style={{ padding: '6px 10px' }}><Badge size="xs" color="gray">{item.batch}</Badge></Box>
+                                                            <Box component="td" style={{ padding: '6px 10px', textAlign: 'right' }}>{item.qty.toLocaleString()}</Box>
+                                                            <Box component="td" style={{ padding: '6px 10px' }}>{item.satuan}</Box>
+                                                            <Box component="td" style={{ padding: '6px 10px' }}>{item.expiry}</Box>
+                                                            <Box component="td" style={{ padding: '6px 10px' }}>{item.rack}</Box>
+                                                        </Box>
+                                                    ))}
+                                                    {(!occupancyData?.items || occupancyData.items.length === 0) && (
+                                                        <Box component="tr"><Box component="td" colSpan={6} style={{ padding: 20, textAlign: 'center' }}><Text size="xs" c="dimmed">Tidak ada item di zone ini.</Text></Box></Box>
+                                                    )}
+                                                </Box>
+                                            </Box>
                                         </Box>
-                                    </Box>
-                                </Box>
-                            </Paper>
+                                    </Paper>
+                                </>
+                            ) : (
+                                <>
+                                    <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
+                                        <Group gap="sm" mb="md">
+                                            <Box style={{ background: '#fff3bf', borderRadius: 10, padding: 8 }}>
+                                                <IconChartBar size={22} color="#f59f00" />
+                                            </Box>
+                                            <div>
+                                                <Title order={5} style={{ color: '#2b2b2b' }}>Okupansi per Zone (1 Tahun)</Title>
+                                                <Text size="xs" c="dimmed">Scroll horizontal untuk melihat data mingguan</Text>
+                                            </div>
+                                        </Group>
+                                        <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
+                                            <Box style={{ minWidth: occupancyData?.weeks?.length * 60 || 400 }}>
+                                                <SimpleBarChart series={occupancyData?.series} labels={occupancyData?.weeks} />
+                                            </Box>
+                                        </Box>
+                                    </Paper>
+
+                                    <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
+                                        <Group justify="space-between" mb="sm">
+                                            <Group gap="sm">
+                                                <Box style={{ background: '#e7f5ff', borderRadius: 10, padding: 8 }}>
+                                                    <IconBuildingWarehouse size={22} color="#228be6" />
+                                                </Box>
+                                                <div>
+                                                    <Title order={5} style={{ color: '#2b2b2b' }}>Summary per Zone</Title>
+                                                    <Text size="xs" c="dimmed">Klik zone di atas untuk detail item</Text>
+                                                </div>
+                                            </Group>
+                                            <TextInput placeholder="Cari zone..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 220 }} />
+                                        </Group>
+                                        <Box style={{ overflowX: 'auto' }}>
+                                            <Box component="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 700 }}>
+                                                <Box component="thead" style={{ background: 'linear-gradient(90deg, #1a1a1a, #343a40)' }}>
+                                                    <Box component="tr">
+                                                        {['Zone', 'Terpakai', 'Kapasitas', 'Okupansi', 'Status'].map((h) => (
+                                                            <Box component="th" key={h} style={{ color: '#fff', fontSize: 11, padding: '8px 10px', textAlign: 'left' }}>{h}</Box>
+                                                        ))}
+                                                    </Box>
+                                                </Box>
+                                                <Box component="tbody">
+                                                    {occupancyData?.gauges?.filter((g) => !tableSearch || g.name.toLowerCase().includes(tableSearch.toLowerCase()) || g.zone.toLowerCase().includes(tableSearch.toLowerCase())).map((g) => (
+                                                        <Box component="tr" key={g.id} style={{ borderBottom: '1px solid #eee', cursor: 'pointer' }} onClick={() => handleZoneClick(g.id)}>
+                                                            <Box component="td" style={{ padding: '6px 10px', fontWeight: 700 }}>{g.name}</Box>
+                                                            <Box component="td" style={{ padding: '6px 10px', textAlign: 'right' }}>{Math.round(g.used).toLocaleString()}</Box>
+                                                            <Box component="td" style={{ padding: '6px 10px', textAlign: 'right' }}>{Math.round(g.capacity).toLocaleString()}</Box>
+                                                            <Box component="td" style={{ padding: '6px 10px' }}>
+                                                                <Badge size="xs" color={g.pct > 90 ? 'red' : g.pct > 75 ? 'orange' : g.pct > 50 ? 'yellow' : 'green'}>{g.pct}%</Badge>
+                                                            </Box>
+                                                            <Box component="td" style={{ padding: '6px 10px', fontSize: 11 }}>
+                                                                {g.pct > 90 ? 'Penuh' : g.pct > 75 ? 'Hampir Penuh' : g.pct > 50 ? 'Sedang' : 'Aman'}
+                                                            </Box>
+                                                        </Box>
+                                                    ))}
+                                                    {!occupancyData && <Box component="tr"><Box component="td" colSpan={5} style={{ padding: 20, textAlign: 'center' }}><Loader size="sm" /></Box></Box>}
+                                                </Box>
+                                            </Box>
+                                        </Box>
+                                    </Paper>
+                                </>
+                            )}
                         </>
                     )}
 
@@ -492,10 +573,14 @@ export default function DashboardPage() {
                                     </Box>
                                     <div>
                                         <Title order={5} style={{ color: '#2b2b2b' }}>Planning Inbound vs Actual Inbound</Title>
-                                        <Text size="xs" c="dimmed">On Time (hijau) vs Late (merah) per hari</Text>
+                                        <Text size="xs" c="dimmed">On Time (hijau) vs Late (merah) - Scroll untuk 1 tahun</Text>
                                     </div>
                                 </Group>
-                                <StackedBarChart data={oftiData?.daily} keys={['ontime', 'late']} colors={['#40c057', '#e03131']} />
+                                <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
+                                    <Box style={{ minWidth: oftiData?.daily?.length * 40 || 400 }}>
+                                        <StackedBarChart data={oftiData?.daily} keys={['ontime', 'late']} colors={['#40c057', '#e03131']} />
+                                    </Box>
+                                </Box>
                             </Paper>
 
                             <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
@@ -505,10 +590,14 @@ export default function DashboardPage() {
                                     </Box>
                                     <div>
                                         <Title order={5} style={{ color: '#2b2b2b' }}>OTIF INBOUND CP3</Title>
-                                        <Text size="xs" c="dimmed">% OTIF vs NOT OTIF per minggu</Text>
+                                        <Text size="xs" c="dimmed">% OTIF vs NOT OTIF per minggu - Scroll untuk 1 tahun</Text>
                                     </div>
                                 </Group>
-                                <HorizontalBarChart data={oftiData?.weekly} leftKey="otif" rightKey="notOtif" leftColor="#228be6" rightColor="#e03131" />
+                                <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
+                                    <Box style={{ minWidth: oftiData?.weekly?.length * 80 || 400 }}>
+                                        <HorizontalBarChart data={oftiData?.weekly} leftKey="otif" rightKey="notOtif" leftColor="#228be6" rightColor="#e03131" />
+                                    </Box>
+                                </Box>
                             </Paper>
                         </>
                     )}
@@ -521,16 +610,20 @@ export default function DashboardPage() {
                                 </Box>
                                 <div>
                                     <Title order={5} style={{ color: '#2b2b2b' }}>Serapan Ayam</Title>
-                                    <Text size="xs" c="dimmed">Planning vs Serapan per minggu (2 bar per minggu)</Text>
+                                    <Text size="xs" c="dimmed">Planning vs Serapan per minggu - Scroll untuk 1 tahun</Text>
                                 </div>
                             </Group>
-                            <SimpleBarChart 
-                                series={[
-                                    { label: 'Planning', color: '#4c6ef5', data: serapanData?.data?.map((d) => d.planning) || [] },
-                                    { label: 'Serapan', color: '#be4bdb', data: serapanData?.data?.map((d) => d.serapan) || [] },
-                                ]} 
-                                labels={serapanData?.data?.map((d) => ({ key: d.date, label: d.label })) || []} 
-                            />
+                            <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
+                                <Box style={{ minWidth: (serapanData?.data?.length || 0) * 60 || 400 }}>
+                                    <SimpleBarChart 
+                                        series={[
+                                            { label: 'Planning', color: '#4c6ef5', data: serapanData?.data?.map((d) => d.planning) || [] },
+                                            { label: 'Serapan', color: '#be4bdb', data: serapanData?.data?.map((d) => d.serapan) || [] },
+                                        ]} 
+                                        labels={serapanData?.data?.map((d) => ({ key: d.date, label: d.label })) || []} 
+                                    />
+                                </Box>
+                            </Box>
                         </Paper>
                     )}
 

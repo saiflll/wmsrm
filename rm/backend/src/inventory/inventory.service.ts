@@ -964,7 +964,7 @@ export class InventoryService {
   }
 
   // Occupancy data: capacity usage per zone
-  async getOccupancyData() {
+  async getOccupancyData(zone?: string, from?: string, to?: string) {
     const gudangs = await this.gudangRepo.find({ order: { id: 'ASC' } });
     const stocks = await this.stockRepo.find({ relations: ['gudang'] });
 
@@ -979,24 +979,24 @@ export class InventoryService {
     // Aggregate by zone
     const zoneMap: Record<string, { used: number; capacity: number; count: number }> = {};
     for (const g of gudangs) {
-      const zone = g.zone || 'UNKNOWN';
-      if (!zoneMap[zone]) zoneMap[zone] = { used: 0, capacity: 0, count: 0 };
-      zoneMap[zone].capacity += g.capacity || 1000;
-      zoneMap[zone].count++;
+      const z = g.zone || 'UNKNOWN';
+      if (!zoneMap[z]) zoneMap[z] = { used: 0, capacity: 0, count: 0 };
+      zoneMap[z].capacity += g.capacity || 1000;
+      zoneMap[z].count++;
     }
     for (const s of stocks) {
       if (!s.gudang) continue;
-      const zone = s.gudang.zone || 'UNKNOWN';
-      if (zoneMap[zone]) zoneMap[zone].used += s.qty;
+      const z = s.gudang.zone || 'UNKNOWN';
+      if (zoneMap[z]) zoneMap[z].used += s.qty;
     }
 
-    const gauges = Object.entries(zoneMap).map(([zone, data]) => {
+    const gauges = Object.entries(zoneMap).map(([z, data]) => {
       const pct = data.capacity > 0 ? Math.min(100, Math.round((data.used / data.capacity) * 100)) : 0;
-      let color = zoneColor[zone] || '#868e96';
+      let color = zoneColor[z] || '#868e96';
       return {
-        id: zone,
-        name: `Zone ${zone}`,
-        zone,
+        id: z,
+        name: `Zone ${z}`,
+        zone: z,
         used: data.used,
         capacity: data.capacity,
         pct,
@@ -1004,11 +1004,73 @@ export class InventoryService {
       };
     });
 
-    // Weekly occupancy summary (last 4 weeks) grouped by zone
-    const today = new Date();
+    // Date range: default 1 year if not specified
+    const startDate = from ? new Date(from) : new Date();
+    startDate.setFullYear(startDate.getFullYear() - 1);
+    const endDate = to ? new Date(to) : new Date();
+
+    // Daily data for the selected range
+    const dailyData: Record<string, number> = {};
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().split('T')[0];
+      dailyData[key] = 0;
+    }
+
+    const logs = await this.logRepo.find({
+      where: {
+        created_at: Between(startDate, endDate),
+        type: In([LogType.INBOUND, LogType.OUTBOUND]),
+      },
+      relations: ['gudang'],
+      order: { created_at: 'ASC' },
+    });
+
+    const zoneDaily: Record<string, Record<string, number>> = {};
+    for (const log of logs) {
+      const z = log.gudang?.zone || 'UNKNOWN';
+      const dateKey = log.created_at.toISOString().split('T')[0];
+      if (!zoneDaily[z]) zoneDaily[z] = {};
+      if (!zoneDaily[z][dateKey]) zoneDaily[z][dateKey] = 0;
+      zoneDaily[z][dateKey] += log.qty;
+    }
+
+    // If zone is selected, return daily data for that zone
+    if (zone) {
+      const zoneData = zoneDaily[zone] || {};
+      const dailySeries = Object.entries(dailyData).map(([date]) => ({
+        date,
+        value: zoneData[date] || 0,
+      }));
+
+      // Get items in this zone
+      const zoneGudangs = gudangs.filter(g => g.zone === zone);
+      const zoneGudangIds = zoneGudangs.map(g => g.id);
+      const items = stocks
+        .filter(s => s.gudang && zoneGudangIds.includes(s.gudang.id))
+        .map(s => ({
+          id: s.id,
+          barang: s.barang?.nama || '-',
+          batch: s.batch_no || '-',
+          qty: s.qty,
+          satuan: s.satuan || '-',
+          expiry: s.expiry_date?.toISOString().split('T')[0] || '-',
+          rack: s.gudang?.name || '-',
+          zone: s.gudang?.zone || '-',
+        }));
+
+      return {
+        gauges,
+        selectedZone: zone,
+        dailySeries,
+        items,
+        range: { from: startDate.toISOString().split('T')[0], to: endDate.toISOString().split('T')[0] },
+      };
+    }
+
+    // Default: weekly summary for all zones
     const weeks: string[] = [];
-    for (let i = 3; i >= 0; i--) {
-      const d = new Date(today);
+    for (let i = 51; i >= 0; i--) {
+      const d = new Date(endDate);
       d.setDate(d.getDate() - i * 7);
       const mon = new Date(d);
       mon.setDate(mon.getDate() - mon.getDay() + 1);
@@ -1020,23 +1082,19 @@ export class InventoryService {
     for (let w = 0; w < weeks.length; w++) {
       const weekEnd = new Date(weeks[w]);
       weekEnd.setDate(weekEnd.getDate() + 6);
-      const weekLogs = await this.logRepo.find({
-        where: {
-          created_at: Between(new Date(weeks[w]), weekEnd),
-          type: In([LogType.INBOUND, LogType.OUTBOUND]),
-        },
-        relations: ['gudang'],
-      });
       const zoneQty: Record<string, number> = {};
-      for (const log of weekLogs) {
-        const zone = log.gudang?.zone || 'UNKNOWN';
-        zoneQty[zone] = (zoneQty[zone] || 0) + log.qty;
-      }
-      for (const [zone, qty] of Object.entries(zoneQty)) {
-        if (!zoneGroups[zone]) {
-          zoneGroups[zone] = { label: `Zone ${zone}`, color: zoneColor[zone] || '#868e96', data: new Array(weeks.length).fill(0) };
+      for (const log of logs) {
+        const logDate = new Date(log.created_at);
+        if (logDate >= new Date(weeks[w]) && logDate <= weekEnd) {
+          const z = log.gudang?.zone || 'UNKNOWN';
+          zoneQty[z] = (zoneQty[z] || 0) + log.qty;
         }
-        zoneGroups[zone].data[w] = Math.round(qty);
+      }
+      for (const [z, qty] of Object.entries(zoneQty)) {
+        if (!zoneGroups[z]) {
+          zoneGroups[z] = { label: `Zone ${z}`, color: zoneColor[z] || '#868e96', data: new Array(weeks.length).fill(0) };
+        }
+        zoneGroups[z].data[w] = Math.round(qty);
       }
     }
 
@@ -1044,13 +1102,14 @@ export class InventoryService {
       gauges,
       weeks: weeks.map((w, i) => ({ key: w, label: `Minggu ${i + 1}` })),
       series: Object.values(zoneGroups),
+      range: { from: startDate.toISOString().split('T')[0], to: endDate.toISOString().split('T')[0] },
     };
   }
 
   // OFTI data: inbound planning vs actual (on-time vs late)
   async getOFTIData(from?: string, to?: string) {
     const start = from ? new Date(from) : new Date();
-    start.setDate(start.getDate() - 30);
+    start.setFullYear(start.getFullYear() - 1);
     const end = to ? new Date(to + 'T23:59:59') : new Date();
 
     const plans = await this.inboundPlanningRepo.find({
