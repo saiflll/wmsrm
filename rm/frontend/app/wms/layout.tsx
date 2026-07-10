@@ -5,12 +5,12 @@ import { useDisclosure } from '@mantine/hooks';
 import { usePathname, useRouter } from 'next/navigation';
 
 const roleLabel: Record<number, string> = {
-    1: 'Checker IB',
-    2: 'Checker OB',
+    1: 'Checker',
+    2: 'Admin',
     3: 'Koordinator',
     4: 'Supervisor',
     5: 'Super Admin',
-    6: 'Reviewer',
+    6: 'Manager',
 };
 
 const roleLineColor: Record<number, string> = {
@@ -24,21 +24,22 @@ const roleLineColor: Record<number, string> = {
 
 const menuPermissions: Record<string, number[]> = {
     '/wms/dashboard': [1, 2, 3, 4, 5, 6],
-    '/wms/driver-planning': [1, 4, 5],          // Planning Inbound
+    '/wms/driver-planning': [1, 3, 4, 5],
     '/wms/inbound': [1, 3, 4, 5],
-    '/wms/outbound': [2, 3, 4, 5],
-    '/wms/picking': [2, 3, 4, 5],               // Planning Outbound
+    '/wms/outbound': [1, 3, 4, 5],
+    '/wms/picking': [1, 3, 4, 5],
     '/wms/planning-ayam': [3, 4, 5],
     '/wms/outbound-ayam': [3, 4, 5],
-    '/wms/relocation': [1, 2, 3, 4, 5],
-    '/wms/stock-opname': [1, 2, 3, 4, 5],
+    '/wms/relocation': [1, 3, 4, 5],
+    '/wms/stock-opname': [1, 3, 4, 5],
     '/wms/inventory': [1, 2, 3, 4, 5],
     '/wms/report-inbound': [3, 4, 5],
     '/wms/report-outbound': [3, 4, 5],
+    '/wms/report-ayam': [3, 4, 5],
     '/wms/report-opname': [3, 4, 5],
-    '/wms/master-produk': [4, 5],
-    '/wms/master-lokasi': [4, 5],
-    '/wms/master-customer': [4, 5],
+    '/wms/master-produk': [2, 4, 5],
+    '/wms/master-lokasi': [2, 4, 5],
+    '/wms/master-customer': [2, 4, 5],
     '/wms/import': [5],
     '/wms/users': [5],
     '/wms/login-logs': [5],
@@ -73,6 +74,7 @@ const menuGroups: { label: string; links: { label: string; href: string; c: stri
         links: [
             { label: 'Report Inbound', href: '/wms/report-inbound', c: 'gray' },
             { label: 'Report Outbound', href: '/wms/report-outbound', c: 'gray' },
+            { label: 'Report Ayam', href: '/wms/report-ayam', c: 'pink' },
             { label: 'Report Opname', href: '/wms/report-opname', c: 'gray' },
         ],
     },

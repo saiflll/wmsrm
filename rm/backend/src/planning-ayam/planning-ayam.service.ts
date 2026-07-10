@@ -74,4 +74,25 @@ export class PlanningAyamService {
         const item = await this.findOne(id);
         return this.repo.remove(item);
     }
+
+    async getReport(from?: string, to?: string) {
+        const qb = this.repo.createQueryBuilder('p')
+            .leftJoinAndSelect('p.barang', 'barang')
+            .where('barang.nama ILIKE :ayam', { ayam: '%ayam%' });
+
+        if (from) qb.andWhere('p.tanggal_planning >= :from', { from });
+        if (to) qb.andWhere('p.tanggal_planning <= :to', { to });
+
+        const plannings = await qb.getMany();
+
+        const rows = plannings.map((p) => ({
+            date: p.tanggal_planning?.toISOString().split('T')[0] || '-',
+            planning: p.qty || 0,
+            outbound: (p as any).qty_diterima || 0,
+            status: p.status,
+            barang: (p as any).barang?.nama || '-',
+        }));
+
+        return { rows };
+    }
 }

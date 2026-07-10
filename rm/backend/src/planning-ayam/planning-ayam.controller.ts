@@ -41,4 +41,10 @@ export class PlanningAyamController {
     remove(@Param('id') id: number) {
         return this.svc.remove(id);
     }
+
+    @Get('report')
+    @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.SUPER_ADMIN)
+    getReport(@Query('from') from?: string, @Query('to') to?: string) {
+        return this.svc.getReport(from, to);
+    }
 }

@@ -21,12 +21,24 @@ const TABS = [
     { key: 'report', label: 'Report', icon: IconChartBar },
 ];
 
-const OccupancyGauge = ({ pct, label, subLabel, color }) => {
+const OccupancyGauge = ({ pct, label, subLabel, color, onClick, selected }) => {
     const radius = 42;
     const circ = 2 * Math.PI * radius;
     const strokePct = ((100 - pct) / 100) * circ;
     return (
-        <Paper withBorder p="md" style={{ borderRadius: 14, background: '#fff', boxShadow: cardShadow, textAlign: 'center' }}>
+        <Paper 
+            withBorder 
+            p="md" 
+            style={{ 
+                borderRadius: 14, 
+                background: selected ? '#e7f5ff' : '#fff', 
+                boxShadow: selected ? '0 0 0 2px #228be6' : cardShadow, 
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+            }}
+            onClick={onClick}
+        >
             <svg width={110} height={110} style={{ transform: 'rotate(-90deg)', margin: '0 auto', display: 'block' }}>
                 <defs>
                     <linearGradient id={`occ-grad-${label.replace(/\s+/g, '')}`} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -190,6 +202,7 @@ export default function DashboardPage() {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [tableSearch, setTableSearch] = useState('');
+    const [selectedZone, setSelectedZone] = useState(null);
 
     useEffect(() => {
         loadBaseData();
@@ -360,7 +373,14 @@ export default function DashboardPage() {
                                 <Grid gutter="md">
                                     {occupancyData?.gauges?.map((g) => (
                                         <Grid.Col key={g.id} span={{ base: 6, sm: 4, md: 3, lg: 'content' }}>
-                                            <OccupancyGauge pct={g.pct} label={g.name} subLabel={`${Math.round(g.used)} / ${Math.round(g.capacity)} kg`} color={g.color} />
+                                            <OccupancyGauge 
+                                                pct={g.pct} 
+                                                label={g.name} 
+                                                subLabel={`${Math.round(g.used)} / ${Math.round(g.capacity)} kg`} 
+                                                color={g.color}
+                                                selected={selectedZone === g.id}
+                                                onClick={() => setSelectedZone(selectedZone === g.id ? null : g.id)}
+                                            />
                                         </Grid.Col>
                                     ))}
                                     {!occupancyData && <Grid.Col span={12}><Box py="xl" ta="center"><Loader size="sm" /></Box></Grid.Col>}
@@ -463,13 +483,16 @@ export default function DashboardPage() {
                                 </Box>
                                 <div>
                                     <Title order={5} style={{ color: '#2b2b2b' }}>Serapan Ayam</Title>
-                                    <Text size="xs" c="dimmed">Planning vs Serapan ayam per hari (fitur akan aktif setelah Planning Ayam & Outbound Ayam dibuat)</Text>
+                                    <Text size="xs" c="dimmed">Planning vs Serapan per minggu (2 bar per minggu)</Text>
                                 </div>
                             </Group>
-                            <SimpleBarChart series={[
-                                { label: 'Planning', color: '#4c6ef5', data: serapanData?.data?.map((d) => d.planning) || [] },
-                                { label: 'Serapan', color: '#be4bdb', data: serapanData?.data?.map((d) => d.serapan) || [] },
-                            ]} labels={serapanData?.data?.map((d) => ({ key: d.date, label: d.label })) || []} />
+                            <SimpleBarChart 
+                                series={[
+                                    { label: 'Planning', color: '#4c6ef5', data: serapanData?.data?.map((d) => d.planning) || [] },
+                                    { label: 'Serapan', color: '#be4bdb', data: serapanData?.data?.map((d) => d.serapan) || [] },
+                                ]} 
+                                labels={serapanData?.data?.map((d) => ({ key: d.date, label: d.label })) || []} 
+                            />
                         </Paper>
                     )}
 
