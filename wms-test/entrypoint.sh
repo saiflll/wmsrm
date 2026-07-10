@@ -3,6 +3,9 @@ set -e
 
 PGDATA=/var/lib/postgresql/data
 
+mkdir -p /run/postgresql
+chown postgres:postgres /run/postgresql
+
 if [ ! -f "$PGDATA/PG_VERSION" ]; then
     echo "Initializing PostgreSQL..."
     mkdir -p "$PGDATA"
