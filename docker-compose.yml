@@ -7,8 +7,6 @@ services:
     restart: unless-stopped
     ports:
       - "3012:5432"
-      - "3013:3013"
-      - "3010:3004"
       - "3011:3011"
       - "3015:3000"
     volumes:
@@ -17,9 +15,7 @@ services:
       - POSTGRES_USER=wms_user
       - POSTGRES_PASSWORD=wms_password
       - POSTGRES_DB=wms_db
-      - JWT_SECRET=super_secret_key_change_me
-      - NEXT_PUBLIC_API_URL=http://localhost:3013
-      - BACKEND_API_URL=http://localhost:3011
+      - JWT_SECRET=rm_super_secret_key_change_me
 
 volumes:
   wms-test-postgres_data:

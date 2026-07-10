@@ -14,10 +14,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create .env file from Secret
-        run: |
-          echo "${{ secrets.ENV_FILE }}" > .env
-
       - name: Stop existing stack
         run: |
           docker compose down --remove-orphans || true
