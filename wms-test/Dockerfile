@@ -74,6 +74,10 @@ COPY --from=rm-backend-builder /build/package.json /app/rm-backend/package.json
 # Copy compiled rm-frontend (full source needed for next start)
 COPY --from=rm-frontend-builder /build/ /app/rm-frontend/
 
+# --- Wrapper scripts ---
+COPY wms-test/wrappers /app/wrappers
+RUN chmod +x /app/wrappers/*.sh
+
 # --- Supervisor config ---
 COPY wms-test/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
