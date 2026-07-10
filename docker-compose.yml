@@ -1,87 +1,25 @@
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: wms-master-db
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-wms_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wms_password}
-      POSTGRES_DB: ${POSTGRES_DB:-wms_db}
+  wms-test:
+    build:
+      context: .
+      dockerfile: wms-test/Dockerfile
+    container_name: wms-test
+    restart: unless-stopped
     ports:
       - "3012:5432"
-    volumes:
-      - wms-master-postgres_data:/var/lib/postgresql/data
-    networks:
-      - wms-master-network
-
-  fg-backend:
-    build:
-      context: ./fg/backend
-      dockerfile: Dockerfile
-    container_name: wms-master-fg-backend
-    restart: unless-stopped
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-wms_user}:${POSTGRES_PASSWORD:-wms_password}@db:5432/${POSTGRES_DB:-wms_db}
-      - JWT_SECRET=${JWT_SECRET:-fg_super_secret_key_change_me}
-      - PORT=3013
-    ports:
       - "3013:3013"
-    depends_on:
-      - db
-    networks:
-      - wms-master-network
-
-  fg-frontend:
-    build:
-      context: ./fg/frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: http://fg-backend:3013
-    container_name: wms-master-fg-frontend
-    restart: unless-stopped
-    ports:
       - "3010:3004"
-    depends_on:
-      - fg-backend
-    networks:
-      - wms-master-network
-
-  rm-backend:
-    build:
-      context: ./rm/backend
-      dockerfile: Dockerfile
-    container_name: wms-master-rm-backend
-    restart: unless-stopped
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-wms_user}:${POSTGRES_PASSWORD:-wms_password}@db:5432/${POSTGRES_DB:-wms_db}
-      - JWT_SECRET=${JWT_SECRET:-rm_super_secret_key_change_me}
-      - PORT=3011
-    ports:
       - "3011:3011"
-    depends_on:
-      - db
-    networks:
-      - wms-master-network
-
-  rm-frontend:
-    build:
-      context: ./rm/frontend
-      dockerfile: Dockerfile
-      args:
-        BACKEND_API_URL: http://rm-backend:3011
-    container_name: wms-master-rm-frontend
-    restart: unless-stopped
-    ports:
       - "3015:3000"
-    depends_on:
-      - rm-backend
-    networks:
-      - wms-master-network
+    volumes:
+      - wms-test-postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=wms_user
+      - POSTGRES_PASSWORD=wms_password
+      - POSTGRES_DB=wms_db
+      - JWT_SECRET=super_secret_key_change_me
+      - NEXT_PUBLIC_API_URL=http://localhost:3013
+      - BACKEND_API_URL=http://localhost:3011
 
 volumes:
-  wms-master-postgres_data:
-
-networks:
-  wms-master-network:
-    driver: bridge
-
+  wms-test-postgres_data:

@@ -1,4 +1,4 @@
-name: Deploy WMS to Server
+name: Deploy WMS
 
 on:
   push:
@@ -18,17 +18,28 @@ jobs:
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
 
-      - name: Stop and Remove existing Containers (including DB to resolve conflicts)
+      - name: Stop existing stack
         run: |
-          docker stop wms_frontend wms_backend wms_db || true
-          docker rm wms_frontend wms_backend wms_db || true
+          docker compose down --remove-orphans || true
 
-      - name: Build and Run Docker Containers
+      - name: Build and start all services
         run: |
-          docker compose build --no-cache
-          docker compose up -d --no-recreate
+          docker compose up -d --build
 
-      - name: Prune unused Docker images and builders
+      - name: Health check – wait for wms-test
+        run: |
+          echo "Waiting for wms-test to become healthy..."
+          for i in $(seq 1 30); do
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' wms-test 2>/dev/null || echo "starting")
+            if [ "$STATUS" = "healthy" ]; then
+              echo "wms-test is healthy!"
+              break
+            fi
+            echo "Attempt $i: status = $STATUS"
+            sleep 5
+          done
+
+      - name: Prune unused Docker images
         run: |
           docker image prune -f
           docker builder prune -f
