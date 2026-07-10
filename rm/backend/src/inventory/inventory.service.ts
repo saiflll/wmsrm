@@ -963,31 +963,42 @@ export class InventoryService {
     return { dates, series };
   }
 
-  // Occupancy data: capacity usage per warehouse (gudang)
+  // Occupancy data: capacity usage per zone
   async getOccupancyData() {
     const gudangs = await this.gudangRepo.find({ order: { id: 'ASC' } });
     const stocks = await this.stockRepo.find({ relations: ['gudang'] });
 
-    const gudangStockMap: Record<number, number> = {};
+    const zoneColor: Record<string, string> = {
+      'A': '#228be6',
+      'B': '#40c057',
+      'C': '#fd7e14',
+      'D': '#be4bdb',
+      'E': '#1098ad',
+    };
+
+    // Aggregate by zone
+    const zoneMap: Record<string, { used: number; capacity: number; count: number }> = {};
+    for (const g of gudangs) {
+      const zone = g.zone || 'UNKNOWN';
+      if (!zoneMap[zone]) zoneMap[zone] = { used: 0, capacity: 0, count: 0 };
+      zoneMap[zone].capacity += g.capacity || 1000;
+      zoneMap[zone].count++;
+    }
     for (const s of stocks) {
       if (!s.gudang) continue;
-      gudangStockMap[s.gudang.id] = (gudangStockMap[s.gudang.id] || 0) + s.qty;
+      const zone = s.gudang.zone || 'UNKNOWN';
+      if (zoneMap[zone]) zoneMap[zone].used += s.qty;
     }
 
-    const gauges = gudangs.map((g) => {
-      const used = gudangStockMap[g.id] || 0;
-      const cap = g.capacity || 1000;
-      const pct = cap > 0 ? Math.min(100, Math.round((used / cap) * 100)) : 0;
-      let color = '#2b8a3e'; // green
-      if (pct >= 90) color = '#e03131'; // red
-      else if (pct >= 75) color = '#f76707'; // orange
-      else if (pct >= 50) color = '#f59f00'; // yellow
+    const gauges = Object.entries(zoneMap).map(([zone, data]) => {
+      const pct = data.capacity > 0 ? Math.min(100, Math.round((data.used / data.capacity) * 100)) : 0;
+      let color = zoneColor[zone] || '#868e96';
       return {
-        id: g.id,
-        name: g.name,
-        zone: g.zone || '-',
-        used,
-        capacity: cap,
+        id: zone,
+        name: `Zone ${zone}`,
+        zone,
+        used: data.used,
+        capacity: data.capacity,
         pct,
         color,
       };
@@ -1005,13 +1016,6 @@ export class InventoryService {
     }
 
     const zoneGroups: Record<string, { label: string; color: string; data: number[] }> = {};
-    const zoneColor: Record<string, string> = {
-      'A': '#228be6',
-      'B': '#40c057',
-      'C': '#fd7e14',
-      'D': '#be4bdb',
-      'E': '#1098ad',
-    };
 
     for (let w = 0; w < weeks.length; w++) {
       const weekEnd = new Date(weeks[w]);
@@ -1030,7 +1034,7 @@ export class InventoryService {
       }
       for (const [zone, qty] of Object.entries(zoneQty)) {
         if (!zoneGroups[zone]) {
-          zoneGroups[zone] = { label: zone, color: zoneColor[zone] || '#868e96', data: new Array(weeks.length).fill(0) };
+          zoneGroups[zone] = { label: `Zone ${zone}`, color: zoneColor[zone] || '#868e96', data: new Array(weeks.length).fill(0) };
         }
         zoneGroups[zone].data[w] = Math.round(qty);
       }

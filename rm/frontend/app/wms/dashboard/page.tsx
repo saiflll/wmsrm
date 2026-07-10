@@ -22,36 +22,65 @@ const TABS = [
 ];
 
 const OccupancyGauge = ({ pct, label, subLabel, color, onClick, selected }) => {
-    const radius = 42;
-    const circ = 2 * Math.PI * radius;
-    const strokePct = ((100 - pct) / 100) * circ;
+    const size = 120;
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = 48;
+    const waveHeight = 6;
+    const fillY = cy + r - (pct / 100) * (r * 2);
+
+    const wavePath = () => {
+        const startX = cx - r;
+        const endX = cx + r;
+        const width = endX - startX;
+        const segments = 4;
+        const segW = width / segments;
+        let d = `M ${startX} ${fillY}`;
+        for (let i = 0; i < segments; i++) {
+            const x1 = startX + i * segW;
+            const x2 = x1 + segW / 2;
+            const x3 = x1 + segW;
+            const dir = i % 2 === 0 ? 1 : -1;
+            d += ` Q ${x2} ${fillY + dir * waveHeight}, ${x3} ${fillY}`;
+        }
+        d += ` L ${endX} ${cy + r} L ${startX} ${cy + r} Z`;
+        return d;
+    };
+
     return (
-        <Paper 
-            withBorder 
-            p="md" 
-            style={{ 
-                borderRadius: 14, 
-                background: selected ? '#e7f5ff' : '#fff', 
-                boxShadow: selected ? '0 0 0 2px #228be6' : cardShadow, 
+        <Paper
+            withBorder
+            p="md"
+            style={{
+                borderRadius: 14,
+                background: selected ? '#e7f5ff' : '#fff',
+                boxShadow: selected ? '0 0 0 2px #228be6' : cardShadow,
                 textAlign: 'center',
                 cursor: 'pointer',
                 transition: 'all 0.2s'
             }}
             onClick={onClick}
         >
-            <svg width={110} height={110} style={{ transform: 'rotate(-90deg)', margin: '0 auto', display: 'block' }}>
+            <svg width={size} height={size} style={{ margin: '0 auto', display: 'block' }}>
                 <defs>
-                    <linearGradient id={`occ-grad-${label.replace(/\s+/g, '')}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor={color} />
+                    <clipPath id={`circle-clip-${label.replace(/\s+/g, '')}`}>
+                        <circle cx={cx} cy={cy} r={r} />
+                    </clipPath>
+                    <linearGradient id={`liquid-grad-${label.replace(/\s+/g, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor={color} stopOpacity={0.9} />
                         <stop offset="100%" stopColor={color} stopOpacity={0.5} />
                     </linearGradient>
                 </defs>
-                <circle r={radius} cx={55} cy={55} fill="transparent" stroke="#f1f3f5" strokeWidth={9} />
-                <circle r={radius} cx={55} cy={55} fill="transparent" stroke={`url(#occ-grad-${label.replace(/\s+/g, '')})`} strokeWidth={9} strokeDasharray={circ} strokeDashoffset={strokePct} strokeLinecap="round" />
+                <circle cx={cx} cy={cy} r={r} fill="#f1f3f5" stroke="#dee2e6" strokeWidth={2} />
+                <g clipPath={`url(#circle-clip-${label.replace(/\s+/g, '')})`}>
+                    <rect x={cx - r} y={fillY} width={r * 2} height={cy + r - fillY} fill={`url(#liquid-grad-${label.replace(/\s+/g, '')})`} />
+                    <path d={wavePath()} fill={color} opacity={0.3} />
+                </g>
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={3} opacity={0.6} />
+                <text x={cx} y={cy - 4} textAnchor="middle" fontSize={22} fontWeight={800} fill={color}>{pct}%</text>
+                <text x={cx} y={cy + 14} textAnchor="middle" fontSize={9} fill="#868e96" fontWeight={600}>{label}</text>
             </svg>
-            <Text size="xl" fw={800} c={color} style={{ marginTop: -12 }}>{pct}%</Text>
-            <Text size="xs" fw={700} truncate>{label}</Text>
-            <Text size="10px" c="dimmed" truncate>{subLabel}</Text>
+            <Text size="10px" c="dimmed" truncate mt={4}>{subLabel}</Text>
         </Paper>
     );
 };
