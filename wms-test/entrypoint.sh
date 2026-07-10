@@ -5,7 +5,8 @@ PGDATA=/var/lib/postgresql/data
 POSTGRES_BIN=/usr/bin
 
 mkdir -p /run/postgresql /var/log
-chown postgres:postgres /run/postgresql
+touch /var/log/pg_init.log /var/log/pg_ensure.log
+chown postgres:postgres /run/postgresql /var/log/pg_init.log /var/log/pg_ensure.log
 
 # Initialize if fresh
 if [ ! -f "$PGDATA/PG_VERSION" ]; then
