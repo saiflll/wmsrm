@@ -316,7 +316,16 @@ export default function DashboardPage() {
                     </Button>
                 </Group>
 
-                <Group gap="sm" justify="center" grow>
+                <Group gap="sm" justify="center" grow style={{
+                    width: 'calc(100% + var(--grid-gutter))',
+                    display: 'flex',
+                    flexWrap: 'nowrap',
+                    justifyContent: 'space-evenly',
+                    alignItems: 'center',
+                    margin: 'var(--grid-margin)',
+                    flexDirection: 'row',
+                    alignContent: 'center',
+                }}>
                     {TABS.map((tab) => {
                         const Icon = tab.icon;
                         const active = activeTab === tab.key;
