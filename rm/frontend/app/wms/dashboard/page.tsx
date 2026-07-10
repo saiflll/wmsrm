@@ -138,48 +138,166 @@ const TD = ({ children, right = false, style = {} }) => (
 );
 
 /* ─────────────────────────── Bar Charts ─────────────────────────── */
+
+/**
+ * OccupancyYearChart — khusus untuk chart occupancy tahunan (banyak week × banyak zone).
+ * Menjamin bar tetap tebal (min 8px), height lebih besar, label rotasi agar tidak tumpuk.
+ */
+const OccupancyYearChart = ({ series, labels }) => {
+    if (!series?.length || !labels?.length)
+        return <Text size="xs" c="dimmed" ta="center" py="md">Tidak ada data.</Text>;
+
+    const nGroups  = labels.length;
+    const nSeries  = series.length;
+    const minBarW  = 10;          // minimum per bar (px)
+    const gap      = 3;           // gap antar bar dalam satu group
+    const groupGap = 8;           // gap antar group
+    const groupW   = nSeries * minBarW + (nSeries - 1) * gap + groupGap;
+    const totalW   = Math.max(800, nGroups * groupW + 80);
+    const height   = 300;
+    const pad      = { top: 32, right: 100, bottom: 60, left: 60 };
+    const chartW   = totalW - pad.left - pad.right;
+    const chartH   = height - pad.top  - pad.bottom;
+    const maxVal   = Math.max(...series.flatMap(s => s.data), 1);
+    const gridLines = [0, 0.25, 0.5, 0.75, 1];
+
+    return (
+        <svg width={totalW} height={height} viewBox={`0 0 ${totalW} ${height}`} style={{ overflow: 'visible' }}>
+            {/* background */}
+            <rect x={pad.left} y={pad.top} width={chartW} height={chartH} fill="#fafbfc" rx={4} />
+
+            {/* grid lines */}
+            {gridLines.map((p, i) => {
+                const y   = pad.top + chartH * p;
+                const val = Math.round(maxVal * (1 - p));
+                return (
+                    <g key={i}>
+                        <line x1={pad.left} y1={y} x2={pad.left + chartW} y2={y}
+                            stroke={p === 0 || p === 1 ? '#ced4da' : '#e9ecef'}
+                            strokeDasharray={p === 0 || p === 1 ? 'none' : '4,4'}
+                            strokeWidth={p === 0 || p === 1 ? 1.5 : 1}
+                        />
+                        <text x={pad.left - 8} y={y + 4} textAnchor="end" fontSize={10} fill="#868e96" fontWeight={600}>
+                            {val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
+                        </text>
+                    </g>
+                );
+            })}
+
+            {/* bars + labels */}
+            {labels.map((l, wIdx) => {
+                const gx = pad.left + wIdx * (chartW / nGroups);
+                const gCenter = gx + (chartW / nGroups) / 2;
+                return (
+                    <g key={l.key ?? wIdx}>
+                        {series.map((s, sIdx) => {
+                            const val = s.data[wIdx] || 0;
+                            const h   = Math.max((val / maxVal) * chartH, val > 0 ? 2 : 0);
+                            const bx  = gCenter - (nSeries * minBarW + (nSeries - 1) * gap) / 2 + sIdx * (minBarW + gap);
+                            const by  = pad.top + chartH - h;
+                            return (
+                                <g key={s.label}>
+                                    <rect x={bx} y={by} width={minBarW} height={h} rx={3}
+                                        fill={s.color} opacity={0.85}
+                                    />
+                                    {/* tooltip-style value on hover — static for now */}
+                                    {h > 22 && (
+                                        <text x={bx + minBarW / 2} y={by + h / 2 + 4}
+                                            textAnchor="middle" fontSize={7} fill="#fff" fontWeight={800}>
+                                            {val >= 1000 ? `${Math.round(val / 1000)}k` : val}
+                                        </text>
+                                    )}
+                                </g>
+                            );
+                        })}
+                        {/* rotated label */}
+                        <text
+                            x={gCenter} y={pad.top + chartH + 10}
+                            textAnchor="end"
+                            fontSize={9} fill="#495057" fontWeight={600}
+                            transform={`rotate(-40, ${gCenter}, ${pad.top + chartH + 10})`}
+                        >
+                            {l.label}
+                        </text>
+                    </g>
+                );
+            })}
+
+            {/* legend */}
+            <g transform={`translate(${pad.left + chartW + 12}, ${pad.top})`}>
+                {series.map((s, i) => (
+                    <g key={s.label} transform={`translate(0, ${i * 22})`}>
+                        <rect x={0} y={0} width={12} height={12} rx={3} fill={s.color} opacity={0.9} />
+                        <text x={17} y={10} fontSize={10} fill="#495057" fontWeight={600}>{s.label}</text>
+                    </g>
+                ))}
+            </g>
+        </svg>
+    );
+};
+
 const SimpleBarChart = ({ series, labels }) => {
     if (!series?.length) return <Text size="xs" c="dimmed" ta="center" py="md">Tidak ada data.</Text>;
-    const labelWidth = 50;
-    const width = Math.max(760, labels.length * labelWidth);
-    const height = 240;
-    const pad = { top: 28, right: 28, bottom: 48, left: 55 };
-    const chartW = width - pad.left - pad.right;
-    const chartH = height - pad.top - pad.bottom;
-    const maxVal = Math.max(...series.flatMap((s) => s.data), 1);
-    const groupW = chartW / labels.length;
-    const barW = Math.min(26, (groupW - 20) / series.length);
+    const nGroups  = labels.length;
+    const nSeries  = series.length;
+    const minBarW  = 12;
+    const gap      = 3;
+    const groupGap = 10;
+    const groupW   = nSeries * minBarW + (nSeries - 1) * gap + groupGap;
+    const width    = Math.max(760, nGroups * groupW + 90);
+    const height   = 250;
+    const pad      = { top: 28, right: 90, bottom: 50, left: 55 };
+    const chartW   = width - pad.left - pad.right;
+    const chartH   = height - pad.top - pad.bottom;
+    const maxVal   = Math.max(...series.flatMap(s => s.data), 1);
 
     return (
         <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
+            <rect x={pad.left} y={pad.top} width={chartW} height={chartH} fill="#fafbfc" rx={4} />
             {[0, 0.25, 0.5, 0.75, 1].map((p, i) => {
                 const y = pad.top + chartH * p;
                 const val = Math.round(maxVal * (1 - p));
                 return (
                     <g key={i}>
-                        <line x1={pad.left} y1={y} x2={width - pad.right} y2={y} stroke="#e9ecef" strokeDasharray="3,3" />
-                        <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize={9} fill="#868e96">{val >= 1000 ? `${(val/1000).toFixed(0)}k` : val}</text>
+                        <line x1={pad.left} y1={y} x2={pad.left + chartW} y2={y}
+                            stroke={p === 0 || p === 1 ? '#ced4da' : '#e9ecef'}
+                            strokeDasharray={p === 0 || p === 1 ? 'none' : '4,4'}
+                        />
+                        <text x={pad.left - 6} y={y + 4} textAnchor="end" fontSize={9} fill="#868e96">
+                            {val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
+                        </text>
                     </g>
                 );
             })}
-            {labels.map((l, wIdx) => (
-                <g key={l.key}>
-                    {series.map((s, sIdx) => {
-                        const val = s.data[wIdx] || 0;
-                        const h = (val / maxVal) * chartH;
-                        const x = pad.left + wIdx * groupW + (groupW - series.length * barW) / 2 + sIdx * barW;
-                        const y = pad.top + chartH - h;
-                        return (
-                            <g key={s.label}>
-                                <rect x={x} y={y} width={barW - 1} height={h} rx={3} fill={s.color} opacity={0.88} />
-                                {h > 18 && <text x={x + barW / 2 - 0.5} y={y + h / 2 + 4} textAnchor="middle" fontSize={8} fill="#fff" fontWeight={700}>{val >= 1000 ? `${Math.round(val/1000)}k` : val}</text>}
-                            </g>
-                        );
-                    })}
-                    <text x={pad.left + wIdx * groupW + groupW / 2} y={height - 30} textAnchor="middle" fontSize={10} fill="#495057" fontWeight={700}>{l.label}</text>
-                </g>
-            ))}
-            <g transform={`translate(${width - pad.right + 8}, ${pad.top})`}>
+            {labels.map((l, wIdx) => {
+                const gx = pad.left + wIdx * (chartW / nGroups);
+                const gCenter = gx + (chartW / nGroups) / 2;
+                return (
+                    <g key={l.key ?? wIdx}>
+                        {series.map((s, sIdx) => {
+                            const val = s.data[wIdx] || 0;
+                            const h   = Math.max((val / maxVal) * chartH, val > 0 ? 2 : 0);
+                            const bx  = gCenter - (nSeries * minBarW + (nSeries - 1) * gap) / 2 + sIdx * (minBarW + gap);
+                            const by  = pad.top + chartH - h;
+                            return (
+                                <g key={s.label}>
+                                    <rect x={bx} y={by} width={minBarW} height={h} rx={3} fill={s.color} opacity={0.88} />
+                                    {h > 20 && (
+                                        <text x={bx + minBarW / 2} y={by + h / 2 + 4}
+                                            textAnchor="middle" fontSize={8} fill="#fff" fontWeight={700}>
+                                            {val >= 1000 ? `${Math.round(val / 1000)}k` : val}
+                                        </text>
+                                    )}
+                                </g>
+                            );
+                        })}
+                        <text x={gCenter} y={height - 30} textAnchor="middle" fontSize={10} fill="#495057" fontWeight={700}>
+                            {l.label}
+                        </text>
+                    </g>
+                );
+            })}
+            <g transform={`translate(${pad.left + chartW + 10}, ${pad.top})`}>
                 {series.map((s, i) => (
                     <g key={s.label} transform={`translate(0, ${i * 20})`}>
                         <rect x={0} y={0} width={10} height={10} rx={2} fill={s.color} />
@@ -559,16 +677,15 @@ export default function DashboardPage() {
                                 </>
                             ) : (
                                 <>
-                                    {/* Zone bar chart */}
+                                    {/* Zone bar chart — pakai OccupancyYearChart agar bar tidak tipis */}
                                     <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
                                         <SectionHeader icon={IconChartBar} accent="#f59f00" bg="#fff3bf"
-                                            title="Okupansi per Zone (1 Tahun)" sub="Scroll horizontal untuk data mingguan" />
-                                        <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
-                                            <Box style={{ minWidth: (occupancyData?.weeks?.length || 0) * 60 || 400 }}>
-                                                <SimpleBarChart series={occupancyData?.series} labels={occupancyData?.weeks} />
-                                            </Box>
+                                            title="Okupansi per Zone (1 Tahun)" sub="Scroll horizontal jika data lebih dari layar" />
+                                        <Box style={{ overflowX: 'auto', maxWidth: '100%', paddingBottom: 4 }}>
+                                            <OccupancyYearChart series={occupancyData?.series} labels={occupancyData?.weeks} />
                                         </Box>
                                     </Paper>
+
 
                                     {/* Summary zone table */}
                                     <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
