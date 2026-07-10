@@ -294,9 +294,9 @@ export class SeedService implements OnApplicationBootstrap {
             const planDate = new Date(oneYearAgo.getTime() + Math.random() * (now.getTime() - oneYearAgo.getTime()));
             const isDone = Math.random() > 0.2;
             const isLate = Math.random() > 0.6;
-            const selisih = isDone ? (isLate ? Math.floor(Math.random() * 120 + 10) : -Math.floor(Math.random() * 60)) : null;
+            const selisih = isDone ? (isLate ? Math.floor(Math.random() * 120 + 10) : -Math.floor(Math.random() * 60)) : undefined;
 
-            const realisasi = isDone ? new Date(planDate.getTime() + (selisih || 0) * 60000) : null;
+            const realisasi = isDone ? new Date(planDate.getTime() + (selisih || 0) * 60000) : undefined;
 
             plans.push({
                 no_po: `PO-${String(Math.floor(Math.random() * 900000) + 100000)}`,
@@ -304,7 +304,7 @@ export class SeedService implements OnApplicationBootstrap {
                 plat_nomor: `B ${Math.floor(Math.random() * 9000) + 1000} XX`,
                 supplier: suppliers[Math.floor(Math.random() * suppliers.length)],
                 qty: Math.floor(Math.random() * 500 + 100),
-                qty_diterima: isDone ? Math.floor(Math.random() * 500 + 100) : null,
+                qty_diterima: isDone ? Math.floor(Math.random() * 500 + 100) : undefined,
                 estimasi_datang: planDate,
                 status: isDone ? 'DONE' : 'WAIT',
                 tanggal_realisasi: realisasi,
