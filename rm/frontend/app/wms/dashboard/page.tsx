@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Box, Group, Paper, Stack, Text, Title, Badge, Button, Loader, TextInput
 } from '@mantine/core';
-import { DateInput } from '@mantine/dates';
 import {
     IconPackage, IconTrendingUp, IconTrendingDown, IconRefresh, IconCalendarStats,
     IconBuildingWarehouse, IconAlertTriangle, IconChartBar, IconChartLine,
@@ -749,8 +748,14 @@ export default function DashboardPage() {
                         </Group>
                         {showExportFilter && (
                             <Group gap="xs" mb="sm">
-                                <DateInput label="Dari" size="xs" value={exportFrom} onChange={setExportFrom} style={{ width: 140 }} />
-                                <DateInput label="Sampai" size="xs" value={exportTo} onChange={setExportTo} style={{ width: 140 }} />
+                                <Box>
+                                    <Text size="xs" c="dimmed">Dari</Text>
+                                    <input type="date" value={exportFrom ? exportFrom.toISOString().split('T')[0] : ''} onChange={(e) => setExportFrom(e.target.value ? new Date(e.target.value) : null)} style={{ padding: '4px 8px', border: '1px solid #dee2e6', borderRadius: 4, fontSize: 12, width: 130 }} />
+                                </Box>
+                                <Box>
+                                    <Text size="xs" c="dimmed">Sampai</Text>
+                                    <input type="date" value={exportTo ? exportTo.toISOString().split('T')[0] : ''} onChange={(e) => setExportTo(e.target.value ? new Date(e.target.value) : null)} style={{ padding: '4px 8px', border: '1px solid #dee2e6', borderRadius: 4, fontSize: 12, width: 130 }} />
+                                </Box>
                                 <Button size="xs" variant="light" color="red" onClick={() => { setExportFrom(null); setExportTo(null); }} mt={18}>Reset</Button>
                             </Group>
                         )}
