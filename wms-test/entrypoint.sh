@@ -38,5 +38,19 @@ if [ ! -f "$PGDATA/PG_VERSION" ]; then
     echo "=== PostgreSQL initialized ==="
 fi
 
+# Ensure user exists even if volume was previously initialized but user creation failed
+echo "=== Ensuring database user exists ==="
+su postgres $POSTGRES_BIN/pg_ctl -D $PGDATA -w -l /var/log/pg_ensure.log start 2>/dev/null || true
+sleep 1
+USER_EXISTS=$(su postgres $POSTGRES_BIN/psql -t -c "SELECT 1 FROM pg_roles WHERE rolname='${POSTGRES_USER}'" 2>/dev/null | tr -d ' ')
+if [ "$USER_EXISTS" != "1" ]; then
+    echo "Creating user ${POSTGRES_USER}..."
+    su postgres $POSTGRES_BIN/psql -c "CREATE USER ${POSTGRES_USER} WITH PASSWORD '${POSTGRES_PASSWORD}';" 2>/dev/null || true
+    su postgres $POSTGRES_BIN/psql -c "CREATE DATABASE ${POSTGRES_DB} OWNER ${POSTGRES_USER};" 2>/dev/null || true
+    su postgres $POSTGRES_BIN/psql -c "GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER};" 2>/dev/null || true
+fi
+su postgres $POSTGRES_BIN/pg_ctl -D $PGDATA -w stop 2>/dev/null || true
+echo "=== Database check complete ==="
+
 echo "Starting all services via supervisord..."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
