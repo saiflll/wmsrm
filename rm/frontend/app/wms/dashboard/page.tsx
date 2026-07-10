@@ -2,7 +2,7 @@
 // @ts-nocheck
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-    Box, Grid, Group, Paper, Stack, Text, Title, Badge, Button, Loader, TextInput
+    Box, Group, Paper, Stack, Text, Title, Badge, Button, Loader, TextInput
 } from '@mantine/core';
 import {
     IconPackage, IconTrendingUp, IconTrendingDown, IconRefresh, IconCalendarStats,
@@ -22,11 +22,11 @@ const TABS = [
 ];
 
 const OccupancyGauge = ({ pct, label, subLabel, color, onClick, selected }) => {
-    const size = 120;
+    const size = 100;
     const cx = size / 2;
     const cy = size / 2;
-    const r = 48;
-    const waveHeight = 6;
+    const r = 40;
+    const waveHeight = 5;
     const fillY = cy + r - (pct / 100) * (r * 2);
 
     const wavePath = () => {
@@ -50,9 +50,9 @@ const OccupancyGauge = ({ pct, label, subLabel, color, onClick, selected }) => {
     return (
         <Paper
             withBorder
-            p="md"
+            p="xs"
             style={{
-                borderRadius: 14,
+                borderRadius: 10,
                 background: selected ? '#e7f5ff' : '#fff',
                 boxShadow: selected ? '0 0 0 2px #228be6' : cardShadow,
                 textAlign: 'center',
@@ -77,20 +77,20 @@ const OccupancyGauge = ({ pct, label, subLabel, color, onClick, selected }) => {
                     <path d={wavePath()} fill={color} opacity={0.3} />
                 </g>
                 <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={3} opacity={0.6} />
-                <text x={cx} y={cy - 4} textAnchor="middle" fontSize={22} fontWeight={800} fill={color}>{pct}%</text>
-                <text x={cx} y={cy + 14} textAnchor="middle" fontSize={9} fill="#868e96" fontWeight={600}>{label}</text>
+                <text x={cx} y={cy - 2} textAnchor="middle" fontSize={18} fontWeight={800} fill={color}>{pct}%</text>
+                <text x={cx} y={cy + 12} textAnchor="middle" fontSize={8} fill="#868e96" fontWeight={600}>{label}</text>
             </svg>
-            <Text size="10px" c="dimmed" truncate mt={4}>{subLabel}</Text>
+            <Text size="9px" c="dimmed" truncate mt={2}>{subLabel}</Text>
         </Paper>
     );
 };
 
 const SimpleBarChart = ({ series, labels, title }) => {
-    if (!series?.length) return <Text size="xs" c="dimmed" ta="center" py="xl">Tidak ada data.</Text>;
+    if (!series?.length) return <Text size="xs" c="dimmed" ta="center" py="md">Tidak ada data.</Text>;
     const labelWidth = 50;
     const width = Math.max(760, labels.length * labelWidth);
-    const height = 320;
-    const pad = { top: 40, right: 30, bottom: 60, left: 60 };
+    const height = 260;
+    const pad = { top: 30, right: 30, bottom: 50, left: 60 };
     const chartW = width - pad.left - pad.right;
     const chartH = height - pad.top - pad.bottom;
     const maxVal = Math.max(...series.flatMap((s) => s.data), 1);
@@ -139,10 +139,10 @@ const SimpleBarChart = ({ series, labels, title }) => {
 };
 
 const StackedBarChart = ({ data, keys, colors }) => {
-    if (!data?.length) return <Text size="xs" c="dimmed" ta="center" py="xl">Tidak ada data.</Text>;
+    if (!data?.length) return <Text size="xs" c="dimmed" ta="center" py="md">Tidak ada data.</Text>;
     const width = 760;
-    const height = 300;
-    const pad = { top: 40, right: 30, bottom: 60, left: 60 };
+    const height = 240;
+    const pad = { top: 30, right: 30, bottom: 50, left: 60 };
     const chartW = width - pad.left - pad.right;
     const chartH = height - pad.top - pad.bottom;
     const maxVal = Math.max(...data.map((d) => keys.reduce((s, k) => s + (d[k] || 0), 0)), 1);
@@ -193,17 +193,17 @@ const StackedBarChart = ({ data, keys, colors }) => {
 };
 
 const HorizontalBarChart = ({ data, leftKey, rightKey, leftColor, rightColor }) => {
-    if (!data?.length) return <Text size="xs" c="dimmed" ta="center" py="xl">Tidak ada data.</Text>;
+    if (!data?.length) return <Text size="xs" c="dimmed" ta="center" py="md">Tidak ada data.</Text>;
     const width = 760;
-    const height = 40 + data.length * 34;
-    const pad = { top: 30, right: 30, bottom: 30, left: 60 };
+    const height = 30 + data.length * 28;
+    const pad = { top: 20, right: 30, bottom: 20, left: 60 };
     const chartW = width - pad.left - pad.right;
 
     return (
         <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
             <line x1={pad.left + chartW / 2} y1={pad.top} x2={pad.left + chartW / 2} y2={height - pad.bottom} stroke="#e9ecef" strokeDasharray="3,3" />
             {data.map((d, i) => {
-                const y = pad.top + i * 34;
+                const y = pad.top + i * 28;
                 const total = (d[leftKey] || 0) + (d[rightKey] || 0);
                 const leftW = total > 0 ? (d[leftKey] / total) * (chartW / 2 - 10) : 0;
                 const rightW = total > 0 ? (d[rightKey] / total) * (chartW / 2 - 10) : 0;
@@ -315,20 +315,42 @@ export default function DashboardPage() {
 
     return (
         <Box>
-            <Box style={{ background: gradientBg, borderBottom: '1px solid #dee2e6', padding: '14px 24px' }}>
-                <Group justify="space-between" align="center" mb="md">
-                    <Group gap="sm">
-                        <IconBuildingWarehouse size={28} color="#0ea5e9" />
-                        <Title order={3} style={{ color: '#0c4a6e', fontWeight: 900 }}>
+            <Box style={{ background: gradientBg, borderBottom: '1px solid #dee2e6', padding: '8px 16px' }}>
+                <Group justify="space-between" align="center" mb={6}>
+                    <Group gap="xs">
+                        <IconBuildingWarehouse size={22} color="#0ea5e9" />
+                        <Title order={4} style={{ color: '#0c4a6e', fontWeight: 900 }}>
                             DASHBOARD MONITORING RAW MATERIALS
                         </Title>
+                        {(s.expiredCount > 0 || s.nearExpiredCount > 0 || s.wasteCount > 0) && (
+                            <Group gap={4}>
+                                {s.expiredCount > 0 && (
+                                    <Badge color="red" variant="filled" size="sm">
+                                        <IconAlertTriangle size={12} style={{ marginRight: 4 }} />
+                                        EXPIRED {s.expiredCount}
+                                    </Badge>
+                                )}
+                                {s.nearExpiredCount > 0 && (
+                                    <Badge color="yellow" variant="filled" size="sm" style={{ color: '#f59f00' }}>
+                                        <IconCalendarStats size={12} style={{ marginRight: 4 }} />
+                                        NEAR EXP {s.nearExpiredCount}
+                                    </Badge>
+                                )}
+                                {s.wasteCount > 0 && (
+                                    <Badge color="violet" variant="filled" size="sm">
+                                        <IconPackage size={12} style={{ marginRight: 4 }} />
+                                        WASTE {s.wasteCount}
+                                    </Badge>
+                                )}
+                            </Group>
+                        )}
                     </Group>
                     <Button size="xs" variant="light" color="gray" leftSection={<IconRefresh size={14} />} onClick={() => { loadBaseData(); loadOccupancy(); loadOFTI(); loadSerapan(); }}>
                         Refresh
                     </Button>
                 </Group>
 
-                <Group gap="sm" justify="center" grow style={{
+                <Group gap={4} justify="center" grow style={{
                     width: 'calc(100% + var(--grid-gutter))',
                     display: 'flex',
                     flexWrap: 'nowrap',
@@ -344,12 +366,12 @@ export default function DashboardPage() {
                         return (
                             <Button
                                 key={tab.key}
-                                size="sm"
+                                size="xs"
                                 color="violet"
                                 variant={active ? 'filled' : 'light'}
-                                leftSection={<Icon size={16} />}
+                                leftSection={<Icon size={14} />}
                                 onClick={() => setActiveTab(tab.key)}
-                                style={{ flex: '1 1 130px', fontWeight: 700 }}
+                                style={{ flex: '1 1 130px', fontWeight: 700, height: 30 }}
                             >
                                 {tab.label}
                             </Button>
@@ -358,71 +380,23 @@ export default function DashboardPage() {
                 </Group>
             </Box>
 
-            <Box p="md">
-                <Stack gap="md">
-                    {/* Alert Banners */}
-                    {(s.expiredCount > 0 || s.nearExpiredCount > 0 || s.wasteCount > 0) && (
-                        <Grid gutter="sm">
-                            {s.expiredCount > 0 && (
-                                <Grid.Col span={{ base: 12, md: 4 }}>
-                                    <Paper withBorder p="sm" style={{ background: 'linear-gradient(135deg, #fff5f5, #ffe3e3)', borderLeft: '5px solid #fa5252', borderRadius: 12 }}>
-                                        <Group gap="sm">
-                                            <IconAlertTriangle color="#fa5252" />
-                                            <div>
-                                                <Text fw={700} size="sm" c="red">BATCH EXPIRED</Text>
-                                                <Text size="xs" c="dimmed">{s.expiredCount} lot melewati expired.</Text>
-                                            </div>
-                                            <Badge color="red" variant="filled" ml="auto">EXPIRED</Badge>
-                                        </Group>
-                                    </Paper>
-                                </Grid.Col>
-                            )}
-                            {s.nearExpiredCount > 0 && (
-                                <Grid.Col span={{ base: 12, md: 4 }}>
-                                    <Paper withBorder p="sm" style={{ background: 'linear-gradient(135deg, #fff9db, #fff3bf)', borderLeft: '5px solid #fcc419', borderRadius: 12 }}>
-                                        <Group gap="sm">
-                                            <IconCalendarStats color="#f59f00" />
-                                            <div>
-                                                <Text fw={700} size="sm" c="yellow.9">NEAR EXPIRED</Text>
-                                                <Text size="xs" c="dimmed">{s.nearExpiredCount} lot &lt; 30 hari.</Text>
-                                            </div>
-                                            <Badge color="yellow" variant="filled" ml="auto">NEAR EXP</Badge>
-                                        </Group>
-                                    </Paper>
-                                </Grid.Col>
-                            )}
-                            {s.wasteCount > 0 && (
-                                <Grid.Col span={{ base: 12, md: 4 }}>
-                                    <Paper withBorder p="sm" style={{ background: 'linear-gradient(135deg, #f3f0ff, #e5dbff)', borderLeft: '5px solid #845ef7', borderRadius: 12 }}>
-                                        <Group gap="sm">
-                                            <IconPackage color="#845ef7" />
-                                            <div>
-                                                <Text fw={700} size="sm" c="violet">WASTE ZONE</Text>
-                                                <Text size="xs" c="dimmed">{s.wasteCount} item di area waste.</Text>
-                                            </div>
-                                            <Badge color="violet" variant="filled" ml="auto">WASTE</Badge>
-                                        </Group>
-                                    </Paper>
-                                </Grid.Col>
-                            )}
-                        </Grid>
-                    )}
-
+            <Box p="sm">
+                <Stack gap="sm">
                     {activeTab === 'occupancy' && (
                         <>
-                            <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
-                                <Group gap="sm" mb="md">
-                                    <Box style={{ background: '#e7f5ff', borderRadius: 10, padding: 8 }}>
-                                        <IconChartPie size={22} color="#228be6" />
+                            <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
+                                <Group gap="xs" mb={6}>
+                                    <Box style={{ background: '#e7f5ff', borderRadius: 8, padding: 5 }}>
+                                        <IconChartPie size={18} color="#228be6" />
                                     </Box>
                                     <div>
-                                        <Title order={5} style={{ color: '#2b2b2b' }}>Okupansi per Zone</Title>
-                                        <Text size="xs" c="dimmed">Klik zone untuk melihat detail item & trend harian</Text>
+                                        <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>Okupansi per Zone</Title>
+                                        <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>Klik zone untuk detail item & trend</Text>
                                     </div>
                                 </Group>
-                                <Box style={{ display: 'flex', justifyContent: 'space-between', gap: 'md', flexWrap: 'wrap' }}>
+                                <Box style={{ display: 'flex', justifyContent: 'space-between', gap: 'sm', flexWrap: 'wrap' }}>
                                     {occupancyData?.gauges?.map((g) => (
-                                        <Box key={g.id} style={{ flex: '1 1 0', minWidth: 140, maxWidth: 200 }}>
+                                        <Box key={g.id} style={{ flex: '1 1 0', minWidth: 120, maxWidth: 180 }}>
                                             <OccupancyGauge 
                                                 pct={g.pct} 
                                                 label={g.name} 
@@ -439,14 +413,14 @@ export default function DashboardPage() {
 
                             {selectedZone ? (
                                 <>
-                                    <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
-                                        <Group gap="sm" mb="md">
-                                            <Box style={{ background: '#fff3bf', borderRadius: 10, padding: 8 }}>
-                                                <IconChartBar size={22} color="#f59f00" />
+                                    <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
+                                        <Group gap="xs" mb={6}>
+                                            <Box style={{ background: '#fff3bf', borderRadius: 8, padding: 5 }}>
+                                                <IconChartBar size={18} color="#f59f00" />
                                             </Box>
                                             <div>
-                                                <Title order={5} style={{ color: '#2b2b2b' }}>Trend Harian - Zone {selectedZone}</Title>
-                                                <Text size="xs" c="dimmed">Scroll horizontal untuk melihat data 1 tahun</Text>
+                                                <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>Trend Harian - Zone {selectedZone}</Title>
+                                                <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>Scroll horizontal untuk data 1 tahun</Text>
                                             </div>
                                         </Group>
                                         <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
@@ -459,18 +433,18 @@ export default function DashboardPage() {
                                         </Box>
                                     </Paper>
 
-                                    <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
-                                        <Group justify="space-between" mb="sm">
-                                            <Group gap="sm">
-                                                <Box style={{ background: '#e7f5ff', borderRadius: 10, padding: 8 }}>
-                                                    <IconBuildingWarehouse size={22} color="#228be6" />
+                                    <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
+                                        <Group justify="space-between" mb={4}>
+                                            <Group gap="xs">
+                                                <Box style={{ background: '#e7f5ff', borderRadius: 8, padding: 5 }}>
+                                                    <IconBuildingWarehouse size={18} color="#228be6" />
                                                 </Box>
                                                 <div>
-                                                    <Title order={5} style={{ color: '#2b2b2b' }}>Item di Zone {selectedZone}</Title>
-                                                    <Text size="xs" c="dimmed">{occupancyData?.items?.length || 0} item ditemukan</Text>
+                                                    <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>Item di Zone {selectedZone}</Title>
+                                                    <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>{occupancyData?.items?.length || 0} item</Text>
                                                 </div>
                                             </Group>
-                                            <TextInput placeholder="Cari item..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 220 }} />
+                                            <TextInput placeholder="Cari item..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 180 }} />
                                         </Group>
                                         <Box style={{ overflowX: 'auto' }}>
                                             <Box component="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 700 }}>
@@ -502,14 +476,14 @@ export default function DashboardPage() {
                                 </>
                             ) : (
                                 <>
-                                    <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
-                                        <Group gap="sm" mb="md">
-                                            <Box style={{ background: '#fff3bf', borderRadius: 10, padding: 8 }}>
-                                                <IconChartBar size={22} color="#f59f00" />
+                                    <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
+                                        <Group gap="xs" mb={6}>
+                                            <Box style={{ background: '#fff3bf', borderRadius: 8, padding: 5 }}>
+                                                <IconChartBar size={18} color="#f59f00" />
                                             </Box>
                                             <div>
-                                                <Title order={5} style={{ color: '#2b2b2b' }}>Okupansi per Zone (1 Tahun)</Title>
-                                                <Text size="xs" c="dimmed">Scroll horizontal untuk melihat data mingguan</Text>
+                                                <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>Okupansi per Zone (1 Tahun)</Title>
+                                                <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>Scroll horizontal untuk data mingguan</Text>
                                             </div>
                                         </Group>
                                         <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
@@ -519,18 +493,18 @@ export default function DashboardPage() {
                                         </Box>
                                     </Paper>
 
-                                    <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
-                                        <Group justify="space-between" mb="sm">
-                                            <Group gap="sm">
-                                                <Box style={{ background: '#e7f5ff', borderRadius: 10, padding: 8 }}>
-                                                    <IconBuildingWarehouse size={22} color="#228be6" />
+                                    <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
+                                        <Group justify="space-between" mb={4}>
+                                            <Group gap="xs">
+                                                <Box style={{ background: '#e7f5ff', borderRadius: 8, padding: 5 }}>
+                                                    <IconBuildingWarehouse size={18} color="#228be6" />
                                                 </Box>
                                                 <div>
-                                                    <Title order={5} style={{ color: '#2b2b2b' }}>Summary per Zone</Title>
-                                                    <Text size="xs" c="dimmed">Klik zone di atas untuk detail item</Text>
+                                                    <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>Summary per Zone</Title>
+                                                    <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>Klik zone untuk detail</Text>
                                                 </div>
                                             </Group>
-                                            <TextInput placeholder="Cari zone..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 220 }} />
+                                            <TextInput placeholder="Cari zone..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 180 }} />
                                         </Group>
                                         <Box style={{ overflowX: 'auto' }}>
                                             <Box component="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, minWidth: 700 }}>
@@ -567,14 +541,14 @@ export default function DashboardPage() {
 
                     {activeTab === 'ofti' && (
                         <>
-                            <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
-                                <Group gap="sm" mb="md">
-                                    <Box style={{ background: '#d3f9d8', borderRadius: 10, padding: 8 }}>
-                                        <IconTruckDelivery size={22} color="#2b8a3e" />
+                            <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
+                                <Group gap="xs" mb={6}>
+                                    <Box style={{ background: '#d3f9d8', borderRadius: 8, padding: 5 }}>
+                                        <IconTruckDelivery size={18} color="#2b8a3e" />
                                     </Box>
                                     <div>
-                                        <Title order={5} style={{ color: '#2b2b2b' }}>Planning Inbound vs Actual Inbound</Title>
-                                        <Text size="xs" c="dimmed">On Time (hijau) vs Late (merah) - Scroll untuk 1 tahun</Text>
+                                        <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>Planning Inbound vs Actual Inbound</Title>
+                                        <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>On Time (hijau) vs Late (merah) - Scroll 1 tahun</Text>
                                     </div>
                                 </Group>
                                 <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
@@ -584,14 +558,14 @@ export default function DashboardPage() {
                                 </Box>
                             </Paper>
 
-                            <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
-                                <Group gap="sm" mb="md">
-                                    <Box style={{ background: '#e7f5ff', borderRadius: 10, padding: 8 }}>
-                                        <IconChartLine size={22} color="#228be6" />
+                            <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
+                                <Group gap="xs" mb={6}>
+                                    <Box style={{ background: '#e7f5ff', borderRadius: 8, padding: 5 }}>
+                                        <IconChartLine size={18} color="#228be6" />
                                     </Box>
                                     <div>
-                                        <Title order={5} style={{ color: '#2b2b2b' }}>OTIF INBOUND CP3</Title>
-                                        <Text size="xs" c="dimmed">% OTIF vs NOT OTIF per minggu - Scroll untuk 1 tahun</Text>
+                                        <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>OTIF INBOUND CP3</Title>
+                                        <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>% OTIF vs NOT OTIF per minggu - Scroll 1 tahun</Text>
                                     </div>
                                 </Group>
                                 <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
@@ -604,14 +578,14 @@ export default function DashboardPage() {
                     )}
 
                     {activeTab === 'serapan' && (
-                        <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
-                            <Group gap="sm" mb="md">
-                                <Box style={{ background: '#f3d9fa', borderRadius: 10, padding: 8 }}>
-                                    <IconMeat size={22} color="#be4bdb" />
+                        <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
+                            <Group gap="xs" mb={6}>
+                                <Box style={{ background: '#f3d9fa', borderRadius: 8, padding: 5 }}>
+                                    <IconMeat size={18} color="#be4bdb" />
                                 </Box>
                                 <div>
-                                    <Title order={5} style={{ color: '#2b2b2b' }}>Serapan Ayam</Title>
-                                    <Text size="xs" c="dimmed">Planning vs Serapan per minggu - Scroll untuk 1 tahun</Text>
+                                    <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>Serapan Ayam</Title>
+                                    <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>Planning vs Serapan per minggu - Scroll 1 tahun</Text>
                                 </div>
                             </Group>
                             <Box style={{ overflowX: 'auto', maxWidth: '100%' }}>
@@ -629,28 +603,28 @@ export default function DashboardPage() {
                     )}
 
                     {activeTab === 'report' && (
-                        <Paper withBorder p="xl" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow, textAlign: 'center' }}>
-                            <IconChartBar size={48} color="#adb5bd" style={{ marginBottom: 12 }} />
-                            <Title order={5} c="dimmed">Report Dashboard</Title>
-                            <Text size="sm" c="dimmed" mt="xs">Fitur report lengkap akan menyusul pada tahap berikutnya.</Text>
+                        <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow, textAlign: 'center' }}>
+                            <IconChartBar size={32} color="#adb5bd" />
+                            <Title order={6} c="dimmed">Report Dashboard</Title>
+                            <Text size="xs" c="dimmed">Fitur report lengkap akan menyusul.</Text>
                         </Paper>
                     )}
 
                     {/* Common mutation table */}
-                    <Paper withBorder p="md" style={{ borderRadius: 16, background: '#fff', boxShadow: cardShadow }}>
-                        <Group justify="space-between" mb="sm">
-                            <Group gap="sm">
-                                <Box style={{ background: '#e7f5ff', borderRadius: 10, padding: 8 }}>
-                                    <IconTrendingUp size={22} color="#228be6" />
+                    <Paper withBorder p="sm" style={{ borderRadius: 12, background: '#fff', boxShadow: cardShadow }}>
+                        <Group justify="space-between" mb={4}>
+                            <Group gap="xs">
+                                <Box style={{ background: '#e7f5ff', borderRadius: 8, padding: 5 }}>
+                                    <IconTrendingUp size={18} color="#228be6" />
                                 </Box>
                                 <div>
-                                    <Title order={5} style={{ color: '#2b2b2b' }}>Mutasi Terbaru</Title>
-                                    <Text size="xs" c="dimmed">15 transaksi terbaru, scroll horizontal untuk detail</Text>
+                                    <Title order={6} style={{ color: '#2b2b2b', lineHeight: 1.2 }}>Mutasi Terbaru</Title>
+                                    <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>15 transaksi terbaru</Text>
                                 </div>
                             </Group>
-                            <Group gap="xs">
-                                <TextInput placeholder="Cari PO, Item, Supplier..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 200 }} />
-                                <Button size="xs" variant="light" color="blue" leftSection={<IconDownload size={14} />} onClick={() => {
+                            <Group gap={4}>
+                                <TextInput placeholder="Cari PO, Item..." size="xs" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} style={{ width: 160 }} />
+                                <Button size="xs" variant="light" color="blue" leftSection={<IconDownload size={12} />} onClick={() => {
                                     const csv = ['Tipe,No PO/Ref,Item,Qty,Satuan,Batch,Expired,Rak,Tanggal,Supplier/Tujuan,Keterangan'].concat(
                                         filteredLogs.slice(0, 100).map(log => [
                                             log.type,
