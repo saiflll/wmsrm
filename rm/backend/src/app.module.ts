@@ -49,6 +49,7 @@ import { SeedService } from './seed.service';
       inject: [ConfigService],
     }),
     TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([Shift]),
     AuthModule,
     UsersModule,
     BarangModule,
