@@ -44,7 +44,7 @@ import { SeedService } from './seed.service';
         type: 'postgres',
         url: configService.get('DATABASE_URL'),
         entities: [User, LoginLog, Shift, Suplayer, Barang, Gudang, Transaksi, Stock, StockLog, Customer, InboundPlanning, PlanningAyam, OutboundAyam],
-        synchronize: true,
+        synchronize: false, // JANGAN true di production — bisa drop data! Gunakan migration.
       }),
       inject: [ConfigService],
     }),
