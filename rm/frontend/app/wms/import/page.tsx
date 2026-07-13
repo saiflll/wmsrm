@@ -9,7 +9,8 @@ import {
 import {
     IconUpload, IconDownload, IconFileSpreadsheet, IconAlertCircle,
     IconCheck, IconTruck, IconPackage, IconBuildingWarehouse, IconUsers,
-    IconBoxSeam, IconMapPin, IconTransferIn, IconTransferOut, IconClipboardList
+    IconBoxSeam, IconMapPin, IconTransferIn, IconTransferOut, IconClipboardList,
+    IconRefresh
 } from '@tabler/icons-react';
 import { api, unwrap, saveXlsx, parseExcelDate } from '../lib/api';
 
@@ -582,6 +583,32 @@ export default function ImportPage() {
 
             setSheetImports(recognized);
             setUnrecognizedSheets(unrecognized);
+
+            // Auto-import all recognized sheets
+            if (recognized.length > 0) {
+                setImportingAll(true);
+                const apiInstance = api();
+                for (const sheet of recognized) {
+                    setSheetImports(prev => prev.map(s =>
+                        s.sheetName === sheet.sheetName ? { ...s, status: 'importing' } : s
+                    ));
+                    try {
+                        const results = await sheet.config.process(sheet.rows, refs, apiInstance);
+                        setSheetImports(prev => prev.map(s =>
+                            s.sheetName === sheet.sheetName
+                                ? { ...s, status: results.fail === 0 ? 'success' : 'error', results }
+                                : s
+                        ));
+                    } catch (err: any) {
+                        setSheetImports(prev => prev.map(s =>
+                            s.sheetName === sheet.sheetName
+                                ? { ...s, status: 'error', results: { success: 0, fail: sheet.rows.length, errors: [err?.message || 'Gagal mengimport'] } }
+                                : s
+                        ));
+                    }
+                }
+                setImportingAll(false);
+            }
         } catch (err) {
             setSheetImports([]);
             setUnrecognizedSheets([]);
@@ -659,7 +686,6 @@ export default function ImportPage() {
         );
     }
 
-    const pendingCount = sheetImports.filter(s => s.status === 'pending').length;
 
     return (
         <Box>
@@ -669,7 +695,7 @@ export default function ImportPage() {
                         <IconUpload size={28} color="#228be6" />
                         <div>
                             <Title order={4}>Import Data WMS</Title>
-                            <Text size="sm" c="dimmed">Upload satu file Excel dengan beberapa sheet. Setiap sheet akan diimpor sesuai namanya.</Text>
+                            <Text size="sm" c="dimmed">Download template → isi data → upload → otomatis terimport. Semua sheet langsung diproses.</Text>
                         </div>
                     </Group>
                     <Button
@@ -688,7 +714,7 @@ export default function ImportPage() {
             <Paper withBorder p="md" mb="md" radius="md" style={{ background: '#fff' }}>
                 <FileInput
                     label="Upload Excel File"
-                    description="Pilih file Excel (.xlsx / .xls) yang berisi sheet-sheet data untuk diimport"
+                    description="File akan otomatis diimport setelah dipilih. Sheet harus sesuai nama: inbound, outbound, picking, relocation, opname, produk, lokasi, customer, driver, users"
                     placeholder="Pilih file Excel..."
                     accept=".xlsx,.xls"
                     onChange={handleFileUpload}
@@ -792,39 +818,53 @@ export default function ImportPage() {
                                     )}
                                 </Alert>
                             )}
-
-                            {/* Import Button */}
-                            <Button
-                                color={sheet.config.color}
-                                leftSection={<IconUpload size={16} />}
-                                onClick={() => importSheet(sheet)}
-                                loading={sheet.status === 'importing'}
-                                disabled={sheet.status !== 'pending' || sheet.rows.length === 0}
-                            >
-                                Import Sheet {sheet.rows.length > 0 && `(${sheet.rows.length})`}
-                            </Button>
                         </Paper>
                     );
                 })}
             </Stack>
 
-            {/* Import All Button */}
-            {sheetImports.length > 0 && (
+            {/* Retry Failed Imports Button */}
+            {sheetImports.length > 0 && sheetImports.some(s => s.status === 'error') && (
                 <Paper withBorder p="md" mt="md" radius="md" style={{ background: '#fff' }}>
                     <Group justify="space-between">
                         <div>
-                            <Text fw={600}>{pendingCount} sheet siap diimport</Text>
-                            <Text size="xs" c="dimmed">dari {sheetImports.length} sheet terdeteksi</Text>
+                            <Text fw={600} c="red">{sheetImports.filter(s => s.status === 'error').length} sheet gagal diimport</Text>
+                            <Text size="xs" c="dimmed">Klik untuk mencoba ulang sheet yang gagal</Text>
                         </div>
                         <Button
                             size="lg"
-                            color="blue"
-                            leftSection={<IconUpload size={18} />}
-                            onClick={importAll}
+                            color="orange"
+                            leftSection={<IconRefresh size={18} />}
+                            onClick={() => {
+                                const failed = sheetImports.filter(s => s.status === 'error');
+                                (async () => {
+                                    setImportingAll(true);
+                                    const apiInstance = api();
+                                    for (const sheet of failed) {
+                                        setSheetImports(prev => prev.map(s =>
+                                            s.sheetName === sheet.sheetName ? { ...s, status: 'importing' } : s
+                                        ));
+                                        try {
+                                            const results = await sheet.config.process(sheet.rows, refs, apiInstance);
+                                            setSheetImports(prev => prev.map(s =>
+                                                s.sheetName === sheet.sheetName
+                                                    ? { ...s, status: results.fail === 0 ? 'success' : 'error', results }
+                                                    : s
+                                            ));
+                                        } catch (err: any) {
+                                            setSheetImports(prev => prev.map(s =>
+                                                s.sheetName === sheet.sheetName
+                                                    ? { ...s, status: 'error', results: { success: 0, fail: sheet.rows.length, errors: [err?.message || 'Gagal mengimport'] } }
+                                                    : s
+                                            ));
+                                        }
+                                    }
+                                    setImportingAll(false);
+                                })();
+                            }}
                             loading={importingAll}
-                            disabled={pendingCount === 0}
                         >
-                            Import All Sheets
+                            Retry Import
                         </Button>
                     </Group>
                 </Paper>
