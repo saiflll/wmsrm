@@ -8,7 +8,7 @@ echo "--- [1/6] Restoring tracked files & pulling latest code ---"
 # Kembalikan semua file yang terhapus (akibat cleanup sebelumnya)
 git checkout -- .
 # Pull dari GitHub
-git pull origin main || echo "[WARNING] Git pull failed, attempting to continue..."
+git pull origin master || git pull dev master || echo "[WARNING] Git pull failed, attempting to continue..."
 
 echo "--- [2/6] Updating IP addresses to 172.20.100.11 ---"
 sed -i 's/localhost/172.20.100.11/g' docker-compose.yml
