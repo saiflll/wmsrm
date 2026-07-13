@@ -5,7 +5,7 @@ export class Customer {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ unique: true })
+    @Column()
     nama: string;
 
     @Column({ nullable: true })
