@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Group, Button, Title, Text, Table, Badge, Paper, Stack, TextInput, Select, Loader } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { api, unwrap, saveXlsx } from '../lib/api';
-import * as XLSX from 'xlsx';
+import { api, unwrap } from '../lib/api';
 
 export default function MasterLokasiPage() {
     const [locs, setLocs] = useState<any[]>([]);
@@ -41,43 +40,6 @@ export default function MasterLokasiPage() {
         } catch (e: any) {
             notifications.show({ title: 'Error', message: unwrap(e.response)?.message || 'Failed', color: 'red' });
         }
-    };
-
-    const downloadTemplate = () => {
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet([
-            ['Nama Rak', 'Zone', 'Kolom', 'Level', 'Type'],
-            ['A13.1', 'CS FROZEN', 'A', 1, 'Single Deep']
-        ]);
-        XLSX.utils.book_append_sheet(wb, ws, 'Template');
-        saveXlsx(XLSX, wb, 'Template_Lokasi.xlsx');
-    };
-
-    const handleImport = async (file: File | null) => {
-        if (!file) return;
-        const data = await file.arrayBuffer();
-        const wb = XLSX.read(data, { type: 'array' });
-        const rows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        let success = 0, fail = 0;
-        for (const row of rows) {
-            try {
-                const name = String(row['Nama Rak'] || '');
-                const zone = String(row.Zone || 'DRY A');
-                const side = ['DRY A', 'DRY B', 'DRY FG'].includes(zone);
-                await api().post('/gudang', {
-                    name,
-                    zone,
-                    kolom: String(row.Kolom || ''),
-                    level: Number(row.Level) || 1,
-                    type: String(row.Type || 'Single Deep'),
-                    side,
-                    status: true,
-                });
-                success++;
-            } catch { fail++; }
-        }
-        notifications.show({ title: 'Import Selesai', message: `${success} berhasil, ${fail} gagal`, color: fail > 0 ? 'yellow' : 'green' });
-        load();
     };
 
     const del = async (id: any) => {
@@ -130,9 +92,6 @@ export default function MasterLokasiPage() {
                         <Group mb="xs" gap="xs">
                             <TextInput placeholder="Cari lokasi..." size="xs" value={search} onChange={e => setSearch(e.target.value)} style={{ width: 200 }} />
                             <Badge color="blue" variant="light">{filtered.length} lokasi</Badge>
-                            <Button size="xs" variant="outline" color="gray" onClick={downloadTemplate}>Template</Button>
-                            <input type="file" accept=".xlsx,.xls" id="import-lokasi" style={{ display: 'none' }} onChange={e => handleImport(e.target.files?.[0] || null)} />
-                            <Button size="xs" variant="outline" color="blue" onClick={() => document.getElementById('import-lokasi')?.click()}>Import Excel</Button>
                         </Group>
                         {loading ? <Loader /> : (
                             <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>

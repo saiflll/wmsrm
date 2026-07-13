@@ -628,6 +628,15 @@ export default function ImportPage() {
         saveXlsx(XLSX, wb, config.filename);
     };
 
+    const downloadAllTemplates = () => {
+        const wb = XLSX.utils.book_new();
+        IMPORT_CONFIGS.forEach((config) => {
+            const ws = XLSX.utils.aoa_to_sheet([config.headers, ...config.sampleRows]);
+            XLSX.utils.book_append_sheet(wb, ws, config.key);
+        });
+        saveXlsx(XLSX, wb, 'Template_Lengkap_WMS.xlsx');
+    };
+
     if (userRole !== null && userRole !== 5) {
         return (
             <Center h="60vh">
@@ -655,12 +664,23 @@ export default function ImportPage() {
     return (
         <Box>
             <Paper withBorder p="md" mb="md" radius="md" style={{ background: 'linear-gradient(135deg, #e7f5ff 0%, #d0ebff 100%)' }}>
-                <Group gap="sm">
-                    <IconUpload size={28} color="#228be6" />
-                    <div>
-                        <Title order={4}>Import Data WMS</Title>
-                        <Text size="sm" c="dimmed">Upload satu file Excel dengan beberapa sheet. Setiap sheet akan diimpor sesuai namanya (inbound, outbound, picking, relocation, opname, produk, lokasi, customer, driver, users).</Text>
-                    </div>
+                <Group justify="space-between" align="center">
+                    <Group gap="sm">
+                        <IconUpload size={28} color="#228be6" />
+                        <div>
+                            <Title order={4}>Import Data WMS</Title>
+                            <Text size="sm" c="dimmed">Upload satu file Excel dengan beberapa sheet. Setiap sheet akan diimpor sesuai namanya.</Text>
+                        </div>
+                    </Group>
+                    <Button
+                        size="md"
+                        variant="filled"
+                        color="green"
+                        leftSection={<IconDownload size={18} />}
+                        onClick={downloadAllTemplates}
+                    >
+                        Download Template Lengkap
+                    </Button>
                 </Group>
             </Paper>
 

@@ -22,10 +22,7 @@ import {
   fmt,
   statusLabel,
   statusColor,
-  saveXlsx,
-  parseExcelDate,
 } from "../lib/api";
-import * as XLSX from "xlsx";
 
 const renderColorfulOption: any = ({ option }: any) => {
   if (option.isEmpty) {
@@ -300,110 +297,6 @@ function InboundContent() {
     });
     setSelectedZone(d._zone);
     setDrafts((p) => p.filter((_, i) => i !== idx));
-  };
-
-  const downloadTemplate = () => {
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([
-      [
-        "NoPO",
-        "Item",
-        "Qty",
-        "Satuan",
-        "Batch",
-        "Expired",
-        "Supplier",
-        "Shift",
-        "Zone",
-        "Rak",
-      ],
-      [
-        "PO-12345",
-        "Ayam Dada Fillet Chilled - Cp",
-        100,
-        "Kg",
-        "LOT-WET-2601",
-        "2026-07-15",
-        "JAPFA",
-        "Shift 1",
-        "CS FROZEN",
-        "A1.1",
-      ],
-    ]);
-    XLSX.utils.book_append_sheet(wb, ws, "Template");
-    saveXlsx(XLSX, wb, "Template_Inbound.xlsx");
-  };
-
-  const handleImport = async (file: File | null) => {
-    if (!file) return;
-    try {
-      const data = await file.arrayBuffer();
-      const wb = XLSX.read(data, { type: "array", cellDates: true });
-      const rows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-      let success = 0,
-        fail = 0;
-      for (const row of rows) {
-        try {
-          const itemName = String(row.Item || "").trim();
-          const brg = barangs.find(
-            (b: any) =>
-              b.nama?.toLowerCase().trim() === itemName.toLowerCase() ||
-              b.sku?.toLowerCase().trim() === itemName.toLowerCase(),
-          );
-          const shiftStr = String(row.Shift || "").trim();
-          const shift = shifts.find(
-            (s: any) => s.name?.toLowerCase().trim() === shiftStr.toLowerCase(),
-          );
-          const rakStr = String(row.Rak || "").trim();
-          const gudang = allGudangs.find(
-            (g: any) => g.name?.toLowerCase().trim() === rakStr.toLowerCase(),
-          );
-
-          if (!brg) {
-            console.error(`Item not found in master product: "${itemName}"`);
-            fail++;
-            continue;
-          }
-          if (!gudang) {
-            console.error(`Rak not found in warehouse: "${rakStr}"`);
-            fail++;
-            continue;
-          }
-
-          await api().post("/inventory/inbound", {
-            items: [
-              {
-                barang_id: brg.id,
-                gudang_id: gudang.id,
-                qty: Number(row.Qty) || 0,
-                batch_no: String(row.Batch || "").trim(),
-                expiry_date: parseExcelDate(row.Expired),
-                supplier: String(row.Supplier || "").trim(),
-                no_po: String(row.NoPO || "").trim(),
-                shift_id: shift?.id || undefined,
-              },
-            ],
-          });
-          success++;
-        } catch (e: any) {
-          console.error("Import row failed:", e?.response?.data || e);
-          fail++;
-        }
-      }
-      notifications.show({
-        title: "Import Selesai",
-        message: `${success} berhasil, ${fail} gagal`,
-        color: fail > 0 ? "yellow" : "green",
-      });
-      loadLogs();
-    } catch (e) {
-      console.error("Import process failed:", e);
-      notifications.show({
-        title: "Error",
-        message: "Gagal memproses file Excel",
-        color: "red",
-      });
-    }
   };
 
   const processPlanningDraftToInbound = (draft: any) => {
@@ -1042,31 +935,6 @@ function InboundContent() {
                   RIWAYAT PENERIMAAN RAW MATERIALS
                 </Text>
                 <Group gap="xs">
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    color="gray"
-                    onClick={downloadTemplate}
-                  >
-                    Template
-                  </Button>
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    id="import-inbound"
-                    style={{ display: "none" }}
-                    onChange={(e) => handleImport(e.target.files?.[0] || null)}
-                  />
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    color="blue"
-                    onClick={() =>
-                      document.getElementById("import-inbound")?.click()
-                    }
-                  >
-                    Import Excel
-                  </Button>
                   <TextInput
                     placeholder="Cari logs..."
                     size="xs"
