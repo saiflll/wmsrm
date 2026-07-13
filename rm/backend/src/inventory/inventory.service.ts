@@ -269,7 +269,8 @@ export class InventoryService {
         const availableQty = stock.qty - stock.reserved_qty;
         if (availableQty < actualQty) {
           throw new BadRequestException(
-            `Stok tersedia tidak cukup untuk ${barang.nama} di ${gudang.name} (Tersedia: ${availableQty}, Diminta: ${actualQty})`,
+            `Stok tersedia tidak cukup untuk ${barang.nama} di ${gudang.name}. ` +
+            `Tersedia: ${availableQty} (Total: ${stock.qty}, Reserved: ${stock.reserved_qty}), Diminta: ${actualQty}`
           );
         }
 
@@ -326,12 +327,19 @@ export class InventoryService {
         });
 
         if (!stock) {
-          throw new BadRequestException(`Stok tidak ditemukan untuk ${log.barang.nama} di ${log.gudang.name}`);
+          throw new BadRequestException(
+            `Stok tidak ditemukan untuk ${log.barang?.nama || 'item'} di ${log.gudang?.name || 'gudang'}. ` +
+            `Stok mungkin telah dipindahkan atau dihapus setelah picking dibuat.`
+          );
         }
 
         const actualQty = log.actual_qty !== undefined && log.actual_qty !== null ? log.actual_qty : log.qty;
         if (stock.qty < actualQty) {
-          throw new BadRequestException(`Stok fisik tidak cukup untuk ${log.barang.nama} di ${log.gudang.name}`);
+          throw new BadRequestException(
+            `Stok fisik tidak cukup untuk ${log.barang?.nama || 'item'} di ${log.gudang?.name || 'gudang'}. ` +
+            `Tersedia: ${stock.qty}, Diminta: ${actualQty}. ` +
+            `Stok mungkin telah dikeluarkan oleh transaksi lain.`
+          );
         }
 
         // Deduct physical qty and reserved_qty

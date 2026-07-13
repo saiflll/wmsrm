@@ -1,9 +1,9 @@
 'use client';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, NumberInput, Textarea, ActionIcon, Grid, Divider } from '@mantine/core';
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, NumberInput, Textarea, ActionIcon, Grid, Divider, Autocomplete, Card, ThemeIcon } from '@mantine/core';
 import { Table } from '../components/Table';
-import { IconPlus, IconEdit, IconTrash, IconMeat, IconSend } from '@tabler/icons-react';
+import { IconPlus, IconEdit, IconTrash, IconMeat, IconSend, IconCheck, IconX, IconClipboardCheck, IconHistory } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { api, unwrap, fmt } from '../lib/api';
 
@@ -16,6 +16,9 @@ export default function OutboundAyamPage() {
     const [editId, setEditId] = useState<number | null>(null);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+
+    // Pending planning queue
+    const [pendingPlans, setPendingPlans] = useState<any[]>([]);
 
     const [form, setForm] = useState<any>({
         planning_ayam_id: '',
@@ -38,9 +41,12 @@ export default function OutboundAyamPage() {
                 api().get('/planning-ayam'),
                 api().get('/shifts'),
             ]);
+            const allPlans = unwrap(pRes);
             setOutbounds(unwrap(oRes));
-            setPlans(unwrap(pRes));
+            setPlans(allPlans);
             setShifts(unwrap(sRes));
+            // Pending plans: status !== 'DONE'
+            setPendingPlans(allPlans.filter((p: any) => p.status !== 'DONE'));
         } catch (e) {
             console.error('Load outbound ayam failed', e);
         }
@@ -49,6 +55,23 @@ export default function OutboundAyamPage() {
 
     const resetForm = () => {
         setForm({ planning_ayam_id: '', qty_aktual: 0, tujuan: '', shift_id: '', keterangan: '', alokasi: [] });
+        setEditId(null);
+    };
+
+    const createOutbound = (plan: any) => {
+        setForm({
+            planning_ayam_id: String(plan.id),
+            qty_aktual: plan.qty,
+            tujuan: plan.tujuan || '',
+            shift_id: plan.shift_id ? String(plan.shift_id) : '',
+            keterangan: '',
+            alokasi: [
+                { tujuan: 'Produksi Ayam', qty: Math.round(plan.qty * 0.6) },
+                { tujuan: 'Waste', qty: Math.round(plan.qty * 0.4) },
+                { tujuan: 'Reject', qty: 0 },
+                { tujuan: 'Premix', qty: 0 },
+            ],
+        });
         setEditId(null);
     };
 
@@ -126,7 +149,7 @@ export default function OutboundAyamPage() {
                                         Serapan: <b>{Math.round((form.qty_aktual / selectedPlan.qty) * 100)}%</b>
                                     </Text>
                                 )}
-                                <Select label="Shift" size="xs" searchable clearable data={shiftOpts} value={form.shift_id} onChange={(v) => pf('shift_id', v)} placeholder="Pilih shift..." nothingFoundMessage="Tidak ada shift" />
+                                <Autocomplete label="Shift" size="xs" data={shifts.map((s: any) => s.name)} value={shifts.find((s: any) => String(s.id) === form.shift_id)?.name || form.shift_id} onChange={(v) => { const match = shifts.find((s: any) => s.name.toLowerCase() === v.toLowerCase()); pf('shift_id', match ? String(match.id) : v); }} placeholder="Pilih shift..." />
                                 <TextInput label="Tujuan Utama" size="xs" placeholder="Produksi Ayam" value={form.tujuan} onChange={(e) => pf('tujuan', e.target.value)} />
                                 <Textarea label="Keterangan" size="xs" value={form.keterangan} onChange={(e) => pf('keterangan', e.target.value)} minRows={2} />
                                 <Divider label="Alokasi (opsional)" labelPosition="center" />
@@ -158,10 +181,69 @@ export default function OutboundAyamPage() {
                     </Grid.Col>
 
                     <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
+                        {/* Pending Planning Queue */}
+                        <Paper withBorder p="md" mb="md" radius="md" style={{ background: '#fff' }}>
+                            <Group gap="xs" mb="sm" style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 4 }}>
+                                <ThemeIcon color="blue" variant="light" size="sm">
+                                    <IconClipboardCheck size={16} />
+                                </ThemeIcon>
+                                <Text fw={800} size="sm" c="blue">
+                                    ANTREAN PLANNING AYAM ({pendingPlans.length})
+                                </Text>
+                            </Group>
+
+                            {pendingPlans.length === 0 ? (
+                                <Box p="md" style={{ textAlign: 'center', border: '1px dashed #cbd5e1', borderRadius: 8 }}>
+                                    <Text c="dimmed" size="xs">Tidak ada planning ayam pending.</Text>
+                                </Box>
+                            ) : (
+                                <Grid gutter="xs">
+                                    {pendingPlans.map((plan: any) => (
+                                        <Grid.Col key={plan.id} span={{ base: 12, md: 6 }}>
+                                            <Card withBorder p="xs" radius="md" style={{ background: '#f8fafc' }}>
+                                                <Group justify="space-between" mb={4}>
+                                                    <Box>
+                                                        <Text fw={800} size="xs" c="blue">{plan.barang?.nama || '-'}</Text>
+                                                        <Text size="10px" c="dimmed">
+                                                            {fmt(plan.tanggal_planning)} • {plan.shift?.name || '-'} • {plan.tujuan || '-'}
+                                                        </Text>
+                                                        <Text size="xs" fw={600}>Qty: {plan.qty} {plan.satuan}</Text>
+                                                    </Box>
+                                                    <Group gap={4}>
+                                                        <Badge size="xs" color={plan.status === 'DONE' ? 'green' : plan.status === 'PROGRESS' ? 'blue' : 'yellow'} variant="filled">
+                                                            {plan.status}
+                                                        </Badge>
+                                                        <Button
+                                                            size="xs"
+                                                            color="orange"
+                                                            leftSection={<IconCheck size={12} />}
+                                                            onClick={() => createOutbound(plan)}
+                                                            style={{ padding: '0 8px', height: 24, fontSize: 10 }}
+                                                        >
+                                                            Outbound
+                                                        </Button>
+                                                    </Group>
+                                                </Group>
+                                            </Card>
+                                        </Grid.Col>
+                                    ))}
+                                </Grid>
+                            )}
+                        </Paper>
+
+                        {/* Outbound History Table */}
                         <Paper withBorder p="md" radius="md" style={{ background: '#fff' }}>
-                            <Group justify="space-between" mb="xs">
-                                <TextInput placeholder="Cari item, tujuan..." size="xs" value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: 260 }} />
-                                <Button size="xs" variant="outline" color="orange" onClick={load}>Refresh</Button>
+                            <Group justify="space-between" mb="sm">
+                                <Group gap="xs">
+                                    <ThemeIcon color="dark" variant="light" size="sm">
+                                        <IconHistory size={16} />
+                                    </ThemeIcon>
+                                    <Text fw={800} size="sm">RIWAYAT OUTBOUND AYAM</Text>
+                                </Group>
+                                <Group gap="xs">
+                                    <TextInput placeholder="Cari item, tujuan..." size="xs" value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: 220 }} />
+                                    <Button size="xs" variant="outline" color="orange" onClick={load}>Refresh</Button>
+                                </Group>
                             </Group>
                             <Box style={{ overflowX: 'auto' }}>
                                 <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>

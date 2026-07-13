@@ -5,6 +5,7 @@ import { PlanningAyam } from './planning-ayam.entity';
 import { CreatePlanningAyamDto, UpdatePlanningAyamDto } from './planning-ayam.dto';
 import { Barang } from '../barang/barang.entity';
 import { Shift } from '../shifts/shift.entity';
+import { OutboundAyam } from '../outbound-ayam/outbound-ayam.entity';
 
 @Injectable()
 export class PlanningAyamService {
@@ -12,6 +13,7 @@ export class PlanningAyamService {
         @InjectRepository(PlanningAyam) private repo: Repository<PlanningAyam>,
         @InjectRepository(Barang) private barangRepo: Repository<Barang>,
         @InjectRepository(Shift) private shiftRepo: Repository<Shift>,
+        @InjectRepository(OutboundAyam) private outboundAyamRepo: Repository<OutboundAyam>,
     ) { }
 
     async findAll() {
@@ -85,12 +87,21 @@ export class PlanningAyamService {
 
         const plannings = await qb.getMany();
 
-        const rows = plannings.map((p) => ({
-            date: p.tanggal_planning?.toISOString().split('T')[0] || '-',
-            planning: p.qty || 0,
-            outbound: (p as any).qty_diterima || 0,
-            status: p.status,
-            barang: (p as any).barang?.nama || '-',
+        // For each planning, calculate outbound qty from OutboundAyam
+        const rows = await Promise.all(plannings.map(async (p) => {
+            const outbounds = await this.outboundAyamRepo.find({
+                where: { planning_ayam: { id: p.id } },
+            });
+            const totalOutbound = outbounds.reduce((sum, o) => sum + (o.qty_aktual || 0), 0);
+
+            return {
+                date: p.tanggal_planning?.toISOString().split('T')[0] || '-',
+                planning: p.qty || 0,
+                outbound: totalOutbound,
+                serapan: p.qty > 0 ? Math.round((totalOutbound / p.qty) * 10000) / 100 : 0,
+                status: p.status,
+                barang: (p as any).barang?.nama || '-',
+            };
         }));
 
         return { rows };

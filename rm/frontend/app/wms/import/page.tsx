@@ -3,14 +3,13 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import {
-    Box, Tabs, Paper, Title, Text, Button, Group, Stack, FileInput, Alert,
-    Progress, Badge, Table, Loader, ScrollArea, Center
+    Box, Paper, Title, Text, Button, Group, Stack, FileInput, Alert,
+    Badge, Table, Loader, ScrollArea, Center
 } from '@mantine/core';
 import {
     IconUpload, IconDownload, IconFileSpreadsheet, IconAlertCircle,
     IconCheck, IconTruck, IconPackage, IconBuildingWarehouse, IconUsers,
-    IconBoxSeam, IconMapPin, IconTransferIn, IconTransferOut, IconClipboardList,
-    IconCalendarStats
+    IconBoxSeam, IconMapPin, IconTransferIn, IconTransferOut, IconClipboardList
 } from '@tabler/icons-react';
 import { api, unwrap, saveXlsx, parseExcelDate } from '../lib/api';
 
@@ -448,141 +447,22 @@ const IMPORT_CONFIGS: ImportConfig[] = [
     },
 ];
 
-const ImportSection = ({ config, refs }: { config: ImportConfig; refs: RefData }) => {
-    const [file, setFile] = useState<File | null>(null);
-    const [rows, setRows] = useState<any[]>([]);
-    const [importing, setImporting] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [result, setResult] = useState<{ success: number; fail: number; errors: string[] } | null>(null);
+interface SheetImport {
+    sheetName: string;
+    config: ImportConfig;
+    rows: any[];
+    status: 'pending' | 'importing' | 'success' | 'error';
+    results?: { success: number; fail: number; errors: string[] };
+}
 
-    const downloadTemplate = () => {
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet([config.headers, ...config.sampleRows]);
-        XLSX.utils.book_append_sheet(wb, ws, 'Template');
-        saveXlsx(XLSX, wb, config.filename);
-    };
-
-    const handleFile = (f: File | null) => {
-        setFile(f);
-        setResult(null);
-        setProgress(0);
-        if (!f) { setRows([]); return; }
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = new Uint8Array(e.target?.result as ArrayBuffer);
-                const wb = XLSX.read(data, { type: 'array', cellDates: true });
-                const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                setRows(json);
-            } catch (err) {
-                setRows([]);
-                setResult({ success: 0, fail: 0, errors: ['Gagal membaca file Excel.'] });
-            }
-        };
-        reader.readAsArrayBuffer(f);
-    };
-
-    const runImport = async () => {
-        if (!rows.length) return;
-        setImporting(true);
-        setProgress(0);
-        setResult(null);
-        const apiInstance = api();
-        const res = await config.process(rows, refs, apiInstance);
-        setResult(res);
-        setProgress(100);
-        setImporting(false);
-    };
-
-    const previewRows = rows.slice(0, 5);
-
-    return (
-        <Paper withBorder p="md" radius="md" style={{ background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-            <Group justify="space-between" mb="sm">
-                <Group gap="sm">
-                    <Box style={{ color: `var(--mantine-color-${config.color}-filled)` }}>{config.icon}</Box>
-                    <div>
-                        <Text fw={700}>{config.title}</Text>
-                        <Text size="xs" c="dimmed">{config.description}</Text>
-                    </div>
-                </Group>
-                <Button size="xs" variant="light" leftSection={<IconDownload size={14} />} onClick={downloadTemplate}>
-                    Download Template
-                </Button>
-            </Group>
-
-            <Group align="flex-end" gap="sm" mb="md">
-                <FileInput
-                    placeholder="Pilih file Excel..."
-                    accept=".xlsx,.xls"
-                    value={file}
-                    onChange={handleFile}
-                    leftSection={<IconFileSpreadsheet size={16} />}
-                    style={{ flex: 1 }}
-                    disabled={importing}
-                />
-                <Button
-                    color={config.color}
-                    leftSection={<IconUpload size={16} />}
-                    onClick={runImport}
-                    loading={importing}
-                    disabled={!rows.length}
-                >
-                    Import {rows.length > 0 && `(${rows.length})`}
-                </Button>
-            </Group>
-
-            {importing && <Progress value={progress} animated color={config.color} mb="md" />}
-
-            {previewRows.length > 0 && !result && (
-                <Box mb="md">
-                    <Text size="xs" fw={700} mb={6}>Preview ({Math.min(rows.length, 5)} dari {rows.length} baris):</Text>
-                    <ScrollArea>
-                        <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
-                            <Table.Thead style={{ background: '#f8f9fa' }}>
-                                <Table.Tr>
-                                    {config.headers.map((h) => (
-                                        <Table.Th key={h} style={{ fontSize: 10 }}>{h}</Table.Th>
-                                    ))}
-                                </Table.Tr>
-                            </Table.Thead>
-                            <Table.Tbody>
-                                {previewRows.map((r, i) => (
-                                    <Table.Tr key={i}>
-                                        {config.headers.map((h) => (
-                                            <Table.Td key={h} style={{ fontSize: 10 }}>{String(r[h] ?? '')}</Table.Td>
-                                        ))}
-                                    </Table.Tr>
-                                ))}
-                            </Table.Tbody>
-                        </Table>
-                    </ScrollArea>
-                </Box>
-            )}
-
-            {result && (
-                <Alert
-                    icon={<IconAlertCircle size={18} />}
-                    color={result.fail === 0 ? 'green' : result.success === 0 ? 'red' : 'yellow'}
-                    variant="light"
-                    radius="md"
-                >
-                    <Group gap="sm" mb="xs">
-                        <Badge color="green" leftSection={<IconCheck size={12} />}>{result.success} sukses</Badge>
-                        <Badge color="red">{result.fail} gagal</Badge>
-                    </Group>
-                    {result.errors.length > 0 && (
-                        <Box style={{ maxHeight: 120, overflowY: 'auto', fontSize: 11 }}>
-                            {result.errors.slice(0, 20).map((err, i) => (
-                                <Text key={i} c="red" size="xs">• {err}</Text>
-                            ))}
-                            {result.errors.length > 20 && <Text size="xs" c="dimmed">...dan {result.errors.length - 20} error lainnya</Text>}
-                        </Box>
-                    )}
-                </Alert>
-            )}
-        </Paper>
-    );
+const statusColor = (status: SheetImport['status']): string => {
+    switch (status) {
+        case 'pending': return 'gray';
+        case 'importing': return 'blue';
+        case 'success': return 'green';
+        case 'error': return 'red';
+        default: return 'gray';
+    }
 };
 
 export default function ImportPage() {
@@ -590,6 +470,9 @@ export default function ImportPage() {
     const [loading, setLoading] = useState(true);
     const [refs, setRefs] = useState<RefData>({ barangs: [], gudangs: [], stocks: [], shifts: [], customers: [] });
     const [error, setError] = useState<string | null>(null);
+    const [sheetImports, setSheetImports] = useState<SheetImport[]>([]);
+    const [unrecognizedSheets, setUnrecognizedSheets] = useState<string[]>([]);
+    const [importingAll, setImportingAll] = useState(false);
 
     useEffect(() => {
         const u = JSON.parse(localStorage.getItem('user') || '{}');
@@ -622,6 +505,82 @@ export default function ImportPage() {
         loadRefs();
     }, []);
 
+    const handleFileUpload = async (file: File | null) => {
+        if (!file) {
+            setSheetImports([]);
+            setUnrecognizedSheets([]);
+            return;
+        }
+        try {
+            const data = await file.arrayBuffer();
+            const wb = XLSX.read(data, { type: 'array', cellDates: true });
+
+            const recognized: SheetImport[] = [];
+            const unrecognized: string[] = [];
+
+            for (const sheetName of wb.SheetNames) {
+                const config = IMPORT_CONFIGS.find(c => c.key === sheetName.toLowerCase());
+                if (!config) {
+                    unrecognized.push(sheetName);
+                    continue;
+                }
+                const json = XLSX.utils.sheet_to_json(wb.Sheets[sheetName]);
+                recognized.push({
+                    sheetName,
+                    config,
+                    rows: json,
+                    status: 'pending',
+                });
+            }
+
+            setSheetImports(recognized);
+            setUnrecognizedSheets(unrecognized);
+        } catch (err) {
+            setSheetImports([]);
+            setUnrecognizedSheets([]);
+            setError('Gagal membaca file Excel: ' + (err instanceof Error ? err.message : 'Unknown error'));
+        }
+    };
+
+    const importSheet = async (sheetImport: SheetImport) => {
+        setSheetImports(prev => prev.map(s =>
+            s.sheetName === sheetImport.sheetName ? { ...s, status: 'importing' } : s
+        ));
+
+        try {
+            const apiInstance = api();
+            const results = await sheetImport.config.process(sheetImport.rows, refs, apiInstance);
+            setSheetImports(prev => prev.map(s =>
+                s.sheetName === sheetImport.sheetName
+                    ? { ...s, status: results.fail === 0 ? 'success' : 'error', results }
+                    : s
+            ));
+        } catch (err: any) {
+            setSheetImports(prev => prev.map(s =>
+                s.sheetName === sheetImport.sheetName
+                    ? { ...s, status: 'error', results: { success: 0, fail: sheetImport.rows.length, errors: [err?.message || 'Gagal mengimport'] } }
+                    : s
+            ));
+        }
+    };
+
+    const importAll = async () => {
+        setImportingAll(true);
+        for (const sheet of sheetImports) {
+            if (sheet.status === 'pending') {
+                await importSheet(sheet);
+            }
+        }
+        setImportingAll(false);
+    };
+
+    const downloadTemplate = (config: ImportConfig) => {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([config.headers, ...config.sampleRows]);
+        XLSX.utils.book_append_sheet(wb, ws, 'Template');
+        saveXlsx(XLSX, wb, config.filename);
+    };
+
     if (userRole !== null && userRole !== 5) {
         return (
             <Center h="60vh">
@@ -636,7 +595,7 @@ export default function ImportPage() {
         return <Center h="60vh"><Loader size="lg" /></Center>;
     }
 
-    if (error) {
+    if (error && sheetImports.length === 0) {
         return (
             <Center h="60vh">
                 <Alert icon={<IconAlertCircle size={20} />} color="red" title="Error">{error}</Alert>
@@ -644,9 +603,7 @@ export default function ImportPage() {
         );
     }
 
-    const transactionConfigs = IMPORT_CONFIGS.filter((c) => ['inbound', 'outbound', 'picking', 'relocation', 'opname'].includes(c.key));
-    const masterConfigs = IMPORT_CONFIGS.filter((c) => ['produk', 'lokasi', 'customer'].includes(c.key));
-    const planningConfigs = IMPORT_CONFIGS.filter((c) => ['driver', 'users'].includes(c.key));
+    const pendingCount = sheetImports.filter(s => s.status === 'pending').length;
 
     return (
         <Box>
@@ -655,36 +612,156 @@ export default function ImportPage() {
                     <IconUpload size={28} color="#228be6" />
                     <div>
                         <Title order={4}>Import Data WMS</Title>
-                        <Text size="sm" c="dimmed">Import massal untuk transaksi, master data, planning, dan user. Gunakan template yang tersedia.</Text>
+                        <Text size="sm" c="dimmed">Upload satu file Excel dengan beberapa sheet. Setiap sheet akan diimpor sesuai namanya (inbound, outbound, picking, relocation, opname, produk, lokasi, customer, driver, users).</Text>
                     </div>
                 </Group>
             </Paper>
 
-            <Tabs defaultValue="transaction" variant="outline" radius="md">
-                <Tabs.List mb="md">
-                    <Tabs.Tab value="transaction" leftSection={<IconTransferIn size={16} />}>Transaksi</Tabs.Tab>
-                    <Tabs.Tab value="master" leftSection={<IconPackage size={16} />}>Master Data</Tabs.Tab>
-                    <Tabs.Tab value="planning" leftSection={<IconCalendarStats size={16} />}>Planning & User</Tabs.Tab>
-                </Tabs.List>
+            {/* File Upload */}
+            <Paper withBorder p="md" mb="md" radius="md" style={{ background: '#fff' }}>
+                <FileInput
+                    label="Upload Excel File"
+                    description="Pilih file Excel (.xlsx / .xls) yang berisi sheet-sheet data untuk diimport"
+                    placeholder="Pilih file Excel..."
+                    accept=".xlsx,.xls"
+                    onChange={handleFileUpload}
+                    leftSection={<IconFileSpreadsheet size={16} />}
+                    size="md"
+                />
+            </Paper>
 
-                <Tabs.Panel value="transaction">
-                    <Stack gap="md">
-                        {transactionConfigs.map((c) => <ImportSection key={c.key} config={c} refs={refs} />)}
-                    </Stack>
-                </Tabs.Panel>
+            {/* Error banner (non-fatal, e.g. read error after file was already loaded) */}
+            {error && (
+                <Alert icon={<IconAlertCircle size={18} />} color="red" variant="light" mb="md" withCloseButton onClose={() => setError(null)}>
+                    {error}
+                </Alert>
+            )}
 
-                <Tabs.Panel value="master">
-                    <Stack gap="md">
-                        {masterConfigs.map((c) => <ImportSection key={c.key} config={c} refs={refs} />)}
-                    </Stack>
-                </Tabs.Panel>
+            {/* Unrecognized sheets warning */}
+            {unrecognizedSheets.length > 0 && (
+                <Alert icon={<IconAlertCircle size={18} />} color="yellow" variant="light" mb="md">
+                    <Text fw={600} size="sm">Sheet tidak dikenali (dilewati):</Text>
+                    <Text size="xs" c="dimmed">{unrecognizedSheets.join(', ')}</Text>
+                </Alert>
+            )}
 
-                <Tabs.Panel value="planning">
-                    <Stack gap="md">
-                        {planningConfigs.map((c) => <ImportSection key={c.key} config={c} refs={refs} />)}
-                    </Stack>
-                </Tabs.Panel>
-            </Tabs>
+            {/* Sheet Previews */}
+            <Stack gap="md">
+                {sheetImports.map((sheet) => {
+                    const previewRows = sheet.rows.slice(0, 3);
+                    const columns = previewRows.length > 0 ? Object.keys(previewRows[0]) : sheet.config.headers;
+
+                    return (
+                        <Paper key={sheet.sheetName} withBorder p="md" radius="md" style={{ background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                            <Group justify="space-between" mb="sm">
+                                <Group gap="sm">
+                                    <Box style={{ color: `var(--mantine-color-${sheet.config.color}-filled)` }}>{sheet.config.icon}</Box>
+                                    <div>
+                                        <Text fw={700}>{sheet.sheetName}</Text>
+                                        <Text size="xs" c="dimmed">{sheet.config.title} — {sheet.rows.length} rows</Text>
+                                    </div>
+                                </Group>
+                                <Group gap="xs">
+                                    <Badge color={statusColor(sheet.status)} variant="light">
+                                        {sheet.status === 'pending' ? 'Pending' : sheet.status === 'importing' ? 'Importing...' : sheet.status === 'success' ? 'Success' : 'Error'}
+                                    </Badge>
+                                    <Button size="xs" variant="light" leftSection={<IconDownload size={14} />} onClick={() => downloadTemplate(sheet.config)}>
+                                        Template
+                                    </Button>
+                                </Group>
+                            </Group>
+
+                            {/* Preview Table */}
+                            {previewRows.length > 0 && (
+                                <Box mb="sm">
+                                    <Text size="xs" fw={700} mb={6}>Preview (3 dari {sheet.rows.length} baris):</Text>
+                                    <ScrollArea>
+                                        <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
+                                            <Table.Thead style={{ background: '#f8f9fa' }}>
+                                                <Table.Tr>
+                                                    {columns.map((col) => (
+                                                        <Table.Th key={col} style={{ fontSize: 10 }}>{col}</Table.Th>
+                                                    ))}
+                                                </Table.Tr>
+                                            </Table.Thead>
+                                            <Table.Tbody>
+                                                {previewRows.map((row, idx) => (
+                                                    <Table.Tr key={idx}>
+                                                        {columns.map((col) => (
+                                                            <Table.Td key={col} style={{ fontSize: 10 }}>{String(row[col] ?? '')}</Table.Td>
+                                                        ))}
+                                                    </Table.Tr>
+                                                ))}
+                                            </Table.Tbody>
+                                        </Table>
+                                    </ScrollArea>
+                                </Box>
+                            )}
+
+                            {sheet.rows.length === 0 && (
+                                <Text size="xs" c="dimmed" mb="sm">Sheet ini kosong, tidak ada data untuk diimport.</Text>
+                            )}
+
+                            {/* Results */}
+                            {sheet.results && (
+                                <Alert
+                                    icon={<IconAlertCircle size={18} />}
+                                    color={sheet.results.fail === 0 ? 'green' : sheet.results.success === 0 ? 'red' : 'yellow'}
+                                    variant="light"
+                                    radius="md"
+                                    mb="sm"
+                                >
+                                    <Group gap="sm" mb="xs">
+                                        <Badge color="green" leftSection={<IconCheck size={12} />}>{sheet.results.success} sukses</Badge>
+                                        <Badge color="red">{sheet.results.fail} gagal</Badge>
+                                    </Group>
+                                    {sheet.results.errors.length > 0 && (
+                                        <Box style={{ maxHeight: 120, overflowY: 'auto', fontSize: 11 }}>
+                                            {sheet.results.errors.slice(0, 20).map((err, i) => (
+                                                <Text key={i} c="red" size="xs">• {err}</Text>
+                                            ))}
+                                            {sheet.results.errors.length > 20 && <Text size="xs" c="dimmed">...dan {sheet.results.errors.length - 20} error lainnya</Text>}
+                                        </Box>
+                                    )}
+                                </Alert>
+                            )}
+
+                            {/* Import Button */}
+                            <Button
+                                color={sheet.config.color}
+                                leftSection={<IconUpload size={16} />}
+                                onClick={() => importSheet(sheet)}
+                                loading={sheet.status === 'importing'}
+                                disabled={sheet.status !== 'pending' || sheet.rows.length === 0}
+                            >
+                                Import Sheet {sheet.rows.length > 0 && `(${sheet.rows.length})`}
+                            </Button>
+                        </Paper>
+                    );
+                })}
+            </Stack>
+
+            {/* Import All Button */}
+            {sheetImports.length > 0 && (
+                <Paper withBorder p="md" mt="md" radius="md" style={{ background: '#fff' }}>
+                    <Group justify="space-between">
+                        <div>
+                            <Text fw={600}>{pendingCount} sheet siap diimport</Text>
+                            <Text size="xs" c="dimmed">dari {sheetImports.length} sheet terdeteksi</Text>
+                        </div>
+                        <Button
+                            size="lg"
+                            color="blue"
+                            leftSection={<IconUpload size={18} />}
+                            onClick={importAll}
+                            loading={importingAll}
+                            disabled={pendingCount === 0}
+                        >
+                            Import All Sheets
+                        </Button>
+                    </Group>
+                </Paper>
+            )}
         </Box>
     );
 }

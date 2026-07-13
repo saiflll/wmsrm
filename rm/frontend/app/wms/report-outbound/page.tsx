@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Box, Group, Button, Title, Table, Badge, TextInput, Select, Loader, Text } from '@mantine/core';
+import { Box, Group, Button, Title, Table, Badge, TextInput, Select, Loader, Text, Autocomplete } from '@mantine/core';
 import { api, unwrap, fmt, statusLabel, statusColor, saveXlsx } from '../lib/api';
 import { IconFileTypePdf, IconFileSpreadsheet } from '@tabler/icons-react';
 import * as XLSX from 'xlsx';
@@ -186,12 +186,13 @@ export default function ReportOutboundPage() {
                     <TextInput variant="unstyled" placeholder="Cari berdasarkan ID, kod" size="sm" value={search} onChange={(e: any) => setSearch(e.target.value)} style={{ width: 180 }} />
                 </Group>
 
-                <Select
-                    size="sm" placeholder="Semua Shift" clearable
+                <Autocomplete
+                    size="sm" placeholder="Semua Shift"
                     variant="unstyled"
-                    data={shiftOpts}
+                    data={shifts.map((s: any) => s.name)}
                     value={filterShift}
-                    onChange={(v: any) => setFilterShift(v || '')}
+                    onChange={(v) => setFilterShift(v)}
+                    
                     style={{ width: 140, fontWeight: 700 }}
                 />
 

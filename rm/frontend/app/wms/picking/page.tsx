@@ -425,7 +425,7 @@ export default function PickingPage() {
                                 <Autocomplete label="Nomor Batch" size="xs" data={batchOpts} value={form.nomor_batch} onChange={v => setForm(p => ({ ...p, nomor_batch: v }))} placeholder="Pilih/Ketik Nomor Batch" />
                                 <Autocomplete label="Tujuan (Master Customer)" size="xs" data={customerOpts} value={form.tujuan} onChange={v => setForm(p => ({ ...p, tujuan: v }))} placeholder="Produksi AP / Customer..." />
                                 <TextInput label="Tanggal Permintaan" size="xs" type="date" value={form.tanggal_permintaan} onChange={e => setForm(p => ({ ...p, tanggal_permintaan: e.target.value }))} />
-                                <Select label="Shift" size="xs" searchable clearable data={shiftOpts} value={form.shift_id} onChange={v => setForm(p => ({ ...p, shift_id: v || '' }))} placeholder="Pilih shift" nothingFoundMessage="Tidak ada shift" />
+                                <Autocomplete label="Shift" size="xs" data={shifts.map((s: any) => s.name)} value={shifts.find((s: any) => String(s.id) === form.shift_id)?.name || form.shift_id} onChange={v => { const match = shifts.find((s: any) => s.name.toLowerCase() === v.toLowerCase()); setForm(p => ({ ...p, shift_id: match ? String(match.id) : v })); }} placeholder="Pilih shift" />
                                 <Button fullWidth size="xs" color="orange" onClick={addDraft} style={{ fontWeight: 700 }} leftSection={<IconPlus size={14} />}>+ Tambahkan Draft</Button>
                             </Stack>
                         </Paper>

@@ -743,14 +743,17 @@ function InboundContent() {
                   onChange={(v: string) => f("supplier", v)}
                   placeholder="Pilih / ketik supplier"
                 />
-                <Select
+                <Autocomplete
                   label="Shift"
                   size="xs"
-                  data={shiftOpts}
-                  value={form.shift_id}
-                  onChange={(v: any) => f("shift_id", v || "")}
+                  data={shifts.map((s: any) => s.name)}
+                  value={shifts.find((s: any) => String(s.id) === form.shift_id)?.name || form.shift_id}
+                  onChange={(v) => {
+                    const match = shifts.find((s: any) => s.name.toLowerCase() === v.toLowerCase());
+                    f("shift_id", match ? String(match.id) : v);
+                  }}
                   placeholder="Pilih shift"
-                  clearable
+                  
                 />
 
                 <Divider my={2} />

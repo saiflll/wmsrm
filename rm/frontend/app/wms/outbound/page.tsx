@@ -527,14 +527,17 @@ export default function OutboundPage() {
                   placeholder="Tulis tujuan / pilih customer"
                 />
 
-                <Select
+                <Autocomplete
                   label="Shift"
                   size="xs"
-                  data={shiftOpts}
-                  value={form.shift_id}
-                  onChange={(v) => setForm((p) => ({ ...p, shift_id: v || "" }))}
+                  data={shifts.map((s: any) => s.name)}
+                  value={shifts.find((s: any) => String(s.id) === form.shift_id)?.name || form.shift_id}
+                  onChange={(v) => {
+                    const match = shifts.find((s: any) => s.name.toLowerCase() === v.toLowerCase());
+                    setForm((p) => ({ ...p, shift_id: match ? String(match.id) : v }));
+                  }}
                   placeholder="Pilih shift"
-                  clearable
+                  
                 />
 
                 <Button

@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Modal, NumberInput, Loader, Select } from "@mantine/core";
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Modal, NumberInput, Loader, Select, Autocomplete } from "@mantine/core";
 import { Table } from '../components/Table';
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
@@ -896,16 +896,19 @@ export default function StockOpnamePage() {
               />
 
               {/* Shift selector - required */}
-              <Select
+              <Autocomplete
                 label="Shift"
                 size="sm"
                 radius="md"
-                data={shiftOpts}
-                value={shiftId}
-                onChange={(v) => setShiftId(v || "")}
+                data={shifts.map((s: any) => s.name)}
+                value={shifts.find((s: any) => String(s.id) === shiftId)?.name || shiftId}
+                onChange={(v) => {
+                  const match = shifts.find((s: any) => s.name.toLowerCase() === v.toLowerCase());
+                  setShiftId(match ? String(match.id) : v);
+                }}
                 placeholder="Pilih Shift"
                 required
-                nothingFoundMessage="Tidak ada shift tersedia"
+                
                 styles={{ input: { backgroundColor: "#fff", fontWeight: 600 } }}
               />
 
