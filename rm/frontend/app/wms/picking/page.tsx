@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Box, Group, Button, Title, Text, Table, Badge, Paper, Stack,
-    TextInput, Select, Loader, NumberInput, Divider, Autocomplete, ActionIcon, Tooltip, Grid, Modal, Textarea
+    TextInput, Select, Loader, NumberInput, Autocomplete, ActionIcon, Tooltip, Grid
 } from '@mantine/core';
 import {
-    IconEdit, IconTrash, IconFileTypePdf, IconPlus, IconSend, IconBuildingWarehouse, IconHistory
+    IconEdit, IconTrash, IconFileTypePdf, IconPlus, IconBuildingWarehouse
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { api, unwrap, fmt, statusLabel, statusColor } from '../lib/api';
@@ -49,9 +49,6 @@ export default function PickingPage() {
         return [];
     });
     const draftSavedRef = useRef(false);
-
-    const [koreksiOpen, setKoreksiOpen] = useState(false);
-    const [koreksiItems, setKoreksiItems] = useState<any[]>([]);
 
     // Zone & Product filter for Rak Selector
     const [selectedZone, setSelectedZone] = useState('');
@@ -160,41 +157,6 @@ export default function PickingPage() {
         setSelectedZone(d._zone);
         setSelectedBarangId(String(d.barang_id));
         setDrafts(p => p.filter((_, i) => i !== idx));
-    };
-
-    const openKoreksiModal = () => {
-        if (!drafts.length) return;
-        setKoreksiItems(drafts.map((d: any) => ({
-            ...d,
-            actual_qty: d.qty,
-            alokasi: [],
-            keterangan: '',
-        })));
-        setKoreksiOpen(true);
-    };
-
-    const submitKoreksi = async () => {
-        const transId = `ID-${String(Date.now()).slice(-6)}`;
-        try {
-            const items = koreksiItems.map((d: any) => ({
-                no_ref: form.no_ref || transId,
-                barang_id: d.barang_id, gudang_id: d.gudang_id,
-                qty: d.qty, actual_qty: d.actual_qty, satuan: d.satuan, tujuan: d.tujuan,
-                shift_id: d.shift_id,
-                batch_no: d.nomor_batch,
-                alokasi: d.alokasi,
-                keterangan: d.keterangan,
-            }));
-            await api().post('/inventory/picking', { items });
-            notifications.show({ title: 'Sukses', message: `${items.length} item berhasil disimpan ke Planning Outbound (ID: ${form.no_ref || transId})`, color: 'green' });
-            setDrafts([]);
-            setForm(p => ({ ...p, no_ref: '' }));
-            setKoreksiOpen(false);
-            setKoreksiItems([]);
-            load();
-        } catch (e: any) {
-            notifications.show({ title: 'Error', message: unwrap(e.response)?.message || 'Failed', color: 'red' });
-        }
     };
 
     // Sort functions
@@ -435,13 +397,10 @@ export default function PickingPage() {
                     <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
                         {drafts.length > 0 && (
                             <Paper withBorder p="md" radius="md" mb="md" style={{ background: '#fff' }}>
-                                <Group justify="space-between" mb="xs">
-                                    <Box>
-                                        <Text fw={800} size="sm" c="orange">DRAFT ANTRIAN PLANNING OUTBOUND {type.toUpperCase()}</Text>
-                                        <Text size="xs" c="dimmed">ID Transaksi: <b>{form.no_ref || '(akan digenerate otomatis)'}</b></Text>
-                                    </Box>
-                                    <Button size="xs" color="green" onClick={openKoreksiModal} style={{ fontWeight: 800 }} leftSection={<IconSend size={14} />}>SUBMIT PLANNING OUTBOUND</Button>
-                                </Group>
+                                <Box mb="xs">
+                                    <Text fw={800} size="sm" c="orange">DRAFT ANTRIAN PLANNING OUTBOUND {type.toUpperCase()}</Text>
+                                    <Text size="xs" c="dimmed">ID Transaksi: <b>{form.no_ref || '(akan digenerate otomatis)'}</b></Text>
+                                </Box>
                                 <Box style={{ overflowX: 'auto' }}>
                                     <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
                                         <Table.Thead style={{ background: '#333' }}>
@@ -573,65 +532,6 @@ export default function PickingPage() {
                 </Grid>
             </Box>
 
-            <Modal opened={koreksiOpen} onClose={() => setKoreksiOpen(false)} title="Koreksi Planning Outbound" size="lg">
-                <Stack gap="xs">
-                    <Text size="xs" c="dimmed">Sesuaikan qty aktual, alokasi, dan keterangan untuk setiap item sebelum publish.</Text>
-                    {koreksiItems.map((d, idx) => (
-                        <Paper key={d.id || idx} withBorder p="sm" radius="md">
-                            <Group justify="space-between" mb={4}>
-                                <Text size="sm" fw={700}>{d._brg}</Text>
-                                <Text size="xs" c="dimmed">Rak: {d._gdg}</Text>
-                            </Group>
-                            <Grid gutter="xs">
-                                <Grid.Col span={6}>
-                                    <NumberInput label="Qty Planning" size="xs" value={d.qty} disabled />
-                                </Grid.Col>
-                                <Grid.Col span={6}>
-                                    <NumberInput
-                                        label="Qty Aktual"
-                                        size="xs"
-                                        value={d.actual_qty}
-                                        onChange={(v) => setKoreksiItems(items => items.map((it, i) => i === idx ? { ...it, actual_qty: Number(v) } : it))}
-                                        min={0}
-                                    />
-                                </Grid.Col>
-                            </Grid>
-                            <Text size="xs" c="dimmed" mt={4}>Selisih: <b>{d.qty - d.actual_qty}</b> {d.satuan}</Text>
-                            <Divider label="Alokasi (opsional)" labelPosition="center" my={6} />
-                            {['Produksi Ayam', 'Waste', 'Reject', 'Premix'].map((t) => (
-                                <NumberInput
-                                    key={t}
-                                    label={t}
-                                    size="xs"
-                                    value={d.alokasi.find((a: any) => a.tujuan === t)?.qty || 0}
-                                    onChange={(v) => {
-                                        const val = Number(v) || 0;
-                                        setKoreksiItems(items => items.map((it, i) => {
-                                            if (i !== idx) return it;
-                                            const existing = it.alokasi.filter((a: any) => a.tujuan !== t);
-                                            if (val > 0) existing.push({ tujuan: t, qty: val });
-                                            return { ...it, alokasi: existing };
-                                        }));
-                                    }}
-                                    min={0}
-                                />
-                            ))}
-                            <Textarea
-                                label="Keterangan"
-                                size="xs"
-                                value={d.keterangan}
-                                onChange={(e) => setKoreksiItems(items => items.map((it, i) => i === idx ? { ...it, keterangan: e.target.value } : it))}
-                                minRows={2}
-                                mt={6}
-                            />
-                        </Paper>
-                    ))}
-                    <Group justify="flex-end" mt="sm">
-                        <Button size="xs" color="gray" variant="outline" onClick={() => setKoreksiOpen(false)}>Batal</Button>
-                        <Button size="xs" color="green" onClick={submitKoreksi}>OK / Publish</Button>
-                    </Group>
-                </Stack>
-            </Modal>
         </Box>
     );
 }

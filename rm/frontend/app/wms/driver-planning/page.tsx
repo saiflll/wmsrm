@@ -1,7 +1,7 @@
 "use client";
 // @ts-nocheck
-import React, { useState, useEffect } from "react";
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, Autocomplete, Grid, ActionIcon, Modal, NumberInput, Textarea, Divider } from "@mantine/core";
+import React, { useState, useEffect, useRef } from "react";
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, Autocomplete, Grid, ActionIcon, NumberInput } from "@mantine/core";
 import { Table } from '../components/Table';
 import {
   IconPlus,
@@ -18,9 +18,19 @@ export default function DriverPlanningPage() {
   const [plans, setPlans] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
-  const [editPlanId, setEditPlanId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+
+  // Draft system
+  const [drafts, setDrafts] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("wms_driver_planning_drafts");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [];
+  });
 
   // Sort states
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -37,14 +47,23 @@ export default function DriverPlanningPage() {
     note: "",
   });
 
-  const [koreksiModal, setKoreksiModal] = useState<{ open: boolean; plan: any }>({ open: false, plan: null });
-  const [koreksiForm, setKoreksiForm] = useState<any>({ qty_diterima: 0, alokasi: [], keterangan: '' });
+  const [editDraftIdx, setEditDraftIdx] = useState<number | null>(null);
 
   const pf = (k: string, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
 
   useEffect(() => {
     load();
   }, []);
+
+  // Persist drafts to localStorage (skip initial render)
+  const initialWrite = useRef(true);
+  useEffect(() => {
+    if (initialWrite.current) {
+      initialWrite.current = false;
+      return;
+    }
+    localStorage.setItem("wms_driver_planning_drafts", JSON.stringify(drafts));
+  }, [drafts]);
 
   const load = async () => {
     try {
@@ -61,71 +80,61 @@ export default function DriverPlanningPage() {
     }
   };
 
-  const savePlan = async () => {
+  const addDraft = () => {
     if (!form.no_po) {
       return notifications.show({ title: "Error", message: "No PO/SJ wajib diisi", color: "red" });
     }
-    try {
-      if (editPlanId) {
-        await api().put(`/inbound-planning/${editPlanId}`, form);
-        notifications.show({ title: "Sukses", message: "Planning berhasil diupdate", color: "green" });
-      } else {
-        await api().post("/inbound-planning", form);
-        notifications.show({ title: "Sukses", message: "Planning berhasil disimpan", color: "green" });
-      }
-      setForm({
-        no_po: "",
-        driver_name: "",
-        plat_nomor: "",
-        supplier: "",
-        qty: 0,
-        estimasi_datang: "",
-        status: "WAIT",
-        note: "",
-      });
-      setEditPlanId(null);
-      load();
-    } catch (e: any) {
-      notifications.show({ title: "Error", message: unwrap(e.response)?.message || "Gagal menyimpan", color: "red" });
+    if (editDraftIdx !== null) {
+      setDrafts((prev) => prev.map((d, i) => (i === editDraftIdx ? { ...d, ...form } : d)));
+      setEditDraftIdx(null);
+      notifications.show({ title: "Sukses", message: "Draft diupdate", color: "green" });
+    } else {
+      setDrafts((prev) => [...prev, { ...form, id: Date.now() }]);
+      notifications.show({ title: "Sukses", message: "Draft ditambahkan", color: "green" });
     }
+    setForm({
+      no_po: "",
+      driver_name: "",
+      plat_nomor: "",
+      supplier: "",
+      qty: 0,
+      estimasi_datang: "",
+      status: "WAIT",
+      note: "",
+    });
   };
 
-  const deletePlan = async (id: number) => {
-    if (!confirm("Hapus jadwal planning inbound ini?")) return;
-    try {
-      await api().delete(`/inbound-planning/${id}`);
-      notifications.show({ title: "Sukses", message: "Planning dihapus", color: "orange" });
-      load();
-    } catch (e) {
-      console.error(e);
-    }
+  const editDraft = (idx: number) => {
+    const d = drafts[idx];
+    setForm({
+      no_po: d.no_po,
+      driver_name: d.driver_name || "",
+      plat_nomor: d.plat_nomor || "",
+      supplier: d.supplier || "",
+      qty: d.qty || 0,
+      estimasi_datang: d.estimasi_datang || "",
+      status: d.status || "WAIT",
+      note: d.note || "",
+    });
+    setEditDraftIdx(idx);
   };
 
-  const openKoreksiModal = (p: any) => {
-    setKoreksiModal({ open: true, plan: p });
-    setKoreksiForm({ qty_diterima: p.qty || 0, alokasi: p.alokasi || [], keterangan: p.note || '' });
+  const deleteDraft = (idx: number) => {
+    setDrafts((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const closeKoreksiModal = () => {
-    setKoreksiModal({ open: false, plan: null });
-    setKoreksiForm({ qty_diterima: 0, alokasi: [], keterangan: '' });
-  };
-
-  const submitKoreksi = async () => {
-    const p = koreksiModal.plan;
-    if (!p) return;
-    try {
-      await api().put(`/inbound-planning/${p.id}`, {
-        qty_diterima: koreksiForm.qty_diterima,
-        alokasi: koreksiForm.alokasi,
-        note: koreksiForm.keterangan,
-      });
-      notifications.show({ title: 'Sukses', message: 'Koreksi planning inbound disimpan', color: 'green' });
-      closeKoreksiModal();
-      router.push(`/wms/inbound?no_po=${encodeURIComponent(p.no_po)}&supplier=${encodeURIComponent(p.supplier || "")}`);
-    } catch (e: any) {
-      notifications.show({ title: 'Error', message: unwrap(e.response)?.message || 'Gagal menyimpan koreksi', color: 'red' });
-    }
+  const cancelEdit = () => {
+    setEditDraftIdx(null);
+    setForm({
+      no_po: "",
+      driver_name: "",
+      plat_nomor: "",
+      supplier: "",
+      qty: 0,
+      estimasi_datang: "",
+      status: "WAIT",
+      note: "",
+    });
   };
 
   // Option lists
@@ -202,7 +211,7 @@ export default function DriverPlanningPage() {
             <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
               <Stack gap="xs">
                 <Text fw={800} size="sm" c="indigo" mb={4} style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: 4 }}>
-                  {editPlanId ? "EDIT PLANNING INBOUND" : "TAMBAH PLANNING INBOUND"}
+                  {editDraftIdx !== null ? "EDIT DRAFT PLANNING" : "TAMBAH DRAFT PLANNING"}
                 </Text>
                 
                 <Autocomplete
@@ -277,26 +286,15 @@ export default function DriverPlanningPage() {
                 />
 
                 <Group gap="xs" mt="xs">
-                  <Button size="xs" color="indigo" style={{ flex: 1 }} onClick={savePlan} leftSection={<IconPlus size={14} />}>
-                    {editPlanId ? "Update" : "Simpan"}
+                  <Button size="xs" color="indigo" style={{ flex: 1 }} onClick={addDraft} leftSection={<IconPlus size={14} />}>
+                    + Tambahkan ke Draft
                   </Button>
-                  {editPlanId && (
+                  {editDraftIdx !== null && (
                     <Button
                       size="xs"
                       color="gray"
                       variant="outline"
-                      onClick={() => {
-                        setEditPlanId(null);
-                        setForm({
-                          no_po: "",
-                          driver_name: "",
-                          plat_nomor: "",
-                          supplier: "",
-                          estimasi_datang: "",
-                          status: "WAIT",
-                          note: "",
-                        });
-                      }}
+                      onClick={cancelEdit}
                     >
                       Batal
                     </Button>
@@ -306,8 +304,78 @@ export default function DriverPlanningPage() {
             </Paper>
           </Grid.Col>
 
-          {/* Right Schedule Table */}
+          {/* Right: Drafts + Riwayat */}
           <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
+            {/* Draft Table */}
+            {drafts.length > 0 && (
+              <Paper withBorder p="md" radius="md" mb="md" style={{ background: "#fff" }}>
+                <Text fw={800} size="sm" c="indigo" mb="xs">
+                  DRAFT PLANNING INBOUND ({drafts.length})
+                </Text>
+                <Box style={{ overflowX: "auto" }}>
+                  <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
+                    <Table.Thead style={{ background: "#333" }}>
+                      <Table.Tr>
+                        {["No PO", "Driver", "Plat", "Supplier", "ETA", "Status", "Aksi"].map((h) => (
+                          <Table.Th key={h} style={{ color: "#fff", fontSize: 11 }}>
+                            {h}
+                          </Table.Th>
+                        ))}
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {drafts.map((d: any, i: number) => {
+                        let etaStr = "-";
+                        if (d.estimasi_datang) {
+                          const dt = new Date(d.estimasi_datang);
+                          etaStr = `${dt.toLocaleDateString("id-ID")} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+                        }
+                        return (
+                          <Table.Tr key={d.id || i}>
+                            <Table.Td fw={700}>{d.no_po}</Table.Td>
+                            <Table.Td fw={600}>{d.driver_name || "-"}</Table.Td>
+                            <Table.Td>{d.plat_nomor || "-"}</Table.Td>
+                            <Table.Td>{d.supplier || "-"}</Table.Td>
+                            <Table.Td>{etaStr}</Table.Td>
+                            <Table.Td>
+                              <Badge
+                                color={d.status === "DONE" ? "green" : d.status === "FAIL" ? "red" : "yellow"}
+                                variant="filled"
+                                size="xs"
+                              >
+                                {d.status || "WAIT"}
+                              </Badge>
+                            </Table.Td>
+                            <Table.Td>
+                              <Group gap={4} wrap="nowrap">
+                                <ActionIcon
+                                  size="sm"
+                                  color="green"
+                                  variant="light"
+                                  onClick={() => editDraft(i)}
+                                >
+                                  <IconEdit size={13} />
+                                </ActionIcon>
+                                <ActionIcon
+                                  size="sm"
+                                  color="red"
+                                  variant="light"
+                                  onClick={() => deleteDraft(i)}
+                                >
+                                  <IconTrash size={13} />
+                                </ActionIcon>
+                              </Group>
+                            </Table.Td>
+                          </Table.Tr>
+                        );
+                      })}
+                    </Table.Tbody>
+                  </Table>
+                </Box>
+              </Paper>
+            )}
+
+            {/* Riwayat Planning Table */}
             <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
               <Group justify="space-between" mb="xs">
                 <Group gap="xs">
@@ -361,7 +429,6 @@ export default function DriverPlanningPage() {
                       <Table.Th style={{ color: "#fff" }}>Selisih Punctuality</Table.Th>
                       <Table.Th style={{ color: "#fff" }}>Status</Table.Th>
                       <Table.Th style={{ color: "#fff" }}>Keterangan</Table.Th>
-                      <Table.Th style={{ color: "#fff" }}>Aksi</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
@@ -412,65 +479,12 @@ export default function DriverPlanningPage() {
                             </Badge>
                           </Table.Td>
                           <Table.Td>{p.note || "-"}</Table.Td>
-                          <Table.Td>
-                            <Group gap={4} wrap="nowrap">
-                              {p.status !== "DONE" && (
-                                <Button
-                                  size="xs"
-                                  color="blue"
-                                  variant="light"
-                                  onClick={() => openKoreksiModal(p)}
-                                  style={{ padding: "0 6px", fontSize: 10 }}
-                                >
-                                  Proses Inbound
-                                </Button>
-                              )}
-                              <ActionIcon
-                                size="sm"
-                                color="green"
-                                variant="light"
-                                onClick={() => {
-                                  setEditPlanId(p.id);
-                                  let dStr = "";
-                                  if (p.estimasi_datang) {
-                                    const d = new Date(p.estimasi_datang);
-                                    const year = d.getFullYear();
-                                    const month = String(d.getMonth() + 1).padStart(2, "0");
-                                    const day = String(d.getDate()).padStart(2, "0");
-                                    const hours = String(d.getHours()).padStart(2, "0");
-                                    const minutes = String(d.getMinutes()).padStart(2, "0");
-                                    dStr = `${year}-${month}-${day}T${hours}:${minutes}`;
-                                  }
-                                  setForm({
-                                    no_po: p.no_po,
-                                    driver_name: p.driver_name || "",
-                                    plat_nomor: p.plat_nomor || "",
-                                    supplier: p.supplier || "",
-                                    qty: p.qty || 0,
-                                    estimasi_datang: dStr,
-                                    status: p.status,
-                                    note: p.note || "",
-                                  });
-                                }}
-                              >
-                                <IconEdit size={13} />
-                              </ActionIcon>
-                              <ActionIcon
-                                size="sm"
-                                color="red"
-                                variant="light"
-                                onClick={() => deletePlan(p.id)}
-                              >
-                                <IconTrash size={13} />
-                              </ActionIcon>
-                            </Group>
-                          </Table.Td>
                         </Table.Tr>
                       );
                     })}
                     {filtered.length === 0 && (
                       <Table.Tr>
-                        <Table.Td colSpan={10} align="center">
+                        <Table.Td colSpan={9} align="center">
                           <Text size="xs" c="dimmed">
                             Tidak ada jadwal planning inbound.
                           </Text>
@@ -484,57 +498,6 @@ export default function DriverPlanningPage() {
           </Grid.Col>
         </Grid>
       </Box>
-
-      <Modal opened={koreksiModal.open} onClose={closeKoreksiModal} title="Koreksi Planning Inbound" size="md">
-        {koreksiModal.plan && (
-          <Stack gap="xs">
-            <Box style={{ background: '#f8f9fa', borderRadius: 6, padding: '8px 10px', fontSize: 12 }}>
-              <Text size="xs">No PO: <b>{koreksiModal.plan.no_po}</b></Text>
-              <Text size="xs">Supplier: <b>{koreksiModal.plan.supplier || '-'}</b></Text>
-              <Text size="xs">Qty Planning: <b>{koreksiModal.plan.qty || 0}</b></Text>
-            </Box>
-            <NumberInput
-              label="Qty Diterima"
-              size="xs"
-              value={koreksiForm.qty_diterima}
-              onChange={(v) => setKoreksiForm((p: any) => ({ ...p, qty_diterima: Number(v) }))}
-              min={0}
-            />
-            <Text size="xs" c="dimmed">
-              Selisih: <b>{(koreksiModal.plan.qty || 0) - koreksiForm.qty_diterima}</b>
-            </Text>
-            <Divider label="Alokasi Selisih (opsional)" labelPosition="center" />
-            {['Waste', 'Reject', 'Retur Supplier'].map((t) => (
-              <NumberInput
-                key={t}
-                label={t}
-                size="xs"
-                value={koreksiForm.alokasi.find((a: any) => a.tujuan === t)?.qty || 0}
-                onChange={(v) => {
-                  const val = Number(v) || 0;
-                  setKoreksiForm((p: any) => {
-                    const existing = p.alokasi.filter((a: any) => a.tujuan !== t);
-                    if (val > 0) existing.push({ tujuan: t, qty: val });
-                    return { ...p, alokasi: existing };
-                  });
-                }}
-                min={0}
-              />
-            ))}
-            <Textarea
-              label="Keterangan"
-              size="xs"
-              value={koreksiForm.keterangan}
-              onChange={(e) => setKoreksiForm((p: any) => ({ ...p, keterangan: e.target.value }))}
-              minRows={2}
-            />
-            <Group justify="flex-end" mt="sm">
-              <Button size="xs" color="gray" variant="outline" onClick={closeKoreksiModal}>Batal</Button>
-              <Button size="xs" color="blue" onClick={submitKoreksi}>Simpan & Lanjut ke Inbound</Button>
-            </Group>
-          </Stack>
-        )}
-      </Modal>
     </Box>
   );
 }

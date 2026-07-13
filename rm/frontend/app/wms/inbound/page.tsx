@@ -15,7 +15,7 @@ import {
   IconBuildingWarehouse,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   api,
   unwrap,
@@ -71,6 +71,7 @@ const renderColorfulOption: any = ({ option }: any) => {
 
 function InboundContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [type, setType] = useState("wet");
   const [barangs, setBarangs] = useState<any[]>([]);
   const [allGudangs, setAllGudangs] = useState<any[]>([]);
@@ -81,6 +82,15 @@ function InboundContent() {
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("wms_inbound_drafts");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [];
+  });
+  const [planningDrafts, setPlanningDrafts] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("wms_driver_planning_drafts");
         if (saved) return JSON.parse(saved);
       } catch (e) {}
     }
@@ -146,7 +156,7 @@ function InboundContent() {
     loadLogs();
   }, []);
 
-  // Save drafts to LocalStorage on change (skip initial write, already in sync from lazy init)
+  // Save inbound drafts to LocalStorage on change (skip initial write)
   const initialWrite = useRef(true);
   useEffect(() => {
     if (initialWrite.current) {
@@ -155,6 +165,16 @@ function InboundContent() {
     }
     localStorage.setItem("wms_inbound_drafts", JSON.stringify(drafts));
   }, [drafts]);
+
+  // Save planning drafts to LocalStorage on change (skip initial write)
+  const initialWritePlanning = useRef(true);
+  useEffect(() => {
+    if (initialWritePlanning.current) {
+      initialWritePlanning.current = false;
+      return;
+    }
+    localStorage.setItem("wms_driver_planning_drafts", JSON.stringify(planningDrafts));
+  }, [planningDrafts]);
 
   // Process search params for prefill (redirected from planning)
   useEffect(() => {
@@ -386,31 +406,58 @@ function InboundContent() {
     }
   };
 
+  const processPlanningDraftToInbound = (draft: any) => {
+    router.push(`/wms/inbound?no_po=${encodeURIComponent(draft.no_po)}&supplier=${encodeURIComponent(draft.supplier || "")}`);
+  };
+
+  const deletePlanningDraft = (idx: number) => {
+    setPlanningDrafts((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const postAll = async () => {
-    if (!drafts.length) return;
+    if (!drafts.length && !planningDrafts.length) return;
     try {
-      await api().post("/inventory/inbound", {
-        items: drafts.map((d: any) => ({
-          barang_id: d.barang_id ? Number(d.barang_id) : 0,
-          gudang_id: d.gudang_id ? Number(d.gudang_id) : 0,
-          qty: Number(d.qty),
-          batch_no: d.batch_no,
-          expiry_date: d.expiry_date || null,
-          supplier: d.supplier,
-          no_po: d.no_po,
-          shift_id: d.shift_id ? Number(d.shift_id) : undefined,
-          tanggal_income: d.tanggal_income,
-          jam_datang: d.jam_datang,
-          jam_bongkar: d.jam_bongkar,
-          jam_selesai: d.jam_selesai,
-        })),
-      });
+      // First, submit driver planning drafts to POST /inbound-planning
+      for (const pd of planningDrafts) {
+        await api().post("/inbound-planning", {
+          no_po: pd.no_po,
+          driver_name: pd.driver_name,
+          plat_nomor: pd.plat_nomor,
+          supplier: pd.supplier,
+          qty: pd.qty,
+          estimasi_datang: pd.estimasi_datang,
+          status: pd.status || "WAIT",
+          note: pd.note,
+        });
+      }
+
+      // Then, submit inbound drafts to POST /inventory/inbound
+      if (drafts.length > 0) {
+        await api().post("/inventory/inbound", {
+          items: drafts.map((d: any) => ({
+            barang_id: d.barang_id ? Number(d.barang_id) : 0,
+            gudang_id: d.gudang_id ? Number(d.gudang_id) : 0,
+            qty: Number(d.qty),
+            batch_no: d.batch_no,
+            expiry_date: d.expiry_date || null,
+            supplier: d.supplier,
+            no_po: d.no_po,
+            shift_id: d.shift_id ? Number(d.shift_id) : undefined,
+            tanggal_income: d.tanggal_income,
+            jam_datang: d.jam_datang,
+            jam_bongkar: d.jam_bongkar,
+            jam_selesai: d.jam_selesai,
+          })),
+        });
+      }
+
       notifications.show({
         title: "Sukses",
         message: "Semua draft berhasil diposting",
         color: "green",
       });
       setDrafts([]);
+      setPlanningDrafts([]);
       loadLogs();
     } catch (e: any) {
       notifications.show({
@@ -810,21 +857,83 @@ function InboundContent() {
 
           {/* Draft & History Tables */}
           <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
+            {/* Section 1: Driver Planning Drafts */}
+            {planningDrafts.length > 0 && (
+              <Paper withBorder p="md" radius="md" mb="md" style={{ background: "#fff" }}>
+                <Text fw={800} size="sm" c="indigo" mb="xs">
+                  DRAFT PLANNING INBOUND ({planningDrafts.length})
+                </Text>
+                <Box style={{ overflowX: "auto" }}>
+                  <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
+                    <Table.Thead style={{ background: "#333" }}>
+                      <Table.Tr>
+                        {["No PO", "Driver", "Plat", "Supplier", "ETA", "Status", "Aksi"].map((h) => (
+                          <Table.Th key={h} style={{ color: "#fff", fontSize: 11 }}>
+                            {h}
+                          </Table.Th>
+                        ))}
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {planningDrafts.map((d: any, i: number) => {
+                        let etaStr = "-";
+                        if (d.estimasi_datang) {
+                          const dt = new Date(d.estimasi_datang);
+                          etaStr = `${dt.toLocaleDateString("id-ID")} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+                        }
+                        return (
+                          <Table.Tr key={d.id || i}>
+                            <Table.Td fw={700}>{d.no_po}</Table.Td>
+                            <Table.Td fw={600}>{d.driver_name || "-"}</Table.Td>
+                            <Table.Td>{d.plat_nomor || "-"}</Table.Td>
+                            <Table.Td>{d.supplier || "-"}</Table.Td>
+                            <Table.Td>{etaStr}</Table.Td>
+                            <Table.Td>
+                              <Badge
+                                color={d.status === "DONE" ? "green" : d.status === "FAIL" ? "red" : "yellow"}
+                                variant="filled"
+                                size="xs"
+                              >
+                                {d.status || "WAIT"}
+                              </Badge>
+                            </Table.Td>
+                            <Table.Td>
+                              <Group gap={4} wrap="nowrap">
+                                <Button
+                                  size="xs"
+                                  color="blue"
+                                  variant="light"
+                                  onClick={() => processPlanningDraftToInbound(d)}
+                                  style={{ padding: "0 6px", fontSize: 10 }}
+                                >
+                                  Proses Inbound
+                                </Button>
+                                <ActionIcon
+                                  size="sm"
+                                  color="red"
+                                  variant="light"
+                                  onClick={() => deletePlanningDraft(i)}
+                                >
+                                  <IconTrash size={13} />
+                                </ActionIcon>
+                              </Group>
+                            </Table.Td>
+                          </Table.Tr>
+                        );
+                      })}
+                    </Table.Tbody>
+                  </Table>
+                </Box>
+              </Paper>
+            )}
+
+            {/* Section 2: Inbound Drafts */}
             {drafts.length > 0 && (
               <Paper withBorder p="md" radius="md" mb="md" style={{ background: "#fff" }}>
                 <Group justify="space-between" mb="xs">
                   <Text fw={800} size="sm" c="blue">
                     DRAFT ANTRIAN INBOUND ({drafts.length})
                   </Text>
-                  <Button
-                    size="xs"
-                    color="green"
-                    onClick={postAll}
-                    style={{ fontWeight: 850 }}
-                    leftSection={<IconSend size={14} />}
-                  >
-                    POSTING DRAFT INBOUND
-                  </Button>
                 </Group>
                 <Box style={{ overflowX: "auto" }}>
                   <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
@@ -909,6 +1018,24 @@ function InboundContent() {
               </Paper>
             )}
 
+            {/* Section 3: Publish Button */}
+            {(drafts.length > 0 || planningDrafts.length > 0) && (
+              <Paper withBorder p="md" radius="md" mb="md" style={{ background: "#fff" }}>
+                <Group justify="center">
+                  <Button
+                    size="sm"
+                    color="green"
+                    onClick={postAll}
+                    style={{ fontWeight: 850 }}
+                    leftSection={<IconSend size={14} />}
+                  >
+                    PUBLISH — Posting Planning & Inbound ({planningDrafts.length} planning, {drafts.length} inbound)
+                  </Button>
+                </Group>
+              </Paper>
+            )}
+
+            {/* Section 4: Inbound History */}
             <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
               <Group justify="space-between" mb="sm">
                 <Text fw={850} size="sm">

@@ -1,8 +1,9 @@
 "use client";
 // @ts-nocheck
-import React, { useState, useEffect } from "react";
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, Loader, NumberInput, Divider, Autocomplete, Tooltip, ActionIcon, Card, Grid, ThemeIcon } from "@mantine/core";
+import React, { useState, useEffect, useRef } from "react";
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, Loader, NumberInput, Divider, Autocomplete, Tooltip, ActionIcon, Card, Grid, ThemeIcon, Table as MantineTable } from "@mantine/core";
 import { Table } from '../components/Table';
+import { useRouter } from "next/navigation";
 import {
   IconTrash,
   IconCheck,
@@ -13,6 +14,9 @@ import {
   IconSearch,
   IconX,
   IconBuildingWarehouse,
+  IconPlus,
+  IconEdit,
+  IconRocket,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import {
@@ -64,6 +68,7 @@ const renderColorfulOption: any = ({ option }: any) => {
 };
 
 export default function OutboundPage() {
+  const router = useRouter();
   const [type, setType] = useState("wet");
   const [stocks, setStocks] = useState<any[]>([]);
   const [barangs, setBarangs] = useState<any[]>([]);
@@ -75,11 +80,35 @@ export default function OutboundPage() {
   const [filterRak, setFilterRak] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Picking drafts from localStorage
+  const [pickingDrafts, setPickingDrafts] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("wms_picking_drafts");
+        return saved ? JSON.parse(saved) : [];
+      } catch (e) {}
+    }
+    return [];
+  });
+  const pickingDraftSavedRef = useRef(false);
+
+  // Outbound drafts from localStorage
+  const [outboundDrafts, setOutboundDrafts] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("wms_outbound_drafts");
+        return saved ? JSON.parse(saved) : [];
+      } catch (e) {}
+    }
+    return [];
+  });
+  const outboundDraftSavedRef = useRef(false);
+
   // Sorting states
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  // Form for Direct Outbound
+  // Form for Direct Outbound (now adds to draft)
   const [form, setForm] = useState({
     no_ref: "",
     stock_id: "",
@@ -93,6 +122,18 @@ export default function OutboundPage() {
   useEffect(() => {
     load();
   }, [type]);
+
+  // Save picking drafts to localStorage (skip initial render)
+  useEffect(() => {
+    if (!pickingDraftSavedRef.current) { pickingDraftSavedRef.current = true; return; }
+    localStorage.setItem("wms_picking_drafts", JSON.stringify(pickingDrafts));
+  }, [pickingDrafts]);
+
+  // Save outbound drafts to localStorage (skip initial render)
+  useEffect(() => {
+    if (!outboundDraftSavedRef.current) { outboundDraftSavedRef.current = true; return; }
+    localStorage.setItem("wms_outbound_drafts", JSON.stringify(outboundDrafts));
+  }, [outboundDrafts]);
 
   const load = async () => {
     setLoading(true);
@@ -161,7 +202,8 @@ export default function OutboundPage() {
     }
   };
 
-  const directOutboundSubmit = async () => {
+  // Add outbound draft to localStorage instead of submitting to API
+  const addOutboundDraft = () => {
     if (!form.stock_id || !form.qty || !form.tujuan) {
       return notifications.show({
         title: "Error",
@@ -173,37 +215,91 @@ export default function OutboundPage() {
     const selSt = stocks.find((s) => s.id === +form.stock_id);
     if (!selSt) return;
 
-    const finalNoRef = form.no_ref || `OUT-${String(Date.now()).slice(-6)}`;
+    setOutboundDrafts((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        no_ref: form.no_ref,
+        stock_id: +form.stock_id,
+        barang_id: selSt.barang?.id,
+        gudang_id: selSt.gudang?.id,
+        qty: +form.qty,
+        tujuan: form.tujuan,
+        shift_id: form.shift_id ? +form.shift_id : undefined,
+        batch_no: selSt.batch_no,
+        _brg: selSt.barang?.nama,
+        _gdg: selSt.gudang?.name,
+        satuan: selSt.satuan,
+      },
+    ]);
+
+    notifications.show({
+      title: "Draft Ditambahkan",
+      message: "Item berhasil ditambahkan ke draft outbound",
+      color: "blue",
+    });
+
+    setForm({ no_ref: "", stock_id: "", qty: 1, tujuan: "", shift_id: "" });
+    setSelectedBarangId("");
+  };
+
+  // Publish both picking and outbound drafts to API
+  const publishDrafts = async () => {
+    if (!pickingDrafts.length && !outboundDrafts.length) {
+      return notifications.show({
+        title: "Error",
+        message: "Tidak ada draft untuk dipublish",
+        color: "red",
+      });
+    }
+
+    const transId = `ID-${String(Date.now()).slice(-6)}`;
 
     try {
-      await api().post("/inventory/outbound", {
-        items: [
-          {
-            no_ref: finalNoRef,
-            barang_id: selSt.barang?.id,
-            gudang_id: selSt.gudang?.id,
-            qty: +form.qty,
-            satuan: selSt.satuan,
-            tujuan: form.tujuan,
-            shift_id: form.shift_id ? +form.shift_id : undefined,
-            batch_no: selSt.batch_no,
-          },
-        ],
-      });
+      // Submit picking drafts
+      if (pickingDrafts.length > 0) {
+        const pickingItems = pickingDrafts.map((d: any) => ({
+          no_ref: d.no_ref || transId,
+          barang_id: d.barang_id,
+          gudang_id: d.gudang_id,
+          qty: d.qty,
+          satuan: d.satuan,
+          tujuan: d.tujuan,
+          shift_id: d.shift_id,
+          batch_no: d.nomor_batch || d.batch_no,
+        }));
+        await api().post("/inventory/picking", { items: pickingItems });
+      }
+
+      // Submit outbound drafts
+      if (outboundDrafts.length > 0) {
+        const outboundItems = outboundDrafts.map((d: any) => ({
+          no_ref: d.no_ref || transId,
+          barang_id: d.barang_id,
+          gudang_id: d.gudang_id,
+          qty: d.qty,
+          satuan: d.satuan,
+          tujuan: d.tujuan,
+          shift_id: d.shift_id,
+          batch_no: d.batch_no,
+        }));
+        await api().post("/inventory/outbound", { items: outboundItems });
+      }
 
       notifications.show({
         title: "Sukses",
-        message: `Barang berhasil dikeluarkan (Ref: ${finalNoRef})`,
+        message: `${pickingDrafts.length} picking + ${outboundDrafts.length} outbound draft berhasil dipublish`,
         color: "green",
       });
 
-      setForm({ no_ref: "", stock_id: "", qty: 1, tujuan: "", shift_id: "" });
-      setSelectedBarangId("");
+      // Clear both localStorage
+      setPickingDrafts([]);
+      setOutboundDrafts([]);
       load();
     } catch (e: any) {
       notifications.show({
         title: "Error",
-        message: unwrap(e.response)?.message || "Failed",
+        message: unwrap(e.response)?.message || "Gagal publish draft",
         color: "red",
       });
     }
@@ -446,14 +542,14 @@ export default function OutboundPage() {
       {/* Main content in responsive Grid */}
       <Box p="md">
         <Grid gutter="md">
-          {/* Form Outbound Langsung */}
+          {/* Left: Form Outbound Draft + PUBLISH button */}
           <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>
             <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
               <Group gap="xs" mb="sm" style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: 4 }}>
                 <ThemeIcon color="red" variant="light" size="sm">
                   <IconSend size={16} />
                 </ThemeIcon>
-                <Text fw={800} size="sm" c="red">OUTBOUND LANGSUNG</Text>
+                <Text fw={800} size="sm" c="red">OUTBOUND DRAFT</Text>
               </Group>
               
               <Stack gap="xs">
@@ -537,26 +633,138 @@ export default function OutboundPage() {
                     setForm((p) => ({ ...p, shift_id: match ? String(match.id) : v }));
                   }}
                   placeholder="Pilih shift"
-                  
                 />
 
                 <Button
                   fullWidth
                   size="xs"
                   color="red"
-                  onClick={directOutboundSubmit}
+                  onClick={addOutboundDraft}
                   style={{ fontWeight: 800, marginTop: 4 }}
-                  leftSection={<IconSend size={14} />}
+                  leftSection={<IconPlus size={14} />}
                 >
-                  PROSES PENGELUARAN
+                  + Tambahkan Draft Outbound
+                </Button>
+
+                <Divider my="xs" />
+
+                <Button
+                  fullWidth
+                  size="sm"
+                  color="green"
+                  onClick={publishDrafts}
+                  disabled={!pickingDrafts.length && !outboundDrafts.length}
+                  style={{ fontWeight: 800 }}
+                  leftSection={<IconRocket size={16} />}
+                >
+                  PUBLISH ({pickingDrafts.length + outboundDrafts.length} draft)
                 </Button>
               </Stack>
             </Paper>
           </Grid.Col>
 
-          {/* Pending Pickings list + History Table */}
+          {/* Right: Drafts tables + Pending Pickings + History */}
           <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
-            {/* PENDING PICKING PLANS */}
+            {/* PICKING DRAFTS (from localStorage) */}
+            {pickingDrafts.length > 0 && (
+              <Paper withBorder p="md" mb="md" radius="md" style={{ background: "#fff" }}>
+                <Group justify="space-between" mb="sm">
+                  <Group gap="xs">
+                    <ThemeIcon color="orange" variant="light" size="sm">
+                      <IconClipboardCheck size={16} />
+                    </ThemeIcon>
+                    <Text fw={800} size="sm" c="orange">
+                      DRAFT PICKING ({pickingDrafts.length})
+                    </Text>
+                  </Group>
+                </Group>
+                <Box style={{ overflowX: "auto" }}>
+                  <MantineTable withTableBorder withColumnBorders style={{ fontSize: 11 }}>
+                    <MantineTable.Thead style={{ background: "#333" }}>
+                      <MantineTable.Tr>
+                        {["Item", "Rak", "Qty", "Tujuan", "Shift", "Aksi"].map((h) => (
+                          <MantineTable.Th key={h} style={{ color: "#fff", fontSize: 11 }}>{h}</MantineTable.Th>
+                        ))}
+                      </MantineTable.Tr>
+                    </MantineTable.Thead>
+                    <MantineTable.Tbody>
+                      {pickingDrafts.map((d: any, i: number) => (
+                        <MantineTable.Tr key={d.id || i}>
+                          <MantineTable.Td fw={600}>{d._brg || "-"}</MantineTable.Td>
+                          <MantineTable.Td><Badge size="xs" color="blue">{d._gdg || "-"}</Badge></MantineTable.Td>
+                          <MantineTable.Td ta="right" fw={700}>{d.qty} {d.satuan}</MantineTable.Td>
+                          <MantineTable.Td>{d.tujuan || "-"}</MantineTable.Td>
+                          <MantineTable.Td>{shifts.find((s: any) => s.id === d.shift_id)?.name || "-"}</MantineTable.Td>
+                          <MantineTable.Td>
+                            <Group gap={4} wrap="nowrap">
+                              <Tooltip label="Edit di Picking">
+                                <ActionIcon size="sm" color="green" variant="light" onClick={() => router.push("/wms/picking")}>
+                                  <IconEdit size={13} />
+                                </ActionIcon>
+                              </Tooltip>
+                              <Tooltip label="Hapus Draft">
+                                <ActionIcon size="sm" color="red" variant="light" onClick={() => setPickingDrafts((p) => p.filter((_, j) => j !== i))}>
+                                  <IconTrash size={13} />
+                                </ActionIcon>
+                              </Tooltip>
+                            </Group>
+                          </MantineTable.Td>
+                        </MantineTable.Tr>
+                      ))}
+                    </MantineTable.Tbody>
+                  </MantineTable>
+                </Box>
+              </Paper>
+            )}
+
+            {/* OUTBOUND DRAFTS (from localStorage) */}
+            {outboundDrafts.length > 0 && (
+              <Paper withBorder p="md" mb="md" radius="md" style={{ background: "#fff" }}>
+                <Group justify="space-between" mb="sm">
+                  <Group gap="xs">
+                    <ThemeIcon color="red" variant="light" size="sm">
+                      <IconSend size={16} />
+                    </ThemeIcon>
+                    <Text fw={800} size="sm" c="red">
+                      DRAFT OUTBOUND ({outboundDrafts.length})
+                    </Text>
+                  </Group>
+                </Group>
+                <Box style={{ overflowX: "auto" }}>
+                  <MantineTable withTableBorder withColumnBorders style={{ fontSize: 11 }}>
+                    <MantineTable.Thead style={{ background: "#333" }}>
+                      <MantineTable.Tr>
+                        {["Item", "Rak Asal", "Qty", "Tujuan", "Shift", "Aksi"].map((h) => (
+                          <MantineTable.Th key={h} style={{ color: "#fff", fontSize: 11 }}>{h}</MantineTable.Th>
+                        ))}
+                      </MantineTable.Tr>
+                    </MantineTable.Thead>
+                    <MantineTable.Tbody>
+                      {outboundDrafts.map((d: any, i: number) => (
+                        <MantineTable.Tr key={d.id || i}>
+                          <MantineTable.Td fw={600}>{d._brg || "-"}</MantineTable.Td>
+                          <MantineTable.Td><Badge size="xs" color="blue">{d._gdg || "-"}</Badge></MantineTable.Td>
+                          <MantineTable.Td ta="right" fw={700}>{d.qty} {d.satuan}</MantineTable.Td>
+                          <MantineTable.Td>{d.tujuan || "-"}</MantineTable.Td>
+                          <MantineTable.Td>{shifts.find((s: any) => s.id === d.shift_id)?.name || "-"}</MantineTable.Td>
+                          <MantineTable.Td>
+                            <Group gap={4} wrap="nowrap">
+                              <Tooltip label="Hapus Draft">
+                                <ActionIcon size="sm" color="red" variant="light" onClick={() => setOutboundDrafts((p) => p.filter((_, j) => j !== i))}>
+                                  <IconTrash size={13} />
+                                </ActionIcon>
+                              </Tooltip>
+                            </Group>
+                          </MantineTable.Td>
+                        </MantineTable.Tr>
+                      ))}
+                    </MantineTable.Tbody>
+                  </MantineTable>
+                </Box>
+              </Paper>
+            )}
+
+            {/* PENDING PICKING PLANS (from API) */}
             <Paper withBorder p="md" mb="md" radius="md" style={{ background: "#fff" }}>
               <Group gap="xs" mb="sm" style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: 4 }}>
                 <ThemeIcon color="blue" variant="light" size="sm">
