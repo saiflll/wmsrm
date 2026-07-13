@@ -984,29 +984,34 @@ export class InventoryService {
       'E': '#1098ad',
     };
 
-    // Aggregate by zone
-    const zoneMap: Record<string, { used: number; capacity: number; count: number }> = {};
+    // Aggregate by zone: count total racks and occupied racks (racks with any stock)
+    const zoneMap: Record<string, { totalRacks: number; occupiedRacks: number; count: number }> = {};
     for (const g of gudangs) {
       const z = g.zone || 'UNKNOWN';
-      if (!zoneMap[z]) zoneMap[z] = { used: 0, capacity: 0, count: 0 };
-      zoneMap[z].capacity += g.capacity || 1000;
+      if (!zoneMap[z]) zoneMap[z] = { totalRacks: 0, occupiedRacks: 0, count: 0 };
+      zoneMap[z].totalRacks++;
       zoneMap[z].count++;
     }
+    // Track which gudang IDs already counted as occupied (to avoid double-counting)
+    const occupiedGudangIds = new Set<number>();
     for (const s of stocks) {
       if (!s.gudang) continue;
-      const z = s.gudang.zone || 'UNKNOWN';
-      if (zoneMap[z]) zoneMap[z].used += s.qty;
+      if (s.qty > 0 && !occupiedGudangIds.has(s.gudang.id)) {
+        occupiedGudangIds.add(s.gudang.id);
+        const z = s.gudang.zone || 'UNKNOWN';
+        if (zoneMap[z]) zoneMap[z].occupiedRacks++;
+      }
     }
 
     const gauges = Object.entries(zoneMap).map(([z, data]) => {
-      const pct = data.capacity > 0 ? Math.min(100, Math.round((data.used / data.capacity) * 100)) : 0;
+      const pct = data.totalRacks > 0 ? Math.min(100, Math.round((data.occupiedRacks / data.totalRacks) * 100)) : 0;
       let color = zoneColor[z] || '#868e96';
       return {
         id: z,
         name: `Zone ${z}`,
         zone: z,
-        used: data.used,
-        capacity: data.capacity,
+        totalRacks: data.totalRacks,
+        occupiedRacks: data.occupiedRacks,
         pct,
         color,
       };

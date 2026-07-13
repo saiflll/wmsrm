@@ -1546,7 +1546,7 @@ export default function DashboardPage() {
                       <OccupancyGauge
                         pct={g.pct}
                         label={g.name}
-                        subLabel={`${Math.round(g.used).toLocaleString()} / ${Math.round(g.capacity).toLocaleString()} kg`}
+                        subLabel={`${g.occupiedRacks} / ${g.totalRacks} rak terisi`}
                         color={g.color}
                         selected={selectedZone === g.id}
                         onClick={() => handleZoneClick(g.id)}
@@ -1846,8 +1846,8 @@ export default function DashboardPage() {
                           <Box component="tr">
                             {[
                               "Zone",
-                              "Terpakai (kg)",
-                              "Kapasitas (kg)",
+                              "Rak Terisi",
+                              "Total Rak",
                               "%",
                               "Status",
                               "Trend",
@@ -1855,8 +1855,8 @@ export default function DashboardPage() {
                               <TH
                                 key={h}
                                 right={[
-                                  "Terpakai (kg)",
-                                  "Kapasitas (kg)",
+                                  "Rak Terisi",
+                                  "Total Rak",
                                 ].includes(h)}
                               >
                                 {h}
@@ -1912,10 +1912,10 @@ export default function DashboardPage() {
                                     {g.name}
                                   </TD>
                                   <TD right style={{ fontWeight: 700 }}>
-                                    {Math.round(g.used).toLocaleString()}
+                                    {g.occupiedRacks}
                                   </TD>
                                   <TD right>
-                                    {Math.round(g.capacity).toLocaleString()}
+                                    {g.totalRacks}
                                   </TD>
                                   <TD>
                                     <Group gap={6} wrap="nowrap">

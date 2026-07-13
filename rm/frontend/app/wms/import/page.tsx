@@ -92,7 +92,12 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         icon: <IconTransferIn size={20} />,
         filename: 'Template_Inbound.xlsx',
         headers: ['NoPO', 'Item', 'Qty', 'Satuan', 'Batch', 'Expired', 'Supplier', 'Shift', 'Zone', 'Rak'],
-        sampleRows: [['PO-001', 'Dada Ayam', 100, 'Kg', 'B001', '2026-12-31', 'Supplier A', 'Shift 1', 'WET A', 'WET A-01-01']],
+        sampleRows: [
+            ['PO-001', 'Dada Ayam Broiler', 100, 'Kg', 'BATCH-001', '2026-12-31', 'PT JAPFA', 'Shift 1', 'CS FROZEN', 'CS-F-01-01'],
+            ['PO-001', 'Paha Ayam Atas', 50, 'Kg', 'BATCH-002', '2026-12-28', 'PT JAPFA', 'Shift 1', 'CHILL', 'CH-01-02'],
+            ['PO-002', 'Beras Premium', 200, 'Kg', 'BATCH-003', '2027-06-30', 'PT Bulog', 'Shift 2', 'DRY A', 'DRY-A-01-01'],
+            ['PO-003', 'Minyak Goreng', 100, 'Liter', 'BATCH-004', '2027-03-15', 'PT Bimoli', 'Shift 2', 'DRY B', 'DRY-B-02-01'],
+        ],
         process: async (rows, refs, apiInstance) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
@@ -134,7 +139,11 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         icon: <IconTransferOut size={20} />,
         filename: 'Template_Outbound.xlsx',
         headers: ['NoRef', 'Item', 'RakAsal', 'Batch', 'Qty', 'Satuan', 'Tujuan', 'Shift'],
-        sampleRows: [['SJ-001', 'Dada Ayam', 'WET A-01-01', 'B001', 50, 'Kg', 'Customer A', 'Shift 1']],
+        sampleRows: [
+            ['SJ-001', 'Dada Ayam Broiler', 'CS-F-01-01', 'BATCH-001', 50, 'Kg', 'PT Produksi Ayam', 'Shift 1'],
+            ['SJ-001', 'Paha Ayam Atas', 'CH-01-02', 'BATCH-002', 30, 'Kg', 'PT Produksi Ayam', 'Shift 1'],
+            ['SJ-002', 'Beras Premium', 'DRY-A-01-01', 'BATCH-003', 100, 'Kg', 'Customer A', 'Shift 2'],
+        ],
         process: async (rows, refs, apiInstance) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
@@ -175,7 +184,11 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         icon: <IconClipboardList size={20} />,
         filename: 'Template_Picking.xlsx',
         headers: ['NoRef', 'Item', 'RakAsal', 'Batch', 'Qty', 'Satuan', 'Tujuan', 'Shift', 'TanggalPermintaan'],
-        sampleRows: [['PK-001', 'Dada Ayam', 'WET A-01-01', 'B001', 50, 'Kg', 'Customer A', 'Shift 1', '2026-12-31']],
+        sampleRows: [
+            ['PK-001', 'Dada Ayam Broiler', 'CS-F-01-01', 'BATCH-001', 50, 'Kg', 'PT Produksi Ayam', 'Shift 1', '2026-07-15'],
+            ['PK-001', 'Paha Ayam Atas', 'CH-01-02', 'BATCH-002', 30, 'Kg', 'PT Produksi Ayam', 'Shift 1', '2026-07-15'],
+            ['PK-002', 'Beras Premium', 'DRY-A-01-01', 'BATCH-003', 100, 'Kg', 'Customer A', 'Shift 2', '2026-07-16'],
+        ],
         process: async (rows, refs, apiInstance) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
@@ -217,7 +230,10 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         icon: <IconBoxSeam size={20} />,
         filename: 'Template_Relocation.xlsx',
         headers: ['NoPO', 'Item', 'RakAsal', 'RakTujuan', 'Batch', 'Qty', 'Note'],
-        sampleRows: [['SJ-001', 'Dada Ayam', 'WET A-01-01', 'WET A-02-01', 'B001', 30, 'Pindah rack']],
+        sampleRows: [
+            ['RL-001', 'Dada Ayam Broiler', 'CS-F-01-01', 'CS-F-02-01', 'BATCH-001', 30, 'Pindah ke rak lebih dekat'],
+            ['RL-002', 'Beras Premium', 'DRY-A-01-01', 'DRY-A-02-01', 'BATCH-003', 50, 'Reorganisasi gudang'],
+        ],
         process: async (rows, refs, apiInstance) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
@@ -256,7 +272,11 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         icon: <IconClipboardList size={20} />,
         filename: 'Template_Opname.xlsx',
         headers: ['Zone', 'Rak', 'Item', 'Batch', 'QtyFisik', 'Shift', 'Note'],
-        sampleRows: [['WET A', 'WET A-01-01', 'Dada Ayam', 'B001', 95, 'Shift 1', '']],
+        sampleRows: [
+            ['CS FROZEN', 'CS-F-01-01', 'Dada Ayam Broiler', 'BATCH-001', 95, 'Shift 1', 'Selisih -5kg'],
+            ['CHILL', 'CH-01-02', 'Paha Ayam Atas', 'BATCH-002', 48, 'Shift 1', ''],
+            ['DRY A', 'DRY-A-01-01', 'Beras Premium', 'BATCH-003', 198, 'Shift 2', 'Selisih -2kg'],
+        ],
         process: async (rows, refs, apiInstance) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
@@ -295,7 +315,13 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         icon: <IconPackage size={20} />,
         filename: 'Template_Produk.xlsx',
         headers: ['SKU', 'Nama', 'Satuan', 'Kategori', 'MinStok', 'MaxStok'],
-        sampleRows: [['SKU001', 'Dada Ayam', 'Kg', 'Wet', 50, 1000]],
+        sampleRows: [
+            ['SKU-001', 'Dada Ayam Broiler', 'Kg', 'Wet', 50, 1000],
+            ['SKU-002', 'Paha Ayam Atas', 'Kg', 'Wet', 30, 800],
+            ['SKU-003', 'Beras Premium', 'Kg', 'Dry', 100, 2000],
+            ['SKU-004', 'Minyak Goreng', 'Liter', 'Dry', 50, 1500],
+            ['SKU-005', 'Telur Ayam', 'Butir', 'Wet', 200, 5000],
+        ],
         process: async (rows, refs, apiInstance) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
@@ -327,7 +353,13 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         icon: <IconMapPin size={20} />,
         filename: 'Template_Lokasi.xlsx',
         headers: ['NamaRak', 'Zone', 'Kolom', 'Level', 'Type'],
-        sampleRows: [['WET A-01-01', 'WET A', '01', 1, 'Single Deep']],
+        sampleRows: [
+            ['CS-F-01-01', 'CS FROZEN', '01', 1, 'Single Deep'],
+            ['CS-F-01-02', 'CS FROZEN', '01', 2, 'Single Deep'],
+            ['CH-01-01', 'CHILL', '01', 1, 'Single Deep'],
+            ['DRY-A-01-01', 'DRY A', '01', 1, 'Double Deep'],
+            ['DRY-B-02-01', 'DRY B', '02', 1, 'Single Deep'],
+        ],
         process: async (rows, refs, apiInstance) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
@@ -361,7 +393,12 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         icon: <IconBuildingWarehouse size={20} />,
         filename: 'Template_Customer.xlsx',
         headers: ['Nama', 'Alamat', 'Telp', 'Tipe'],
-        sampleRows: [['Customer A', 'Jl. Mawar No.1', '08123456789', 'customer']],
+        sampleRows: [
+            ['PT Produksi Ayam', 'Jl. Industri No.1, Jakarta', '021-12345678', 'customer'],
+            ['PT JAPFA Comfeed', 'Jl. Raya Bogor Km.22', '021-87654321', 'customer'],
+            ['PT Bulog', 'Jl. Gatot Subroto No.1, Jakarta', '021-55555555', 'customer'],
+            ['Customer A', 'Jl. Mawar No.10, Bandung', '022-11111111', 'customer'],
+        ],
         process: async (rows, refs, apiInstance) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
@@ -391,7 +428,11 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         icon: <IconTruck size={20} />,
         filename: 'Template_Driver_Planning.xlsx',
         headers: ['NoPO', 'DriverName', 'PlatNomor', 'Supplier', 'ETA', 'Status', 'Note'],
-        sampleRows: [['PO-001', 'Budi', 'B 1234 ABC', 'Supplier A', '2026-12-31 08:00', 'WAIT', '']],
+        sampleRows: [
+            ['PO-001', 'Budi Santoso', 'B 1234 ABC', 'PT JAPFA', '2026-07-15 08:00', 'WAIT', ''],
+            ['PO-002', 'Ahmad Hidayat', 'B 5678 DEF', 'PT Bulog', '2026-07-15 10:00', 'WAIT', ''],
+            ['PO-003', 'Cahyo Wibowo', 'B 9012 GHI', 'PT Bimoli', '2026-07-16 07:30', 'WAIT', 'Delivery pagi'],
+        ],
         process: async (rows, refs, apiInstance) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
@@ -424,7 +465,13 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         icon: <IconUsers size={20} />,
         filename: 'Template_Users.xlsx',
         headers: ['Username', 'Password', 'RoleID'],
-        sampleRows: [['admin2', 'password123', 5]],
+        sampleRows: [
+            ['checker1', 'password123', 1],
+            ['admin1', 'admin123', 2],
+            ['koordinator1', 'koord123', 3],
+            ['supervisor1', 'super123', 4],
+            ['superadmin', 'superadmin123', 5],
+        ],
         process: async (rows, refs, apiInstance) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
