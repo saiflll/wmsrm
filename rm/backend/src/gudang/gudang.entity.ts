@@ -22,7 +22,7 @@ export class Gudang {
     @Column({ type: 'boolean' })
     side: boolean; // true=dry, false=wet
 
-    @Column()
+    @Column({ unique: true })
     name: string; // rack number e.g. A1.1
 
     @Column({ type: 'varchar', nullable: true })

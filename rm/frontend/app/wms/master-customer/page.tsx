@@ -23,6 +23,9 @@ export default function MasterCustomerPage() {
 
     const save = async () => {
         if (!form.nama) return notifications.show({ title: 'Error', message: 'Nama wajib', color: 'red' });
+        // Check duplicate
+        const duplicate = list.find((c: any) => c.nama?.toLowerCase() === form.nama.toLowerCase() && c.id !== editId);
+        if (duplicate) return notifications.show({ title: 'Error', message: `Customer "${form.nama}" sudah ada`, color: 'red' });
         try {
             if (editId) {
                 await api().put(`/customers/${editId}`, form);

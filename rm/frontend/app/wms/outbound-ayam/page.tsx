@@ -126,7 +126,7 @@ export default function OutboundAyamPage() {
                                         Serapan: <b>{Math.round((form.qty_aktual / selectedPlan.qty) * 100)}%</b>
                                     </Text>
                                 )}
-                                <Select label="Shift" size="xs" clearable data={shiftOpts} value={form.shift_id} onChange={(v) => pf('shift_id', v)} placeholder="Pilih shift..." />
+                                <Select label="Shift" size="xs" searchable clearable data={shiftOpts} value={form.shift_id} onChange={(v) => pf('shift_id', v)} placeholder="Pilih shift..." nothingFoundMessage="Tidak ada shift" />
                                 <TextInput label="Tujuan Utama" size="xs" placeholder="Produksi Ayam" value={form.tujuan} onChange={(e) => pf('tujuan', e.target.value)} />
                                 <Textarea label="Keterangan" size="xs" value={form.keterangan} onChange={(e) => pf('keterangan', e.target.value)} minRows={2} />
                                 <Divider label="Alokasi (opsional)" labelPosition="center" />

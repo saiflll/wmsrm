@@ -23,6 +23,9 @@ export default function MasterLokasiPage() {
 
     const save = async () => {
         if (!form.name) return notifications.show({ title: 'Error', message: 'Nama lokasi wajib', color: 'red' });
+        // Check duplicate
+        const duplicate = locs.find((l: any) => l.name?.toLowerCase() === form.name.toLowerCase() && l.id !== editId);
+        if (duplicate) return notifications.show({ title: 'Error', message: `Lokasi "${form.name}" sudah ada`, color: 'red' });
         try {
             const side = ['DRY A', 'DRY B', 'DRY FG'].includes(form.zone);
             if (editId) {

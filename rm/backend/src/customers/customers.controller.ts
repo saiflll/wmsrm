@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Query, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
 import { Customer } from './customer.entity';
@@ -21,12 +21,20 @@ export class CustomersController {
     }
 
     @Post()
-    create(@Body() body: Partial<Customer>) {
+    async create(@Body() body: Partial<Customer>) {
+        if (body.nama) {
+            const existing = await this.repo.findOne({ where: { nama: body.nama } });
+            if (existing) throw new ConflictException(`Customer "${body.nama}" sudah ada`);
+        }
         return this.repo.save(this.repo.create(body));
     }
 
     @Put(':id')
     async update(@Param('id') id: number, @Body() body: Partial<Customer>) {
+        if (body.nama) {
+            const existing = await this.repo.findOne({ where: { nama: body.nama } });
+            if (existing && existing.id !== id) throw new ConflictException(`Customer "${body.nama}" sudah ada`);
+        }
         await this.repo.update(id, body);
         return this.repo.findOneBy({ id });
     }

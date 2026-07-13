@@ -1,7 +1,7 @@
 'use client';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, NumberInput, Textarea, ActionIcon, Grid } from '@mantine/core';
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, NumberInput, Textarea, ActionIcon, Grid, Autocomplete } from '@mantine/core';
 import { Table } from '../components/Table';
 import { IconPlus, IconEdit, IconTrash, IconMeat } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -17,6 +17,7 @@ const STATUS_OPTIONS = [
 export default function PlanningAyamPage() {
     const [plans, setPlans] = useState<any[]>([]);
     const [barangs, setBarangs] = useState<any[]>([]);
+    const [customers, setCustomers] = useState<any[]>([]);
     const [shifts, setShifts] = useState<any[]>([]);
     const [editId, setEditId] = useState<number | null>(null);
     const [search, setSearch] = useState('');
@@ -39,14 +40,16 @@ export default function PlanningAyamPage() {
     const load = async () => {
         setLoading(true);
         try {
-            const [pRes, bRes, sRes] = await Promise.all([
+            const [pRes, bRes, sRes, cRes] = await Promise.all([
                 api().get('/planning-ayam'),
                 api().get('/barang'),
                 api().get('/shifts'),
+                api().get('/customers'),
             ]);
             setPlans(unwrap(pRes));
             setBarangs(unwrap(bRes).filter((b: any) => b.nama?.toLowerCase().includes('ayam')));
             setShifts(unwrap(sRes));
+            setCustomers(unwrap(cRes));
         } catch (e) {
             console.error('Load planning ayam failed', e);
         }
@@ -91,6 +94,7 @@ export default function PlanningAyamPage() {
 
     const barangOpts = barangs.map((b: any) => ({ value: String(b.id), label: `${b.sku || ''} ${b.nama}`.trim() }));
     const shiftOpts = shifts.map((s: any) => ({ value: String(s.id), label: s.name }));
+    const customerOpts = customers.map((c: any) => c.nama || c.name).filter(Boolean);
 
     const filtered = plans.filter((p: any) =>
         !search ||
@@ -126,8 +130,8 @@ export default function PlanningAyamPage() {
                                 <Select label="Item Ayam" size="xs" searchable data={barangOpts} value={form.barang_id} onChange={(v) => pf('barang_id', v)} placeholder="Pilih item ayam..." required />
                                 <NumberInput label="Qty Planning" size="xs" value={form.qty} onChange={(v) => pf('qty', Number(v))} min={0} required />
                                 <TextInput label="Tanggal Planning" size="xs" type="date" value={form.tanggal_planning} onChange={(e) => pf('tanggal_planning', e.target.value)} required />
-                                <Select label="Shift" size="xs" clearable data={shiftOpts} value={form.shift_id} onChange={(v) => pf('shift_id', v)} placeholder="Pilih shift..." />
-                                <TextInput label="Tujuan" size="xs" placeholder="Produksi Ayam / dll" value={form.tujuan} onChange={(e) => pf('tujuan', e.target.value)} />
+                                <Select label="Shift" size="xs" searchable clearable data={shiftOpts} value={form.shift_id} onChange={(v) => pf('shift_id', v)} placeholder="Pilih shift..." nothingFoundMessage="Tidak ada shift" />
+                                <Autocomplete label="Tujuan" size="xs" data={customerOpts} value={form.tujuan} onChange={(v) => pf('tujuan', v)} placeholder="Produksi Ayam / Customer..." />
                                 <Select label="Status" size="xs" data={STATUS_OPTIONS} value={form.status} onChange={(v) => pf('status', v || 'WAIT')} />
                                 <Textarea label="Keterangan" size="xs" value={form.keterangan} onChange={(e) => pf('keterangan', e.target.value)} minRows={2} />
                                 <Group gap="xs" mt="xs">

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
 import { Gudang } from './gudang.entity';
@@ -27,7 +27,12 @@ export class GudangService {
         return this.repo.find({ where: { zone }, relations: ['barang'], order: { name: 'ASC' } });
     }
 
-    create(data: Partial<Gudang>) {
+    async create(data: Partial<Gudang>) {
+        // Check duplicate name
+        if (data.name) {
+            const existing = await this.repo.findOne({ where: { name: data.name } });
+            if (existing) throw new ConflictException(`Lokasi "${data.name}" sudah ada`);
+        }
         // Auto-extract kolom from name (e.g. A1.1 -> A)
         if (data.name && !data.kolom) {
             data.kolom = data.name.charAt(0);
@@ -36,6 +41,11 @@ export class GudangService {
     }
 
     async update(id: number, data: Partial<Gudang>) {
+        // Check duplicate name
+        if (data.name) {
+            const existing = await this.repo.findOne({ where: { name: data.name } });
+            if (existing && existing.id !== id) throw new ConflictException(`Lokasi "${data.name}" sudah ada`);
+        }
         await this.repo.update(id, data);
         return this.findOne(id);
     }

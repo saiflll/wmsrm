@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Query, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
 import { Barang } from './barang.entity';
@@ -43,7 +43,12 @@ export class BarangController {
     }
 
     @Post()
-    create(@Body() dto: CreateBarangDto) {
+    async create(@Body() dto: CreateBarangDto) {
+        // Check duplicate nama
+        if (dto.nama) {
+            const existing = await this.repo.findOne({ where: { nama: dto.nama } });
+            if (existing) throw new ConflictException(`Produk "${dto.nama}" sudah ada`);
+        }
         // Auto-set side based on kategori
         const data: any = { ...dto };
         const kat = dto.kategori ? dto.kategori.trim().toLowerCase() : '';
@@ -60,6 +65,11 @@ export class BarangController {
 
     @Put(':id')
     async update(@Param('id') id: number, @Body() dto: UpdateBarangDto) {
+        // Check duplicate nama
+        if (dto.nama) {
+            const existing = await this.repo.findOne({ where: { nama: dto.nama } });
+            if (existing && existing.id !== id) throw new ConflictException(`Produk "${dto.nama}" sudah ada`);
+        }
         const data: any = { ...dto };
         if (dto.kategori) {
             const kat = dto.kategori.trim().toLowerCase();

@@ -28,6 +28,10 @@ export default function MasterProdukPage() {
     };
 
     const save = async () => {
+        if (!form.nama) return notifications.show({ title: 'Error', message: 'Nama produk wajib', color: 'red' });
+        // Check duplicate
+        const duplicate = items.find((i: any) => i.nama?.toLowerCase() === form.nama.toLowerCase() && i.id !== editId);
+        if (duplicate) return notifications.show({ title: 'Error', message: `Produk "${form.nama}" sudah ada`, color: 'red' });
         try {
             if (editId) {
                 await api().put(`/barang/${editId}`, form);

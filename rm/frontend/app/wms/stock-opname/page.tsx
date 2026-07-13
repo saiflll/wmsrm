@@ -895,7 +895,7 @@ export default function StockOpnamePage() {
                 styles={{ input: { backgroundColor: "#fff" } }}
               />
 
-              {/* Shift selector */}
+              {/* Shift selector - required */}
               <Select
                 label="Shift"
                 size="sm"
@@ -904,7 +904,8 @@ export default function StockOpnamePage() {
                 value={shiftId}
                 onChange={(v) => setShiftId(v || "")}
                 placeholder="Pilih Shift"
-                clearable
+                required
+                nothingFoundMessage="Tidak ada shift tersedia"
                 styles={{ input: { backgroundColor: "#fff", fontWeight: 600 } }}
               />
 
