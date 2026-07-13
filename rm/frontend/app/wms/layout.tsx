@@ -89,7 +89,7 @@ const menuGroups: { label: string; links: { label: string; href: string; c: stri
 ];
 
 export default function WMSLayout({ children }: { children: React.ReactNode }) {
-    const [opened, { toggle }] = useDisclosure();
+    const [opened, { toggle, open }] = useDisclosure(true);
     const pathname = usePathname();
     const router = useRouter();
     const [userRole, setUserRole] = useState<number>(4);
@@ -122,7 +122,7 @@ export default function WMSLayout({ children }: { children: React.ReactNode }) {
     return (
         <AppShell
             header={{ height: 60 }}
-            navbar={{ width: 250, breakpoint: 'sm', collapsed: { desktop: !opened, mobile: !opened } }}
+            navbar={{ width: 250, breakpoint: 'sm', collapsed: { mobile: !opened } }}
             padding="md"
             style={{ background: '#f8f9fa' }}
         >
