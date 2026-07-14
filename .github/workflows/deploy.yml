@@ -15,8 +15,8 @@ jobs:
 
       - name: Bersihin container lama
         run: |
-          docker compose down --remove-orphans --volumes 2>$null
-          docker rm -f test-wms 2>$null
+          docker compose down --remove-orphans --volumes 2>/dev/null
+          docker rm -f test-wms 2>/dev/null
 
       - name: Build & start
         run: |
