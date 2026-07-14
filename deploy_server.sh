@@ -14,8 +14,12 @@ echo "--- [2/6] Updating IP addresses to 172.20.100.11 ---"
 sed -i 's/localhost/172.20.100.11/g' docker-compose.yml
 sed -i 's/localhost/172.20.100.11/g' .env
 
-echo "--- [3/6] Building and Running Docker ---"
-docker compose down
+echo "--- [3/6] Stopping & removing old containers ---"
+docker compose down --remove-orphans --volumes 2>/dev/null || true
+# Force remove any leftover wms-test container (avoids "name already in use")
+docker rm -f wms-test 2>/dev/null || true
+
+echo "--- [4/6] Building and Running Docker ---"
 docker compose build --no-cache
 docker compose up -d
 

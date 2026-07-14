@@ -1,42 +1,32 @@
-name: Deploy WMS
+name: Deploy WMS to Server
 
 on:
   push:
-    branches:
-      - master
-      - main
+    branches: [master]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Stop existing stack and clean volume
+      - name: Stop & remove old containers
         run: |
-          docker compose down -v --remove-orphans || true
-          docker volume rm cek_wms-test-postgres_data 2>/dev/null || true
+          docker compose down --remove-orphans --volumes 2>/dev/null || true
+          # Force hapus container wms-test kalau masih nyangkut
+          docker rm -f wms-test 2>/dev/null || true
 
-      - name: Build and start all services
+      - name: Build & start containers
         run: |
-          docker compose up -d --build
+          docker compose build --no-cache
+          docker compose up -d
 
-      - name: Health check – wait for wms-test
+      - name: Verify running
         run: |
-          echo "Waiting for wms-test to become healthy..."
-          for i in $(seq 1 30); do
-            STATUS=$(docker inspect --format='{{.State.Health.Status}}' wms-test 2>/dev/null || echo "starting")
-            if [ "$STATUS" = "healthy" ]; then
-              echo "wms-test is healthy!"
-              break
-            fi
-            echo "Attempt $i: status = $STATUS"
-            sleep 5
-          done
-
-      - name: Prune unused Docker images
-        run: |
-          docker image prune -f
-          docker builder prune -f
+          echo "--- Container Status ---"
+          docker ps --filter "name=wms-test"
+          echo "--- Recent Logs ---"
+          docker logs wms-test --tail 30
