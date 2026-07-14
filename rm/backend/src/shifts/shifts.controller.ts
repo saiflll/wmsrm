@@ -7,10 +7,10 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @Controller('shifts')
 @UseGuards(JwtAuthGuard)
 export class ShiftsController {
-    constructor(@InjectRepository(Shift) private repo: Repository<Shift>) { }
+  constructor(@InjectRepository(Shift) private repo: Repository<Shift>) {}
 
-    @Get()
-    findAll() {
-        return this.repo.find({ order: { id: 'ASC' } });
-    }
+  @Get()
+  findAll() {
+    return this.repo.find({ order: { id: 'ASC' } });
+  }
 }

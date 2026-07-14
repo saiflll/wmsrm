@@ -5,7 +5,7 @@ import { Gudang } from '../gudang/gudang.entity';
 import { HardwareController } from './hardware.controller';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Barang, Gudang])],
-    controllers: [HardwareController],
+  imports: [TypeOrmModule.forFeature([Barang, Gudang])],
+  controllers: [HardwareController],
 })
-export class HardwareModule { }
+export class HardwareModule {}

@@ -4,8 +4,8 @@ import { Barang } from './barang.entity';
 import { BarangController } from './barang.controller';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Barang])],
-    controllers: [BarangController],
-    exports: [TypeOrmModule],
+  imports: [TypeOrmModule.forFeature([Barang])],
+  controllers: [BarangController],
+  exports: [TypeOrmModule],
 })
-export class BarangModule { }
+export class BarangModule {}

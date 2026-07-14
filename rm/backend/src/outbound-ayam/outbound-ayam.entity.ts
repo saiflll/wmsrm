@@ -1,36 +1,46 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { PlanningAyam } from '../planning-ayam/planning-ayam.entity';
 import { Shift } from '../shifts/shift.entity';
 
 @Entity()
 export class OutboundAyam {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @ManyToOne(() => PlanningAyam, { eager: true })
-    planning_ayam: PlanningAyam;
+  @ManyToOne(() => PlanningAyam, { eager: true })
+  planning_ayam: PlanningAyam;
 
-    @Column({ type: 'float' })
-    qty_aktual: number;
+  @Column({ type: 'float' })
+  qty_aktual: number;
 
-    @Column({ nullable: true })
-    satuan: string;
+  @Column({ nullable: true })
+  satuan: string;
 
-    @Column({ type: 'simple-json', nullable: true })
-    alokasi: { tujuan: string; qty: number }[];
+  @Column({ type: 'simple-json', nullable: true })
+  alokasi: { tujuan: string; qty: number }[];
 
-    @Column({ nullable: true })
-    tujuan: string; // primary tujuan (legacy single field)
+  @Column({ nullable: true })
+  tujuan: string; // primary tujuan (legacy single field)
 
-    @ManyToOne(() => Shift, { eager: true, nullable: true })
-    shift: Shift;
+  @ManyToOne(() => Shift, { eager: true, nullable: true })
+  shift: Shift;
 
-    @Column({ type: 'text', nullable: true })
-    keterangan: string;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  batch_no: string;
 
-    @CreateDateColumn()
-    created_at: Date;
+  @Column({ type: 'text', nullable: true })
+  keterangan: string;
 
-    @UpdateDateColumn()
-    updated_at: Date;
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
 }

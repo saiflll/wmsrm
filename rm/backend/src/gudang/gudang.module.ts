@@ -5,9 +5,9 @@ import { GudangService } from './gudang.service';
 import { GudangController } from './gudang.controller';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Gudang])],
-    providers: [GudangService],
-    controllers: [GudangController],
-    exports: [GudangService],
+  imports: [TypeOrmModule.forFeature([Gudang])],
+  providers: [GudangService],
+  controllers: [GudangController],
+  exports: [GudangService],
 })
-export class GudangModule { }
+export class GudangModule {}

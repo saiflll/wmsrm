@@ -5,9 +5,9 @@ import { TransaksiController } from './transaksi.controller';
 import { TransaksiService } from './transaksi.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Transaksi])],
-    controllers: [TransaksiController],
-    providers: [TransaksiService],
-    exports: [TransaksiService],
+  imports: [TypeOrmModule.forFeature([Transaksi])],
+  controllers: [TransaksiController],
+  providers: [TransaksiService],
+  exports: [TransaksiService],
 })
-export class TransaksiModule { }
+export class TransaksiModule {}

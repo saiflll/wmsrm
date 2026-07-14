@@ -1,9 +1,10 @@
 'use client';
 // @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, NumberInput, Textarea, ActionIcon, Grid, Divider, Autocomplete, Card, ThemeIcon } from '@mantine/core';
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, NumberInput, Textarea, ActionIcon, Grid, Divider, Autocomplete, Card, ThemeIcon, Tabs } from '@mantine/core';
+import { DateInput } from '@mantine/dates';
 import { Table } from '../components/Table';
-import { IconPlus, IconEdit, IconTrash, IconMeat, IconSend, IconCheck, IconClipboardCheck, IconHistory, IconRocket } from '@tabler/icons-react';
+import { IconPlus, IconEdit, IconTrash, IconMeat, IconSend, IconCheck, IconClipboardCheck, IconHistory, IconRocket, IconPrinter, IconFilter, IconFilterOff } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { api, unwrap, fmt } from '../lib/api';
 
@@ -15,6 +16,13 @@ export default function OutboundAyamPage() {
     const [shifts, setShifts] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('active');
+    
+    // Filter state
+    const [filterStatus, setFilterStatus] = useState('');
+    const [filterDateFrom, setFilterDateFrom] = useState<Date | null>(null);
+    const [filterDateTo, setFilterDateTo] = useState<Date | null>(null);
+    const [filterVisible, setFilterVisible] = useState(true);
 
     // Pending planning queue (from API - already published)
     const [pendingPlans, setPendingPlans] = useState<any[]>([]);

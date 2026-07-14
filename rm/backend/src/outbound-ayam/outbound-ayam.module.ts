@@ -5,11 +5,21 @@ import { OutboundAyamService } from './outbound-ayam.service';
 import { OutboundAyamController } from './outbound-ayam.controller';
 import { PlanningAyam } from '../planning-ayam/planning-ayam.entity';
 import { Shift } from '../shifts/shift.entity';
+import { Stock } from '../inventory/stock.entity';
+import { Barang } from '../barang/barang.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([OutboundAyam, PlanningAyam, Shift])],
-    controllers: [OutboundAyamController],
-    providers: [OutboundAyamService],
-    exports: [OutboundAyamService],
+  imports: [
+    TypeOrmModule.forFeature([
+      OutboundAyam,
+      PlanningAyam,
+      Shift,
+      Stock,
+      Barang,
+    ]),
+  ],
+  controllers: [OutboundAyamController],
+  providers: [OutboundAyamService],
+  exports: [OutboundAyamService],
 })
-export class OutboundAyamModule { }
+export class OutboundAyamModule {}

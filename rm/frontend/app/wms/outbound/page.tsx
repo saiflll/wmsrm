@@ -1,7 +1,7 @@
 "use client";
 // @ts-nocheck
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, Loader, NumberInput, Divider, Autocomplete, Tooltip, ActionIcon, Card, Grid, ThemeIcon, Table as MantineTable } from "@mantine/core";
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, Loader, NumberInput, Divider, Autocomplete, Tooltip, ActionIcon, Card, Grid, ThemeIcon, Tabs, Table as MantineTable } from "@mantine/core";
 import { Table } from '../components/Table';
 import { useRouter } from "next/navigation";
 import {
@@ -17,6 +17,9 @@ import {
   IconPlus,
   IconEdit,
   IconRocket,
+  IconPrinter,
+  IconFilter,
+  IconFilterOff,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import {
@@ -79,6 +82,11 @@ export default function OutboundPage() {
   const [pendingPickings, setPendingPickings] = useState<any[]>([]);
   const [filterRak, setFilterRak] = useState("");
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<string | null>("aktif");
+  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+  const [filterDateFrom, setFilterDateFrom] = useState<Date | null>(null);
+  const [filterDateTo, setFilterDateTo] = useState<Date | null>(null);
+  const [filteredOutbounds, setFilteredOutbounds] = useState<any[]>([]);
 
   // Picking drafts from localStorage
   const [pickingDrafts, setPickingDrafts] = useState<any[]>(() => {
@@ -139,7 +147,11 @@ export default function OutboundPage() {
     setLoading(true);
     try {
       const side = type === "dry";
-      const [s, ol, il, b, c, sh, pp] = await Promise.all([
+      const params = new URLSearchParams();
+      if (filterStatus) params.set("status", filterStatus);
+      if (filterDateFrom) params.set("dateFrom", filterDateFrom.toISOString().slice(0, 10));
+      if (filterDateTo) params.set("dateTo", filterDateTo.toISOString().slice(0, 10));
+      const [s, ol, il, b, c, sh, pp, filtered] = await Promise.all([
         api().get(`/inventory/stock?side=${side}`),
         api().get("/inventory/logs/outbound"),
         api().get("/inventory/logs/inbound"),
@@ -147,6 +159,7 @@ export default function OutboundPage() {
         api().get("/customers"),
         api().get("/shifts"),
         api().get("/inventory/picking/pending"),
+        api().get(`/outbound-ayam/filter?${params.toString()}`),
       ]);
       setStocks(unwrap(s));
       setOutboundLogs(
@@ -159,6 +172,7 @@ export default function OutboundPage() {
       setCustomers(unwrap(c));
       setShifts(unwrap(sh));
       setPendingPickings(unwrap(pp));
+      setFilteredOutbounds(unwrap(filtered));
     } catch (e) {
       console.error(e);
     }
@@ -455,7 +469,7 @@ export default function OutboundPage() {
   };
 
   // Sort logs array
-  const sortedLogs = [...outboundLogs].sort((a, b) => {
+  const sortedLogs = [...filteredOutbounds].sort((a, b) => {
     if (!sortKey) return 0;
     
     let aVal = a[sortKey];
@@ -535,8 +549,73 @@ export default function OutboundPage() {
             >
               ITEM DRY
             </Button>
+            <Button
+              size="xs"
+              color="green"
+              onClick={publishDrafts}
+              disabled={!pickingDrafts.length && !outboundDrafts.length}
+              style={{ fontWeight: 800 }}
+              leftSection={<IconRocket size={14} />}
+            >
+              PUBLISH ({pickingDrafts.length + outboundDrafts.length})
+            </Button>
           </Group>
         </Group>
+      </Box>
+
+      {/* Filter Panel */}
+      <Box px="md" mb="sm">
+        <Paper withBorder p="sm" radius="md" style={{ background: "#fff" }}>
+          <Group gap="sm" align="flex-end">
+            <Select
+              label="Status"
+              size="xs"
+              clearable
+              data={[
+                { value: "PENDING", label: "PENDING" },
+                { value: "PROGRESS", label: "PROGRESS" },
+                { value: "DONE", label: "DONE" },
+                { value: "CANCEL", label: "CANCEL" },
+              ]}
+              value={filterStatus}
+              onChange={setFilterStatus}
+              placeholder="Semua status"
+              style={{ width: 160 }}
+            />
+            <TextInput
+              type="date"
+              label="Dari Tanggal"
+              size="xs"
+              value={filterDateFrom ? filterDateFrom.toISOString().slice(0, 10) : ""}
+              onChange={(e) => setFilterDateFrom(e.target.value ? new Date(e.target.value) : null)}
+              style={{ width: 150 }}
+            />
+            <TextInput
+              type="date"
+              label="Sampai Tanggal"
+              size="xs"
+              value={filterDateTo ? filterDateTo.toISOString().slice(0, 10) : ""}
+              onChange={(e) => setFilterDateTo(e.target.value ? new Date(e.target.value) : null)}
+              style={{ width: 150 }}
+            />
+            <Button size="xs" color="blue" leftSection={<IconFilter size={13} />} onClick={load}>
+              Terapkan
+            </Button>
+            <Button
+              size="xs"
+              color="gray"
+              variant="outline"
+              leftSection={<IconFilterOff size={13} />}
+              onClick={() => {
+                setFilterStatus(null);
+                setFilterDateFrom(null);
+                setFilterDateTo(null);
+              }}
+            >
+              Reset
+            </Button>
+          </Group>
+        </Paper>
       </Box>
 
       {/* Main content in responsive Grid */}
@@ -644,20 +723,6 @@ export default function OutboundPage() {
                   leftSection={<IconPlus size={14} />}
                 >
                   + Tambahkan Draft Outbound
-                </Button>
-
-                <Divider my="xs" />
-
-                <Button
-                  fullWidth
-                  size="sm"
-                  color="green"
-                  onClick={publishDrafts}
-                  disabled={!pickingDrafts.length && !outboundDrafts.length}
-                  style={{ fontWeight: 800 }}
-                  leftSection={<IconRocket size={16} />}
-                >
-                  PUBLISH ({pickingDrafts.length + outboundDrafts.length} draft)
                 </Button>
               </Stack>
             </Paper>
@@ -835,14 +900,14 @@ export default function OutboundPage() {
               )}
             </Paper>
 
-            {/* OUTBOUND DELIVERED HISTORY */}
+            {/* OUTBOUND HISTORY WITH TABS */}
             <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
               <Group justify="space-between" mb="sm">
                 <Group gap="xs">
                   <ThemeIcon color="dark" variant="light" size="sm">
                     <IconHistory size={16} />
                   </ThemeIcon>
-                  <Text fw={800} size="sm">RIWAYAT PENGELUARAN TERKIRIM</Text>
+                  <Text fw={800} size="sm">PENGELUARAN BARANG</Text>
                 </Group>
                 <TextInput
                   placeholder="Cari Ref, Rak, Item..."
@@ -854,111 +919,210 @@ export default function OutboundPage() {
                 />
               </Group>
 
-              {loading ? (
-                <Group justify="center" py="md"><Loader size="sm" /></Group>
-              ) : (
-                <Box style={{ overflowX: "auto" }}>
-                  <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
-                    <Table.Thead style={{ background: "#1a1a1a" }}>
-                      <Table.Tr>
-                        <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('no_ref')}>
-                          ID Ref{sortIcon('no_ref')}
-                        </Table.Th>
-                        <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('barang.nama')}>
-                          Nama Item{sortIcon('barang.nama')}
-                        </Table.Th>
-                        <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('batch_no')}>
-                          Batch No{sortIcon('batch_no')}
-                        </Table.Th>
-                        <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('gudang.name')}>
-                          Rak Asal{sortIcon('gudang.name')}
-                        </Table.Th>
-                        <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('created_at')}>
-                          Tgl Keluar{sortIcon('created_at')}
-                        </Table.Th>
-                        <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('shift.name')}>
-                          Shift{sortIcon('shift.name')}
-                        </Table.Th>
-                        <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('qty')}>
-                          Qty{sortIcon('qty')}
-                        </Table.Th>
-                        <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('tujuan')}>
-                          Tujuan{sortIcon('tujuan')}
-                        </Table.Th>
-                        <Table.Th style={{ color: "#fff" }}>Aksi</Table.Th>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {filteredLogs.length === 0 ? (
-                        <Table.Tr>
-                          <Table.Td colSpan={9} ta="center" c="dimmed">
-                            Tidak ada riwayat pengeluaran barang.
-                          </Table.Td>
-                        </Table.Tr>
-                      ) : (
-                        (() => {
-                          const grouped: Record<string, any[]> = {};
-                          filteredLogs.forEach((log) => {
-                            const ref = log.no_ref || `OUT-${log.id}`;
-                            if (!grouped[ref]) grouped[ref] = [];
-                            grouped[ref].push(log);
-                          });
+              <Tabs value={activeTab} onChange={setActiveTab} defaultValue="aktif">
+                <Tabs.List>
+                  <Tabs.Tab value="aktif" leftSection={<IconSend size={14} />}>Aktif</Tabs.Tab>
+                  <Tabs.Tab value="riwayat" leftSection={<IconHistory size={14} />}>Riwayat</Tabs.Tab>
+                </Tabs.List>
 
-                          return Object.entries(grouped).map(([ref, items]) =>
-                            items.map((r: any, idx: number) => (
-                              <Table.Tr key={r.id}>
-                                {idx === 0 && (
-                                  <Table.Td fw={700} style={{ color: "#e60000" }} rowSpan={items.length}>
-                                    {ref}
+                <Tabs.Panel value="aktif" pt="md">
+                  {loading ? (
+                    <Group justify="center" py="md"><Loader size="sm" /></Group>
+                  ) : (
+                    <Box style={{ overflowX: "auto" }}>
+                      <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
+                        <Table.Thead style={{ background: "#1a1a1a" }}>
+                          <Table.Tr>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('no_ref')}>
+                              ID Ref{sortIcon('no_ref')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('barang.nama')}>
+                              Nama Item{sortIcon('barang.nama')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('batch_no')}>
+                              Batch No{sortIcon('batch_no')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('gudang.name')}>
+                              Rak Asal{sortIcon('gudang.name')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('created_at')}>
+                              Tgl Keluar{sortIcon('created_at')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('shift.name')}>
+                              Shift{sortIcon('shift.name')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('qty')}>
+                              Qty{sortIcon('qty')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('tujuan')}>
+                              Tujuan{sortIcon('tujuan')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff" }}>Aksi</Table.Th>
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                          {(() => {
+                            const aktif = filteredLogs.filter((l: any) => l.status !== "DONE" && l.status !== "CANCEL");
+                            if (aktif.length === 0) {
+                              return (
+                                <Table.Tr>
+                                  <Table.Td colSpan={9} ta="center" c="dimmed">
+                                    Tidak ada pengeluaran aktif.
                                   </Table.Td>
-                                )}
-                                <Table.Td fw={600}>{r.barang?.nama}</Table.Td>
-                                <Table.Td>{r.batch_no || "-"}</Table.Td>
-                                <Table.Td>
-                                  <Badge size="xs" color="blue" variant="light">
-                                    {r.gudang?.name}
-                                  </Badge>
-                                </Table.Td>
-                                <Table.Td>{fmt(r.created_at)}</Table.Td>
-                                <Table.Td>{r.shift?.name || "-"}</Table.Td>
-                                <Table.Td ta="right" fw={700}>
-                                  {r.qty} {r.satuan}
-                                </Table.Td>
-                                <Table.Td>{r.tujuan || "-"}</Table.Td>
-                                {idx === 0 && (
-                                  <Table.Td rowSpan={items.length}>
-                                    <Group gap={6} wrap="nowrap">
-                                      <Button
-                                        size="xs"
-                                        color="red"
-                                        variant="light"
-                                        leftSection={<IconFileTypePdf size={14} />}
-                                        onClick={() => printPDF(ref, items)}
-                                      >
-                                        Print
-                                      </Button>
-                                      <Tooltip label="Batalkan & Kembalikan ke Rak">
-                                        <ActionIcon
-                                          size="md"
-                                          color="red"
-                                          variant="light"
-                                          onClick={() => deleteOutboundLog(ref)}
-                                        >
-                                          <IconTrash size={16} />
+                                </Table.Tr>
+                              );
+                            }
+                            const grouped: Record<string, any[]> = {};
+                            aktif.forEach((log) => {
+                              const ref = log.no_ref || `OUT-${log.id}`;
+                              if (!grouped[ref]) grouped[ref] = [];
+                              grouped[ref].push(log);
+                            });
+                            return Object.entries(grouped).map(([ref, items], groupIdx) =>
+                              items.map((r: any, idx: number) => (
+                                <Table.Tr key={r.id} style={{ background: groupIdx % 2 === 0 ? "#fff" : "#f8f9fa" }}>
+                                  {idx === 0 && (
+                                    <Table.Td fw={700} style={{ color: "#e60000" }} rowSpan={items.length}>
+                                      {ref}
+                                    </Table.Td>
+                                  )}
+                                  <Table.Td fw={600}>{r.barang?.nama}</Table.Td>
+                                  <Table.Td>{r.batch_no || "-"}</Table.Td>
+                                  <Table.Td>
+                                    <Badge size="xs" color="blue" variant="light">
+                                      {r.gudang?.name}
+                                    </Badge>
+                                  </Table.Td>
+                                  <Table.Td>{fmt(r.created_at)}</Table.Td>
+                                  <Table.Td>{r.shift?.name || "-"}</Table.Td>
+                                  <Table.Td ta="right" fw={700}>
+                                    {r.qty} {r.satuan}
+                                  </Table.Td>
+                                  <Table.Td>{r.tujuan || "-"}</Table.Td>
+                                  {idx === 0 && (
+                                    <Table.Td rowSpan={items.length}>
+                                      <Group gap={4} wrap="nowrap">
+                                        <Tooltip label="Edit">
+                                          <ActionIcon size="sm" color="blue" variant="light">
+                                            <IconEdit size={14} />
+                                          </ActionIcon>
+                                        </Tooltip>
+                                        <Tooltip label="Hapus">
+                                          <ActionIcon size="sm" color="red" variant="light" onClick={() => deleteOutboundLog(ref)}>
+                                            <IconTrash size={14} />
+                                          </ActionIcon>
+                                        </Tooltip>
+                                        <Tooltip label="Print">
+                                          <ActionIcon size="sm" color="orange" variant="light" onClick={() => printPDF(ref, items)}>
+                                            <IconPrinter size={14} />
+                                          </ActionIcon>
+                                        </Tooltip>
+                                      </Group>
+                                    </Table.Td>
+                                  )}
+                                </Table.Tr>
+                              )),
+                            );
+                          })()}
+                        </Table.Tbody>
+                      </Table>
+                    </Box>
+                  )}
+                </Tabs.Panel>
+
+                <Tabs.Panel value="riwayat" pt="md">
+                  {loading ? (
+                    <Group justify="center" py="md"><Loader size="sm" /></Group>
+                  ) : (
+                    <Box style={{ overflowX: "auto" }}>
+                      <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
+                        <Table.Thead style={{ background: "#1a1a1a" }}>
+                          <Table.Tr>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('no_ref')}>
+                              ID Ref{sortIcon('no_ref')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('barang.nama')}>
+                              Nama Item{sortIcon('barang.nama')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('batch_no')}>
+                              Batch No{sortIcon('batch_no')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('gudang.name')}>
+                              Rak Asal{sortIcon('gudang.name')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('created_at')}>
+                              Tgl Keluar{sortIcon('created_at')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('shift.name')}>
+                              Shift{sortIcon('shift.name')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('qty')}>
+                              Qty{sortIcon('qty')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff", cursor: "pointer" }} onClick={() => handleSort('tujuan')}>
+                              Tujuan{sortIcon('tujuan')}
+                            </Table.Th>
+                            <Table.Th style={{ color: "#fff" }}>Aksi</Table.Th>
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                          {(() => {
+                            const riwayat = filteredLogs.filter((l: any) => l.status === "DONE" || l.status === "CANCEL");
+                            if (riwayat.length === 0) {
+                              return (
+                                <Table.Tr>
+                                  <Table.Td colSpan={9} ta="center" c="dimmed">
+                                    Tidak ada riwayat pengeluaran.
+                                  </Table.Td>
+                                </Table.Tr>
+                              );
+                            }
+                            const grouped: Record<string, any[]> = {};
+                            riwayat.forEach((log) => {
+                              const ref = log.no_ref || `OUT-${log.id}`;
+                              if (!grouped[ref]) grouped[ref] = [];
+                              grouped[ref].push(log);
+                            });
+                            return Object.entries(grouped).map(([ref, items], groupIdx) =>
+                              items.map((r: any, idx: number) => (
+                                <Table.Tr key={r.id} style={{ background: groupIdx % 2 === 0 ? "#fff" : "#f8f9fa" }}>
+                                  {idx === 0 && (
+                                    <Table.Td fw={700} style={{ color: "#e60000" }} rowSpan={items.length}>
+                                      {ref}
+                                    </Table.Td>
+                                  )}
+                                  <Table.Td fw={600}>{r.barang?.nama}</Table.Td>
+                                  <Table.Td>{r.batch_no || "-"}</Table.Td>
+                                  <Table.Td>
+                                    <Badge size="xs" color="blue" variant="light">
+                                      {r.gudang?.name}
+                                    </Badge>
+                                  </Table.Td>
+                                  <Table.Td>{fmt(r.created_at)}</Table.Td>
+                                  <Table.Td>{r.shift?.name || "-"}</Table.Td>
+                                  <Table.Td ta="right" fw={700}>
+                                    {r.qty} {r.satuan}
+                                  </Table.Td>
+                                  <Table.Td>{r.tujuan || "-"}</Table.Td>
+                                  {idx === 0 && (
+                                    <Table.Td rowSpan={items.length}>
+                                      <Tooltip label="Print">
+                                        <ActionIcon size="sm" color="orange" variant="light" onClick={() => printPDF(ref, items)}>
+                                          <IconPrinter size={14} />
                                         </ActionIcon>
                                       </Tooltip>
-                                    </Group>
-                                  </Table.Td>
-                                )}
-                              </Table.Tr>
-                            )),
-                          );
-                        })()
-                      )}
-                    </Table.Tbody>
-                  </Table>
-                </Box>
-              )}
+                                    </Table.Td>
+                                  )}
+                                </Table.Tr>
+                              )),
+                            );
+                          })()}
+                        </Table.Tbody>
+                      </Table>
+                    </Box>
+                  )}
+                </Tabs.Panel>
+              </Tabs>
             </Paper>
           </Grid.Col>
         </Grid>

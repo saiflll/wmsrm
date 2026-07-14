@@ -18,6 +18,7 @@ import { Customer } from './customers/customer.entity';
 import { InboundPlanning } from './inbound-planning/inbound-planning.entity';
 import { PlanningAyam } from './planning-ayam/planning-ayam.entity';
 import { OutboundAyam } from './outbound-ayam/outbound-ayam.entity';
+import { Relocation } from './inventory/relocation.entity';
 
 // Modules
 import { AuthModule } from './auth/auth.module';
@@ -31,6 +32,7 @@ import { HardwareModule } from './hardware/hardware.module';
 import { InboundPlanningModule } from './inbound-planning/inbound-planning.module';
 import { PlanningAyamModule } from './planning-ayam/planning-ayam.module';
 import { OutboundAyamModule } from './outbound-ayam/outbound-ayam.module';
+import { RelocationModule } from './inventory/relocation.module';
 import { ShiftsController } from './shifts/shifts.controller';
 
 import { SeedService } from './seed.service';
@@ -43,12 +45,41 @@ import { SeedService } from './seed.service';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get('DATABASE_URL'),
-        entities: [User, LoginLog, Shift, Suplayer, Barang, Gudang, Transaksi, Stock, StockLog, Customer, InboundPlanning, PlanningAyam, OutboundAyam],
+        entities: [
+          User,
+          LoginLog,
+          Shift,
+          Suplayer,
+          Barang,
+          Gudang,
+          Transaksi,
+          Stock,
+          StockLog,
+          Customer,
+          InboundPlanning,
+          PlanningAyam,
+          OutboundAyam,
+          Relocation,
+        ],
         synchronize: true, // HATI-HATI: bisa drop tabel jika terjadi error sync. Gunakan migration untuk production.
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Shift, Barang, Gudang, Suplayer, Customer, Transaksi, Stock, StockLog, PlanningAyam, OutboundAyam, InboundPlanning]),
+    TypeOrmModule.forFeature([
+      User,
+      Shift,
+      Barang,
+      Gudang,
+      Suplayer,
+      Customer,
+      Transaksi,
+      Stock,
+      StockLog,
+      PlanningAyam,
+      OutboundAyam,
+      InboundPlanning,
+      Relocation,
+    ]),
     AuthModule,
     UsersModule,
     BarangModule,
@@ -56,12 +87,13 @@ import { SeedService } from './seed.service';
     GudangModule,
     InventoryModule,
     CustomersModule,
-        HardwareModule,
-        InboundPlanningModule,
-        PlanningAyamModule,
-        OutboundAyamModule,
-    ],
+    HardwareModule,
+    InboundPlanningModule,
+    PlanningAyamModule,
+    OutboundAyamModule,
+    RelocationModule,
+  ],
   controllers: [AppController, ShiftsController],
   providers: [AppService, SeedService],
 })
-export class AppModule { }
+export class AppModule {}

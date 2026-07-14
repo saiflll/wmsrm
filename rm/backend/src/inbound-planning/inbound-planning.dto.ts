@@ -1,80 +1,155 @@
-import { IsNotEmpty, IsOptional, IsString, IsDateString, IsNumber, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsDateString,
+  IsNumber,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class AlokasiItemDto {
-    @IsString()
-    tujuan: string;
+  @IsString()
+  tujuan: string;
 
-    @IsNumber()
-    qty: number;
+  @IsNumber()
+  qty: number;
+}
+
+class ProcessInboundItemDto {
+  @IsNumber()
+  @IsNotEmpty()
+  barangId: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  gudangId: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  qty: number;
+
+  @IsOptional()
+  @IsString()
+  batch_no?: string;
+
+  @IsOptional()
+  @IsDateString()
+  expiry_date?: string;
+
+  @IsOptional()
+  @IsString()
+  satuan?: string;
+
+  @IsOptional()
+  @IsString()
+  jam_datang?: string;
+
+  @IsOptional()
+  @IsString()
+  jam_bongkar?: string;
 }
 
 export class CreateInboundPlanningDto {
-    @IsNotEmpty() @IsString()
-    no_po: string;
+  @IsNotEmpty()
+  @IsString()
+  no_po: string;
 
-    @IsOptional() @IsString()
-    driver_name?: string;
+  @IsOptional()
+  @IsString()
+  driver_name?: string;
 
-    @IsOptional() @IsString()
-    plat_nomor?: string;
+  @IsOptional()
+  @IsString()
+  plat_nomor?: string;
 
-    @IsOptional() @IsString()
-    supplier?: string;
+  @IsOptional()
+  @IsString()
+  supplier?: string;
 
-    @IsOptional() @IsNumber()
-    qty?: number;
+  @IsOptional()
+  @IsNumber()
+  qty?: number;
 
-    @IsOptional() @IsNumber()
-    qty_diterima?: number;
+  @IsOptional()
+  @IsNumber()
+  qty_diterima?: number;
 
-    @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => AlokasiItemDto)
-    alokasi?: AlokasiItemDto[];
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AlokasiItemDto)
+  alokasi?: AlokasiItemDto[];
 
-    @IsOptional() @IsDateString()
-    estimasi_datang?: string;
+  @IsOptional()
+  @IsDateString()
+  estimasi_datang?: string;
 
-    @IsOptional() @IsString()
-    status?: string;
+  @IsOptional()
+  @IsString()
+  status?: string;
 
-    @IsOptional() @IsString()
-    note?: string;
+  @IsOptional()
+  @IsString()
+  note?: string;
 }
 
 export class UpdateInboundPlanningDto {
-    @IsOptional() @IsString()
-    no_po?: string;
+  @IsOptional()
+  @IsString()
+  no_po?: string;
 
-    @IsOptional() @IsString()
-    driver_name?: string;
+  @IsOptional()
+  @IsString()
+  driver_name?: string;
 
-    @IsOptional() @IsString()
-    plat_nomor?: string;
+  @IsOptional()
+  @IsString()
+  plat_nomor?: string;
 
-    @IsOptional() @IsString()
-    supplier?: string;
+  @IsOptional()
+  @IsString()
+  supplier?: string;
 
-    @IsOptional() @IsNumber()
-    qty?: number;
+  @IsOptional()
+  @IsNumber()
+  qty?: number;
 
-    @IsOptional() @IsNumber()
-    qty_diterima?: number;
+  @IsOptional()
+  @IsNumber()
+  qty_diterima?: number;
 
-    @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => AlokasiItemDto)
-    alokasi?: AlokasiItemDto[];
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AlokasiItemDto)
+  alokasi?: AlokasiItemDto[];
 
-    @IsOptional() @IsDateString()
-    estimasi_datang?: string;
+  @IsOptional()
+  @IsDateString()
+  estimasi_datang?: string;
 
-    @IsOptional() @IsString()
-    status?: string;
+  @IsOptional()
+  @IsString()
+  status?: string;
 
-    @IsOptional() @IsString()
-    note?: string;
+  @IsOptional()
+  @IsString()
+  note?: string;
 
-    @IsOptional() @IsNumber()
-    selisih_menit?: number;
+  @IsOptional()
+  @IsNumber()
+  selisih_menit?: number;
 
-    @IsOptional() @IsDateString()
-    tanggal_realisasi?: string;
+  @IsOptional()
+  @IsDateString()
+  tanggal_realisasi?: string;
+}
+
+export class ProcessInboundDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProcessInboundItemDto)
+  items: ProcessInboundItemDto[];
 }

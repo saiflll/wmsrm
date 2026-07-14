@@ -5,15 +5,15 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @Controller('transaksi')
 @UseGuards(JwtAuthGuard)
 export class TransaksiController {
-    constructor(private readonly transaksiService: TransaksiService) { }
+  constructor(private readonly transaksiService: TransaksiService) {}
 
-    @Get()
-    findAll() {
-        return this.transaksiService.findAll();
-    }
+  @Get()
+  findAll() {
+    return this.transaksiService.findAll();
+  }
 
-    @Post()
-    create(@Body() body: any) {
-        return this.transaksiService.create(body);
-    }
+  @Post()
+  create(@Body() body: any) {
+    return this.transaksiService.create(body);
+  }
 }

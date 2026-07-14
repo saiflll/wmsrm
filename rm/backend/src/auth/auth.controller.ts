@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Body, Req, Query, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Req,
+  Query,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
@@ -8,30 +17,30 @@ import type { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
-    @Post('login')
-    async login(
-        @Body() body: any,
-        @Req() req: Request,
-    ) {
-        const user = await this.authService.validateUser(body.username, body.password);
-        const ip = req.ip || req.socket?.remoteAddress || '';
-        const userAgent = req.headers['user-agent'] || '';
-        if (!user) {
-            await this.authService.loginFailed(body.username, ip, userAgent);
-            throw new UnauthorizedException('Invalid credentials');
-        }
-        return this.authService.login(user, ip, userAgent);
+  @Post('login')
+  async login(@Body() body: any, @Req() req: Request) {
+    const user = await this.authService.validateUser(
+      body.username,
+      body.password,
+    );
+    const ip = req.ip || req.socket?.remoteAddress || '';
+    const userAgent = req.headers['user-agent'] || '';
+    if (!user) {
+      await this.authService.loginFailed(body.username, ip, userAgent);
+      throw new UnauthorizedException('Invalid credentials');
     }
+    return this.authService.login(user, ip, userAgent);
+  }
 
-    @Get('login-logs')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.SUPER_ADMIN)
-    async getLoginLogs(
-        @Query('page') page: number = 1,
-        @Query('limit') limit: number = 50,
-    ) {
-        return this.authService.getLoginLogs(Number(page), Number(limit));
-    }
+  @Get('login-logs')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  async getLoginLogs(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 50,
+  ) {
+    return this.authService.getLoginLogs(Number(page), Number(limit));
+  }
 }

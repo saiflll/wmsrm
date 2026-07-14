@@ -1,565 +1,489 @@
 // @ts-nocheck
 "use client";
-import React, { useState, useEffect } from "react";
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, Loader, NumberInput, Divider, Autocomplete } from "@mantine/core";
-import { Table } from '../components/Table';
-import { notifications } from "@mantine/notifications";
-import { api, unwrap, fmt, statusLabel, statusColor } from "../lib/api";
 
-const renderColorfulOption: any = ({ option }: any) => {
-  if (option.isEmpty) {
-    return (
-      <Group gap={6} wrap="nowrap">
-        <Badge color="green" variant="filled" style={{ textTransform: "none" }}>
-          {option.locName}
-        </Badge>
-        <Text size="xs" c="dimmed">
-          KOSONG
-        </Text>
-      </Group>
-    );
-  }
-  if (option.locName) {
-    return (
-      <Group gap={6} wrap="nowrap">
-        <Badge color="green" variant="filled" style={{ textTransform: "none" }}>
-          {option.locName}
-        </Badge>
-        {option.itemNames && (
-          <Badge
-            color="orange"
-            variant="light"
-            style={{ textTransform: "none", maxWidth: 120 }}
-            size="xs"
-          >
-            {option.itemNames.length > 20
-              ? option.itemNames.slice(0, 20) + "..."
-              : option.itemNames}
-          </Badge>
-        )}
-        {option.qtyStr && (
-          <Text size="xs" c="blue" fw={600}>
-            {option.qtyStr}
-          </Text>
-        )}
-      </Group>
-    );
-  }
-  return <Text size="sm">{option.label}</Text>;
-};
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Badge,
+  Box,
+  Button,
+  Group,
+  Loader,
+  NumberInput,
+  Paper,
+  Select,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Title,
+} from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { api, fmt, unwrap } from "../lib/api";
+
+const rowStyle = (index: number) => ({
+  backgroundColor: index % 2 === 0 ? "#fff" : "#f8f9fa",
+});
+
+const getSourceRack = (row: any) =>
+  row.stock?.gudang?.name ||
+  row.gudang_asal?.name ||
+  row.gudang?.name ||
+  row.source_stock?.gudang?.name ||
+  "-";
+
+const getTargetRack = (row: any) =>
+  row.gudang_tujuan?.name ||
+  row.target_gudang?.name ||
+  row.target_location?.name ||
+  "-";
+
+const getItem = (row: any) =>
+  row.stock?.barang ||
+  row.barang ||
+  row.source_stock?.barang ||
+  {};
 
 export default function RelocationPage() {
-  const [type, setType] = useState("wet");
   const [stocks, setStocks] = useState<any[]>([]);
-  const [barangs, setBarangs] = useState<any[]>([]);
-  const [allGudangs, setAllGudangs] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [gudangs, setGudangs] = useState<any[]>([]);
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterSearch, setFilterSearch] = useState("");
-  const [filterRak, setFilterRak] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [executingId, setExecutingId] = useState<number | null>(null);
 
-  const [selectedZoneTujuan, setSelectedZoneTujuan] = useState("");
-  const [selectedBarangId, setSelectedBarangId] = useState("");
-
-  const [selStock, setSelStock] = useState("");
-  const [selDest, setSelDest] = useState("");
-  const [relQty, setRelQty] = useState(0);
-  const [noPo, setNoPo] = useState("");
+  const [stockId, setStockId] = useState("");
+  const [targetGudangId, setTargetGudangId] = useState("");
+  const [qty, setQty] = useState<number | string>(0);
   const [note, setNote] = useState("");
-
-  useEffect(() => {
-    load();
-  }, [type]);
 
   const load = async () => {
     setLoading(true);
-    try {
-      const side = type === "dry";
-      const [s, g, l, b] = await Promise.all([
-        api().get(`/inventory/stock?side=${side}`),
-        api().get(`/gudang?side=${side}`),
-        api().get("/inventory/logs"),
-        api().get("/barang"),
-      ]);
-      setStocks(unwrap(s));
-      setAllGudangs(unwrap(g));
-      setLogs(
-        unwrap(l).filter((log: any) =>
-          type === "wet" ? !log.barang?.side : log.barang?.side,
-        ),
-      );
-      setBarangs(unwrap(b));
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
-  };
 
-  const doRelocate = async () => {
-    if (!selStock || !selDest || !relQty)
-      return notifications.show({
-        title: "Error",
-        message: "Lengkapi form",
+    try {
+      const [stockResponse, gudangResponse, draftResponse, historyResponse] =
+        await Promise.all([
+          api().get("/inventory/stock"),
+          api().get("/gudang"),
+          api().get("/relocation"),
+          api().get("/inventory/logs?type=RELOCATION"),
+        ]);
+
+      setStocks(unwrap(stockResponse) || []);
+      setGudangs(unwrap(gudangResponse) || []);
+      setDrafts(unwrap(draftResponse) || []);
+      setHistory(unwrap(historyResponse) || []);
+    } catch (error) {
+      console.error(error);
+      notifications.show({
+        title: "Gagal memuat data",
+        message: "Data relokasi atau stok tidak dapat dimuat.",
         color: "red",
       });
-    try {
-      await api().post("/inventory/relocation", {
-        stock_id: +selStock,
-        gudang_tujuan_id: +selDest,
-        qty: relQty,
-        no_po: noPo || "-",
-        note: note,
-      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const selectedStock = useMemo(
+    () => stocks.find((stock: any) => String(stock.id) === stockId),
+    [stocks, stockId],
+  );
+
+  const stockOptions = useMemo(
+    () =>
+      stocks
+        .filter((stock: any) => Number(stock.qty) > 0)
+        .map((stock: any) => ({
+          value: String(stock.id),
+          label: `${stock.barang?.nama || "Item"} • ${
+            stock.gudang?.name || "Rak -"
+          } • ${stock.qty} ${stock.satuan || ""}`,
+        })),
+    [stocks],
+  );
+
+  const targetOptions = useMemo(
+    () =>
+      gudangs
+        .filter(
+          (gudang: any) =>
+            String(gudang.id) !== String(selectedStock?.gudang?.id),
+        )
+        .map((gudang: any) => ({
+          value: String(gudang.id),
+          label: gudang.zone
+            ? `${gudang.name} — ${gudang.zone}`
+            : gudang.name,
+        })),
+    [gudangs, selectedStock],
+  );
+
+  const resetForm = () => {
+    setStockId("");
+    setTargetGudangId("");
+    setQty(0);
+    setNote("");
+  };
+
+  const createDraft = async () => {
+    const relocationQty = Number(qty);
+
+    if (!stockId || !targetGudangId || !relocationQty) {
       notifications.show({
-        title: "Sukses",
-        message: "Relokasi berhasil",
+        title: "Form belum lengkap",
+        message: "Pilih stok asal, rak tujuan, dan masukkan quantity.",
+        color: "red",
+      });
+      return;
+    }
+
+    if (relocationQty < 1 || relocationQty > Number(selectedStock?.qty || 0)) {
+      notifications.show({
+        title: "Quantity tidak valid",
+        message: `Quantity harus antara 1 hingga ${selectedStock?.qty || 0}.`,
+        color: "red",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      await api().post("/relocation", {
+        stock_id: Number(stockId),
+        gudang_tujuan_id: Number(targetGudangId),
+        qty: relocationQty,
+        note,
+      });
+
+      notifications.show({
+        title: "Draft dibuat",
+        message: "Relokasi telah masuk ke daftar draft.",
         color: "green",
       });
-      setSelStock("");
-      setSelDest("");
-      setRelQty(0);
-      setNoPo("");
-      setNote("");
-      setSelectedZoneTujuan("");
-      load();
-    } catch (e: any) {
+
+      resetForm();
+      await load();
+    } catch (error: any) {
       notifications.show({
-        title: "Error",
-        message: unwrap(e.response)?.message || "Gagal",
+        title: "Gagal membuat draft",
+        message: unwrap(error.response)?.message || "Terjadi kesalahan.",
         color: "red",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const stockOpts = stocks
-    .filter(
-      (s: any) =>
-        !selectedBarangId || String(s.barang?.id) === String(selectedBarangId),
-    )
-    .map((s: any) => ({
-      value: String(s.id),
-      label: s.gudang?.name || "-",
-      locName: s.gudang?.name || "-",
-      itemNames: s.barang?.nama || "Unknown",
-      qtyStr: `${s.qty} ${s.satuan || ""}`,
-    }));
+  const executeDraft = async (id: number) => {
+    setExecutingId(id);
 
-  const barangOpts = barangs
-    .filter((b: any) => (type === "wet" ? !b.side : b.side))
-    .map((b: any) => ({
-      value: String(b.id),
-      label: b.sku ? `${b.sku} - ${b.nama}` : b.nama,
-    }));
-  const ZONES_WET = ["CS FROZEN", "CHILL", "WASTE"];
-  const ZONES_DRY = ["DRY A", "DRY B", "DRY FG"];
-  const defaultZones = type === "wet" ? ZONES_WET : ZONES_DRY;
+    try {
+      await api().post(`/relocation/${id}/execute`);
 
-  const dynamicZones = Array.from(
-    new Set(allGudangs.map((g: any) => g.zone).filter(Boolean)),
+      notifications.show({
+        title: "Relokasi dieksekusi",
+        message: "Stok asal dan stok tujuan telah diperbarui.",
+        color: "green",
+      });
+
+      await load();
+    } catch (error: any) {
+      notifications.show({
+        title: "Gagal mengeksekusi relokasi",
+        message: unwrap(error.response)?.message || "Terjadi kesalahan.",
+        color: "red",
+      });
+    } finally {
+      setExecutingId(null);
+    }
+  };
+
+  const executedHistory = history.filter(
+    (row: any) =>
+      row.status === "EXECUTED" ||
+      row.relocation?.status === "EXECUTED" ||
+      !row.status,
   );
-  const allZonesWithReject = Array.from(
-    new Set([...defaultZones, ...dynamicZones, "REJECT"]),
-  );
-  const tujuanRakOpts =
-    selectedZoneTujuan === "REJECT"
-      ? allGudangs
-          .filter((g: any) => g.zone === "REJECT")
-          .map((g: any) => ({
-            value: String(g.id),
-            label: `${g.name} (REJECT AREA)`,
-            locName: g.name,
-            isEmpty: true,
-            disabled: false,
-          }))
-      : selectedZoneTujuan
-        ? allGudangs
-            .filter((g: any) => g.zone === selectedZoneTujuan)
-            .map((g: any) => {
-              const stockInRack = stocks.filter(
-                (s: any) => String(s.gudang?.id) === String(g.id),
-              );
-              const totalQty = stockInRack.reduce(
-                (acc: number, s: any) => acc + s.qty,
-                0,
-              );
-
-              let disabled = false;
-              if (totalQty > 0) {
-                if (
-                  selectedBarangId &&
-                  stockInRack.some(
-                    (s: any) =>
-                      s.barang &&
-                      String(s.barang.id) !== String(selectedBarangId),
-                  )
-                ) {
-                  disabled = true;
-                }
-                if (
-                  selStock &&
-                  String(
-                    stocks.find((s: any) => s.id === +selStock)?.gudang?.id,
-                  ) === String(g.id)
-                ) {
-                  disabled = true;
-                }
-
-                const produkNames = Array.from(
-                  new Set(
-                    stockInRack.map((s: any) => s.barang?.nama).filter(Boolean),
-                  ),
-                ).join(", ");
-                return {
-                  value: String(g.id),
-                  label: g.name,
-                  locName: g.name,
-                  itemNames: produkNames,
-                  qtyStr: `${totalQty} qty`,
-                  disabled,
-                  isEmpty: false,
-                };
-              }
-              if (
-                selStock &&
-                String(
-                  stocks.find((s: any) => s.id === +selStock)?.gudang?.id,
-                ) === String(g.id)
-              ) {
-                disabled = true;
-              }
-              return {
-                value: String(g.id),
-                label: `${g.name} (KOSONG)`,
-                locName: g.name,
-                isEmpty: true,
-                disabled: disabled,
-              };
-            })
-            .filter((r: any) => !r.disabled)
-        : [];
-
-  const poOpts = Array.from(
-    new Set(logs.map((l: any) => l.no_po || l.no_ref).filter(Boolean)),
-  );
-
-  const selStockObj = stocks.find((s: any) => s.id === +selStock);
-  const filteredLogs = logs
-    .filter((r: any) => r.type === "RELOCATION")
-    .filter(
-      (r: any) =>
-        !filterSearch ||
-        r.barang?.nama?.toLowerCase().includes(filterSearch.toLowerCase()),
-    )
-    .filter(
-      (r: any) =>
-        !filterRak ||
-        r.gudang?.name?.includes(filterRak) ||
-        r.gudang_tujuan?.name?.includes(filterRak),
-    );
 
   return (
-    <Box>
+    <Box p="md">
       <Box
-        style={{
-          background: "#fff",
-          borderBottom: "1px solid #ddd",
-          padding: "12px 20px",
-        }}
+        mb="md"
+        pb="md"
+        style={{ borderBottom: "1px solid #e9ecef" }}
       >
-        <Group justify="space-between">
-          <Title order={3} style={{ color: "#e6921e", fontWeight: 900 }}>
-            RELOCATION
-          </Title>
-          <Group gap="xs">
-            <Button
-              size="xs"
-              color={type === "wet" ? "yellow" : "gray"}
-              variant={type === "wet" ? "filled" : "outline"}
-              onClick={() => {
-                setType("wet");
-                setSelectedZoneTujuan("");
-              }}
-              style={{ fontWeight: 700 }}
-            >
-              ITEM WET
-            </Button>
-            <Button
-              size="xs"
-              variant={type === "dry" ? "filled" : "outline"}
-              color={type === "dry" ? "blue" : "gray"}
-              onClick={() => {
-                setType("dry");
-                setSelectedZoneTujuan("");
-              }}
-              style={{ fontWeight: 700 }}
-            >
-              ITEM DRY
-            </Button>
-          </Group>
-        </Group>
+        <Text size="xs" fw={800} c="orange" tt="uppercase" mb={4}>
+          Warehouse Movement
+        </Text>
+        <Title order={2} style={{ letterSpacing: "-0.04em" }}>
+          Relocation Plan → Execute
+        </Title>
+        <Text size="sm" c="dimmed" mt={4}>
+          Rencanakan perpindahan stok terlebih dahulu, lalu eksekusi saat
+          barang benar-benar dipindahkan.
+        </Text>
       </Box>
 
-      <Box p="md">
-        <Group align="flex-start" gap="md">
-          {/* Left form */}
-          <Paper withBorder p="md" style={{ width: 260, flexShrink: 0 }}>
-            <Stack gap="xs">
-              <Autocomplete
-                label="No.PO/SJ"
-                size="xs"
-                data={poOpts}
-                value={noPo}
-                onChange={(v) => setNoPo(v)}
-                placeholder="Cari / Isi Referensi"
-              />
+      <Group align="flex-start" gap="md" wrap="nowrap">
+        <Paper
+          withBorder
+          radius="md"
+          p="lg"
+          style={{ width: 330, flexShrink: 0 }}
+        >
+          <Text fw={800} size="sm" mb={2}>
+            01 — Planning
+          </Text>
+          <Text size="xs" c="dimmed" mb="md">
+            Buat draft perpindahan stok.
+          </Text>
 
-              <Select
-                label="Nama Item (Master Produk)"
-                size="xs"
-                searchable
-                clearable
-                data={barangOpts}
-                value={selectedBarangId}
-                onChange={(v) => {
-                  setSelectedBarangId(v || "");
-                  setSelStock("");
-                  setRelQty(0);
-                }}
-                placeholder="Pilih dari master produk"
-              />
+          <Stack gap="sm">
+            <Select
+              label="Source Stock"
+              description="Item dan rak asal"
+              placeholder="Pilih stok tersedia"
+              searchable
+              data={stockOptions}
+              value={stockId}
+              onChange={(value) => {
+                setStockId(value || "");
+                setTargetGudangId("");
+                setQty(0);
+              }}
+            />
 
-              <Select
-                label="Stock (Pilih Rak Asal)"
-                size="xs"
-                searchable
-                data={stockOpts}
-                value={selStock}
-                onChange={(v) => {
-                  setSelStock(v || "");
-                  const s = stocks.find((x: any) => x.id === +(v || ""));
-                  if (s) {
-                    setRelQty(s.qty);
-                    // Auto-fetch original PO
-                    const inLog = logs.find(
-                      (l: any) =>
-                        l.type === "INBOUND" &&
-                        l.barang?.id === s.barang?.id &&
-                        l.gudang?.id === s.gudang?.id,
-                    );
-                    if (inLog && inLog.no_po) setNoPo(inLog.no_po);
-                  } else {
-                    setRelQty(0);
-                  }
-                }}
-                placeholder="Pilih dari stok tersedia"
-                renderOption={renderColorfulOption}
-              />
-
-              {/* Auto-info */}
-              {selStockObj && (
-                <Box
-                  style={{
-                    background: "#f8f9fa",
-                    borderRadius: 6,
-                    padding: "6px 8px",
-                    fontSize: 11,
-                  }}
-                >
-                  <Text size="xs" c="dimmed">
-                    Tgl Expired:{" "}
-                    <b>
-                      {selStockObj.expiry_date
-                        ? fmt(selStockObj.expiry_date)
-                        : "-"}
-                    </b>{" "}
-                    [Otomatis Relasi]
-                  </Text>
-                  <Text size="xs" c="dimmed">
-                    Qty:{" "}
-                    <b>
-                      {selStockObj.qty} {selStockObj.satuan}
-                    </b>
-                  </Text>
-                </Box>
-              )}
-
-              <NumberInput
-                label="Qty"
-                size="xs"
-                value={relQty}
-                onChange={(v) => setRelQty(Number(v))}
-                min={1}
-                max={selStockObj?.qty}
-              />
-              {selStockObj && relQty < selStockObj.qty && relQty > 0 && (
-                <Text size="xs" c="orange" fw={600}>
-                  ⚠ Split: {relQty} dari {selStockObj.qty}
-                </Text>
-              )}
-
-              <Divider my={4} />
-              <Select
-                label="Zone Tujuan"
-                size="xs"
-                searchable
-                data={allZonesWithReject}
-                value={selectedZoneTujuan}
-                onChange={(v) => {
-                  setSelectedZoneTujuan(v || "");
-                  setSelDest("");
-                }}
-                placeholder="Pilih zone tujuan"
-              />
-
-              {selectedZoneTujuan && (
-                <Select
-                  label="Rak Tujuan"
-                  size="xs"
-                  searchable
-                  data={tujuanRakOpts}
-                  value={selDest}
-                  onChange={(v) => setSelDest(v || "")}
-                  placeholder="Pilih rak"
-                  renderOption={renderColorfulOption}
-                  error={
-                    selDest &&
-                    tujuanRakOpts.find((o) => o.value === selDest)?.disabled
-                       ? "Rak ini berisi produk lain"
-                       : null
-                  }
-                />
-              )}
-
-              <TextInput
-                label="Keterangan / Note"
-                size="xs"
-                placeholder="Isi keterangan relokasi..."
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
-
-              <Button
-                fullWidth
-                size="sm"
-                color="blue"
-                onClick={doRelocate}
-                style={{ fontWeight: 700, marginTop: 4 }}
-              >
-                PINDAHKAN
-              </Button>
-              <Text size="xs" c="red" fw={600} ta="center" size="xs">
-                NOTE: RELOCATION INI BISA DI SPLIT DARI QTY INCOMING!
-              </Text>
-            </Stack>
-          </Paper>
-
-          {/* Right table */}
-          <Box style={{ flex: 1 }}>
-            <Group mb="xs" gap="xs">
-              <TextInput
-                placeholder="Cari item..."
-                size="xs"
-                value={filterSearch}
-                onChange={(e) => setFilterSearch(e.target.value)}
-                style={{ width: 180 }}
-              />
-              <TextInput
-                placeholder="Filter rak..."
-                size="xs"
-                value={filterRak}
-                onChange={(e) => setFilterRak(e.target.value)}
-                style={{ width: 120 }}
-              />
-              <Button
-                size="xs"
-                color="gray"
-                variant="outline"
-                onClick={() => {
-                  setFilterSearch("");
-                  setFilterRak("");
+            {selectedStock && (
+              <Box
+                p="sm"
+                style={{
+                  background: "#f8f9fa",
+                  borderLeft: "3px solid #e6921e",
+                  borderRadius: 4,
                 }}
               >
-                Reset
-              </Button>
-              <Group gap="xs" ml="auto">
-                <Text size="xs" fw={600}>
-                  dari
+                <Text size="xs" fw={700}>
+                  {selectedStock.barang?.nama}
                 </Text>
-                <TextInput type="date" size="xs" style={{ width: 130 }} />
-                <Text size="xs" fw={600}>
-                  sampai
+                <Text size="xs" c="dimmed">
+                  Rak asal: {selectedStock.gudang?.name || "-"}
                 </Text>
-                <TextInput type="date" size="xs" style={{ width: 130 }} />
-                <Button size="xs" color="blue">
-                  Filter
-                </Button>
-              </Group>
+                <Text size="xs" c="dimmed">
+                  Stok tersedia: {selectedStock.qty}{" "}
+                  {selectedStock.satuan || ""}
+                </Text>
+              </Box>
+            )}
+
+            <Select
+              label="Target Gudang"
+              description="Rak tujuan"
+              placeholder="Pilih rak tujuan"
+              searchable
+              disabled={!stockId}
+              data={targetOptions}
+              value={targetGudangId}
+              onChange={(value) => setTargetGudangId(value || "")}
+            />
+
+            <NumberInput
+              label="Qty"
+              placeholder="Masukkan quantity"
+              min={1}
+              max={selectedStock?.qty}
+              value={qty}
+              onChange={setQty}
+            />
+
+            <TextInput
+              label="Keterangan"
+              placeholder="Opsional"
+              value={note}
+              onChange={(event) => setNote(event.currentTarget.value)}
+            />
+
+            <Button
+              color="orange"
+              loading={submitting}
+              onClick={createDraft}
+              mt="xs"
+              style={{ fontWeight: 800 }}
+            >
+              BUAT DRAFT RELOCATION
+            </Button>
+          </Stack>
+        </Paper>
+
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <Paper withBorder radius="md" p="lg" mb="md">
+            <Group justify="space-between" mb="md">
+              <Box>
+                <Text fw={800} size="sm">
+                  02 — Draft Relocation
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Draft belum memengaruhi stok sampai dieksekusi.
+                </Text>
+              </Box>
+              <Badge color="orange" variant="light">
+                {drafts.length} DRAFT
+              </Badge>
             </Group>
 
-            <Text fw={700} size="sm" mb="xs">
-              RIWAYAT RELOKASI ({filteredLogs.length})
-            </Text>
             {loading ? (
-              <Loader />
+              <Loader size="sm" />
             ) : (
-              <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
-                <Table.Thead style={{ background: "#1a1a1a" }}>
+              <Table
+                withTableBorder
+                withColumnBorders
+                highlightOnHover
+                style={{ fontSize: 12 }}
+              >
+                <Table.Thead style={{ background: "#1d1d1f" }}>
                   <Table.Tr>
-                    {[
-                      "NoPO",
-                      "Item",
-                      "Tgl.Incoming",
-                      "Nomor Rak (Asal)",
-                      "Tgl.Expired",
-                      "Qty",
-                      "Status",
-                      "Location (Tujuan)",
-                      "Keterangan",
-                    ].map((h: any) => (
-                      <Table.Th key={h} style={{ color: "#fff", fontSize: 11 }}>
-                        {h}
-                      </Table.Th>
-                    ))}
+                    {["Item", "Rak Asal", "Rak Tujuan", "Qty", "Note", "Action"].map(
+                      (header) => (
+                        <Table.Th
+                          key={header}
+                          style={{ color: "#fff", fontSize: 11 }}
+                        >
+                          {header}
+                        </Table.Th>
+                      ),
+                    )}
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {filteredLogs.map((r: any) => (
-                    <Table.Tr key={r.id}>
-                      <Table.Td>{r.no_po || "-"}</Table.Td>
-                      <Table.Td fw={600}>{r.barang?.nama}</Table.Td>
-                      <Table.Td>{fmt(r.created_at)}</Table.Td>
-                      <Table.Td>
-                        <Badge size="xs" color="blue">
-                          {r.gudang?.name}
-                        </Badge>
+                  {drafts.length === 0 ? (
+                    <Table.Tr>
+                      <Table.Td colSpan={6} ta="center" py="xl" c="dimmed">
+                        Belum ada draft relocation.
                       </Table.Td>
-                      <Table.Td>{fmt(r.expiry_date)}</Table.Td>
-                      <Table.Td ta="right">
-                        {r.qty} {r.satuan}
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge
-                          size="xs"
-                          color={statusColor(r.expiry_date)}
-                          variant="filled"
-                        >
-                          {statusLabel(r.expiry_date)}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge size="xs" color="green">
-                          {r.gudang_tujuan?.name || "-"}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>{r.note || "-"}</Table.Td>
                     </Table.Tr>
-                  ))}
+                  ) : (
+                    drafts.map((draft: any, index: number) => {
+                      const item = getItem(draft);
+
+                      return (
+                        <Table.Tr key={draft.id} style={rowStyle(index)}>
+                          <Table.Td fw={700}>{item.nama || "-"}</Table.Td>
+                          <Table.Td>
+                            <Badge size="sm" color="blue" variant="light">
+                              {getSourceRack(draft)}
+                            </Badge>
+                          </Table.Td>
+                          <Table.Td>
+                            <Badge size="sm" color="green" variant="light">
+                              {getTargetRack(draft)}
+                            </Badge>
+                          </Table.Td>
+                          <Table.Td ta="right">
+                            {draft.qty} {draft.satuan || item.satuan || ""}
+                          </Table.Td>
+                          <Table.Td>{draft.note || "-"}</Table.Td>
+                          <Table.Td>
+                            <Button
+                              size="xs"
+                              color="green"
+                              loading={executingId === draft.id}
+                              onClick={() => executeDraft(draft.id)}
+                              style={{ fontWeight: 800 }}
+                            >
+                              EXECUTE
+                            </Button>
+                          </Table.Td>
+                        </Table.Tr>
+                      );
+                    })
+                  )}
                 </Table.Tbody>
               </Table>
             )}
-          </Box>
-        </Group>
-      </Box>
+          </Paper>
+
+          <Paper withBorder radius="md" p="lg">
+            <Group justify="space-between" mb="md">
+              <Box>
+                <Text fw={800} size="sm">
+                  03 — Execution History
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Riwayat relocation yang sudah dieksekusi.
+                </Text>
+              </Box>
+              <Button
+                size="xs"
+                variant="outline"
+                color="dark"
+                onClick={() => window.print()}
+              >
+                PRINT HISTORY
+              </Button>
+            </Group>
+
+            {loading ? (
+              <Loader size="sm" />
+            ) : (
+              <Table
+                withTableBorder
+                withColumnBorders
+                style={{ fontSize: 12 }}
+              >
+                <Table.Thead style={{ background: "#1d1d1f" }}>
+                  <Table.Tr>
+                    {["Tanggal", "Item", "Rak Asal", "Rak Tujuan", "Qty", "Status"].map(
+                      (header) => (
+                        <Table.Th
+                          key={header}
+                          style={{ color: "#fff", fontSize: 11 }}
+                        >
+                          {header}
+                        </Table.Th>
+                      ),
+                    )}
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {executedHistory.length === 0 ? (
+                    <Table.Tr>
+                      <Table.Td colSpan={6} ta="center" py="xl" c="dimmed">
+                        Belum ada relocation yang dieksekusi.
+                      </Table.Td>
+                    </Table.Tr>
+                  ) : (
+                    executedHistory.map((row: any, index: number) => {
+                      const item = getItem(row);
+
+                      return (
+                        <Table.Tr key={row.id} style={rowStyle(index)}>
+                          <Table.Td>{fmt(row.created_at)}</Table.Td>
+                          <Table.Td fw={700}>{item.nama || "-"}</Table.Td>
+                          <Table.Td>{getSourceRack(row)}</Table.Td>
+                          <Table.Td>{getTargetRack(row)}</Table.Td>
+                          <Table.Td ta="right">
+                            {row.qty} {row.satuan || item.satuan || ""}
+                          </Table.Td>
+                          <Table.Td>
+                            <Badge color="green" variant="filled">
+                              EXECUTED
+                            </Badge>
+                          </Table.Td>
+                        </Table.Tr>
+                      );
+                    })
+                  )}
+                </Table.Tbody>
+              </Table>
+            )}
+          </Paper>
+        </Box>
+      </Group>
     </Box>
   );
 }

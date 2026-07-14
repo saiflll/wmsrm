@@ -1,22 +1,27 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+} from 'typeorm';
 
 @Entity()
 export class Customer {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    nama: string;
+  @Column()
+  nama: string;
 
-    @Column({ nullable: true })
-    alamat: string;
+  @Column({ nullable: true })
+  alamat: string;
 
-    @Column({ nullable: true })
-    telp: string;
+  @Column({ nullable: true })
+  telp: string;
 
-    @Column({ type: 'varchar', default: 'customer' })
-    tipe: string; // 'customer' | 'supplier'
+  @Column({ type: 'varchar', default: 'customer' })
+  tipe: string; // 'customer' | 'supplier'
 
-    @CreateDateColumn()
-    created_at: Date;
+  @CreateDateColumn()
+  created_at: Date;
 }

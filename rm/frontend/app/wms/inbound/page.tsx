@@ -1,7 +1,7 @@
 "use client";
 // @ts-nocheck
 import React, { useState, useEffect, useRef, Suspense } from "react";
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, NumberInput, Divider, ActionIcon, Autocomplete, Loader, Grid } from "@mantine/core";
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, NumberInput, Divider, ActionIcon, Autocomplete, Loader, Grid, Modal } from "@mantine/core";
 import { Table } from '../components/Table';
 import {
   IconPlus,
@@ -13,6 +13,7 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconBuildingWarehouse,
+  IconCheck,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -118,6 +119,13 @@ function InboundContent() {
     jam_selesai: "",
     gudang_id: "",
   });
+
+  // Process Inbound Modal state
+  const [processModalOpen, setProcessModalOpen] = useState(false);
+  const [selectedPlanningId, setSelectedPlanningId] = useState<number | null>(null);
+  const [selectedPlanning, setSelectedPlanning] = useState<any>(null);
+  const [processItems, setProcessItems] = useState<any[]>([]);
+  const [processLoading, setProcessLoading] = useState(false);
 
   const loadBarangs = async () => {
     try {
@@ -462,6 +470,111 @@ function InboundContent() {
     return sortDir === "asc" ? " ▲" : " ▼";
   };
 
+  const openProcessModal = (planning: any) => {
+    setSelectedPlanning(planning);
+    setSelectedPlanningId(planning.id);
+    setProcessItems([
+      {
+        id: Date.now(),
+        barang_id: "",
+        gudang_id: "",
+        qty: 1,
+        batch_no: "",
+        expiry_date: "",
+        shift_id: "",
+        jam_datang: "",
+        jam_bongkar: "",
+      }
+    ]);
+    setProcessModalOpen(true);
+  };
+
+  const addProcessItem = () => {
+    setProcessItems((p) => [
+      ...p,
+      {
+        id: Date.now(),
+        barang_id: "",
+        gudang_id: "",
+        qty: 1,
+        batch_no: "",
+        expiry_date: "",
+        shift_id: "",
+        jam_datang: "",
+        jam_bongkar: "",
+      }
+    ]);
+  };
+
+  const updateProcessItem = (id: number, field: string, value: any) => {
+    setProcessItems((p) =>
+      p.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const removeProcessItem = (id: number) => {
+    setProcessItems((p) => p.filter((item) => item.id !== id));
+  };
+
+  const submitProcessInbound = async () => {
+    if (!processItems.length) {
+      return notifications.show({
+        title: "Error",
+        message: "Tambahkan minimal 1 item untuk diproses",
+        color: "red",
+      });
+    }
+
+    // Validate required fields
+    for (const item of processItems) {
+      if (!item.barang_id || !item.gudang_id || !item.qty) {
+        return notifications.show({
+          title: "Error",
+          message: "Semua item harus memiliki barang, gudang, dan qty",
+          color: "red",
+        });
+      }
+    }
+
+    setProcessLoading(true);
+    try {
+      const payload = {
+        items: processItems.map((item) => ({
+          barangId: Number(item.barang_id),
+          gudangId: Number(item.gudang_id),
+          qty: Number(item.qty),
+          batch_no: item.batch_no || undefined,
+          expiry_date: item.expiry_date || undefined,
+          satuan: item.satuan || undefined,
+          jam_datang: item.jam_datang || undefined,
+          jam_bongkar: item.jam_bongkar || undefined,
+        }))
+      };
+
+      await api().post(`/inbound-planning/${selectedPlanningId}/process`, payload);
+
+      notifications.show({
+        title: "Sukses",
+        message: "Inbound planning berhasil diproses",
+        color: "green",
+      });
+
+      setProcessModalOpen(false);
+      setProcessItems([]);
+      setSelectedPlanningId(null);
+      setSelectedPlanning(null);
+      loadLogs();
+    } catch (e: any) {
+      notifications.show({
+        title: "Error",
+        message: unwrap(e.response)?.message || "Gagal memproses inbound",
+        color: "red",
+      });
+    } finally {
+      setProcessLoading(false);
+    }
+  };
+
   const sortedData = [...logs].sort((a, b) => {
     if (!sortKey) return 0;
     
@@ -757,65 +870,77 @@ function InboundContent() {
                   DRAFT PLANNING INBOUND ({planningDrafts.length})
                 </Text>
                 <Box style={{ overflowX: "auto" }}>
-                  <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
-                    <Table.Thead style={{ background: "#333" }}>
-                      <Table.Tr>
-                        {["No PO", "Driver", "Plat", "Supplier", "ETA", "Status", "Aksi"].map((h) => (
-                          <Table.Th key={h} style={{ color: "#fff", fontSize: 11 }}>
-                            {h}
-                          </Table.Th>
-                        ))}
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {planningDrafts.map((d: any, i: number) => {
-                        let etaStr = "-";
-                        if (d.estimasi_datang) {
-                          const dt = new Date(d.estimasi_datang);
-                          etaStr = `${dt.toLocaleDateString("id-ID")} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
-                        }
-                        return (
-                          <Table.Tr key={d.id || i}>
-                            <Table.Td fw={700}>{d.no_po}</Table.Td>
-                            <Table.Td fw={600}>{d.driver_name || "-"}</Table.Td>
-                            <Table.Td>{d.plat_nomor || "-"}</Table.Td>
-                            <Table.Td>{d.supplier || "-"}</Table.Td>
-                            <Table.Td>{etaStr}</Table.Td>
-                            <Table.Td>
-                              <Badge
-                                color={d.status === "DONE" ? "green" : d.status === "FAIL" ? "red" : "yellow"}
-                                variant="filled"
-                                size="xs"
-                              >
-                                {d.status || "WAIT"}
-                              </Badge>
-                            </Table.Td>
-                            <Table.Td>
-                              <Group gap={4} wrap="nowrap">
-                                <Button
-                                  size="xs"
-                                  color="blue"
-                                  variant="light"
-                                  onClick={() => processPlanningDraftToInbound(d)}
-                                  style={{ padding: "0 6px", fontSize: 10 }}
-                                >
-                                  Proses Inbound
-                                </Button>
-                                <ActionIcon
-                                  size="sm"
-                                  color="red"
-                                  variant="light"
-                                  onClick={() => deletePlanningDraft(i)}
-                                >
-                                  <IconTrash size={13} />
-                                </ActionIcon>
-                              </Group>
-                            </Table.Td>
-                          </Table.Tr>
-                        );
-                      })}
-                    </Table.Tbody>
-                  </Table>
+                   <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
+                     <Table.Thead style={{ background: "#333" }}>
+                       <Table.Tr>
+                         {["No PO", "Supplier", "ETA", "Status", "Aksi"].map((h) => (
+                           <Table.Th key={h} style={{ color: "#fff", fontSize: 11 }}>
+                             {h}
+                           </Table.Th>
+                         ))}
+                       </Table.Tr>
+                     </Table.Thead>
+                     <Table.Tbody>
+                       {planningDrafts.map((d: any, i: number) => {
+                         let etaStr = "-";
+                         if (d.estimasi_datang) {
+                           const dt = new Date(d.estimasi_datang);
+                           etaStr = `${dt.toLocaleDateString("id-ID")} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+                         }
+                         return (
+                           <Table.Tr key={d.id || i}>
+                             <Table.Td fw={700}>{d.no_po}</Table.Td>
+                             <Table.Td>{d.supplier || "-"}</Table.Td>
+                             <Table.Td>{etaStr}</Table.Td>
+                             <Table.Td>
+                               <Badge
+                                 color={d.status === "DONE" ? "green" : d.status === "FAIL" ? "red" : "yellow"}
+                                 variant="filled"
+                                 size="xs"
+                               >
+                                 {d.status || "WAIT"}
+                               </Badge>
+                             </Table.Td>
+                             <Table.Td>
+                               <Group gap={4} wrap="nowrap">
+                                 {d.status === "WAIT" ? (
+                                   <>
+                                     <Button
+                                       size="xs"
+                                       color="green"
+                                       variant="light"
+                                       onClick={() => openProcessModal(d)}
+                                       style={{ padding: "0 6px", fontSize: 10 }}
+                                       leftSection={<IconCheck size={12} />}
+                                     >
+                                       Process
+                                     </Button>
+                                     <ActionIcon
+                                       size="sm"
+                                       color="red"
+                                       variant="light"
+                                       onClick={() => deletePlanningDraft(i)}
+                                     >
+                                       <IconTrash size={13} />
+                                     </ActionIcon>
+                                   </>
+                                 ) : (
+                                   <ActionIcon
+                                     size="sm"
+                                     color="red"
+                                     variant="light"
+                                     onClick={() => deletePlanningDraft(i)}
+                                   >
+                                     <IconTrash size={13} />
+                                   </ActionIcon>
+                                 )}
+                               </Group>
+                             </Table.Td>
+                           </Table.Tr>
+                         );
+                       })}
+                     </Table.Tbody>
+                   </Table>
                 </Box>
               </Paper>
             )}
@@ -1024,6 +1149,191 @@ function InboundContent() {
           </Grid.Col>
         </Grid>
       </Box>
+
+      {/* Process Inbound Modal */}
+      <Modal
+        opened={processModalOpen}
+        onClose={() => {
+          setProcessModalOpen(false);
+          setProcessItems([]);
+          setSelectedPlanningId(null);
+          setSelectedPlanning(null);
+        }}
+        title={`Process Inbound - ${selectedPlanning?.no_po || ""}`}
+        size="lg"
+        scrollAreaComponent={Box}
+      >
+        <Stack gap="md">
+          {selectedPlanning && (
+            <Paper withBorder p="sm" radius="md" style={{ background: "#f9f9f9" }}>
+              <Group justify="space-between">
+                <Box>
+                  <Text size="xs" c="dimmed">No PO</Text>
+                  <Text fw={700}>{selectedPlanning.no_po}</Text>
+                </Box>
+                <Box>
+                  <Text size="xs" c="dimmed">Supplier</Text>
+                  <Text fw={700}>{selectedPlanning.supplier || "-"}</Text>
+                </Box>
+              </Group>
+            </Paper>
+          )}
+
+          <Divider my={0} />
+
+          <Text fw={700} size="sm">Items untuk Diproses</Text>
+
+          {processItems.map((item, idx) => (
+            <Paper key={item.id} withBorder p="md" radius="md" style={{ background: "#fafafa" }}>
+              <Stack gap="xs">
+                <Group justify="space-between">
+                  <Text fw={600} size="sm">Item {idx + 1}</Text>
+                  {processItems.length > 1 && (
+                    <ActionIcon
+                      size="sm"
+                      color="red"
+                      variant="light"
+                      onClick={() => removeProcessItem(item.id)}
+                    >
+                      <IconTrash size={14} />
+                    </ActionIcon>
+                  )}
+                </Group>
+
+                <Grid gutter="xs">
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <Select
+                      label="Barang"
+                      size="xs"
+                      searchable
+                      data={barangOpts}
+                      value={item.barang_id}
+                      onChange={(v) => updateProcessItem(item.id, "barang_id", v)}
+                      placeholder="Pilih barang"
+                      required
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <Select
+                      label="Gudang / Rak"
+                      size="xs"
+                      searchable
+                      data={allGudangs.map((g: any) => ({
+                        value: String(g.id),
+                        label: `${g.zone} - ${g.name}`,
+                      }))}
+                      value={item.gudang_id}
+                      onChange={(v) => updateProcessItem(item.id, "gudang_id", v)}
+                      placeholder="Pilih gudang"
+                      required
+                    />
+                  </Grid.Col>
+                </Grid>
+
+                <Grid gutter="xs">
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <NumberInput
+                      label="Qty"
+                      size="xs"
+                      value={item.qty}
+                      onChange={(v) => updateProcessItem(item.id, "qty", v)}
+                      placeholder="Jumlah"
+                      required
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <TextInput
+                      label="Batch No"
+                      size="xs"
+                      value={item.batch_no}
+                      onChange={(e) => updateProcessItem(item.id, "batch_no", e.target.value)}
+                      placeholder="Batch number"
+                    />
+                  </Grid.Col>
+                </Grid>
+
+                <Grid gutter="xs">
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <TextInput
+                      label="Expiry Date"
+                      size="xs"
+                      type="date"
+                      value={item.expiry_date}
+                      onChange={(e) => updateProcessItem(item.id, "expiry_date", e.target.value)}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <Select
+                      label="Shift"
+                      size="xs"
+                      data={shiftOpts}
+                      value={item.shift_id}
+                      onChange={(v) => updateProcessItem(item.id, "shift_id", v)}
+                      placeholder="Pilih shift"
+                    />
+                  </Grid.Col>
+                </Grid>
+
+                <Grid gutter="xs">
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <TextInput
+                      label="Jam Datang"
+                      size="xs"
+                      type="time"
+                      value={item.jam_datang}
+                      onChange={(e) => updateProcessItem(item.id, "jam_datang", e.target.value)}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <TextInput
+                      label="Jam Bongkar"
+                      size="xs"
+                      type="time"
+                      value={item.jam_bongkar}
+                      onChange={(e) => updateProcessItem(item.id, "jam_bongkar", e.target.value)}
+                    />
+                  </Grid.Col>
+                </Grid>
+              </Stack>
+            </Paper>
+          ))}
+
+          <Button
+            variant="light"
+            size="xs"
+            onClick={addProcessItem}
+            leftSection={<IconPlus size={14} />}
+          >
+            Tambah Item
+          </Button>
+
+          <Divider my={0} />
+
+          <Group justify="flex-end" gap="xs">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setProcessModalOpen(false);
+                setProcessItems([]);
+                setSelectedPlanningId(null);
+                setSelectedPlanning(null);
+              }}
+            >
+              Batal
+            </Button>
+            <Button
+              color="green"
+              size="sm"
+              onClick={submitProcessInbound}
+              loading={processLoading}
+              leftSection={<IconCheck size={14} />}
+            >
+              Proses Inbound
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Box>
   );
 }

@@ -29,9 +29,12 @@ export class InventoryService {
     @InjectRepository(Barang) private barangRepo: Repository<Barang>,
     @InjectRepository(Gudang) private gudangRepo: Repository<Gudang>,
     @InjectRepository(Shift) private shiftRepo: Repository<Shift>,
-    @InjectRepository(InboundPlanning) private inboundPlanningRepo: Repository<InboundPlanning>,
-    @InjectRepository(PlanningAyam) private planningAyamRepo: Repository<PlanningAyam>,
-    @InjectRepository(OutboundAyam) private outboundAyamRepo: Repository<OutboundAyam>,
+    @InjectRepository(InboundPlanning)
+    private inboundPlanningRepo: Repository<InboundPlanning>,
+    @InjectRepository(PlanningAyam)
+    private planningAyamRepo: Repository<PlanningAyam>,
+    @InjectRepository(OutboundAyam)
+    private outboundAyamRepo: Repository<OutboundAyam>,
     private dataSource: DataSource,
   ) {}
 
@@ -125,6 +128,8 @@ export class InventoryService {
           tanggal_income: item.tanggal_income,
           jam_bongkar: item.jam_bongkar,
           jam_selesai: item.jam_selesai,
+          note: item.note,
+          keterangan: item.keterangan,
         } as any);
         await manager.save(StockLog, log);
         logs.push(log);
@@ -145,7 +150,11 @@ export class InventoryService {
           }
           let selisih = 0;
           if (plan.estimasi_datang) {
-            selisih = Math.round((arrivalDate.getTime() - new Date(plan.estimasi_datang).getTime()) / 60000);
+            selisih = Math.round(
+              (arrivalDate.getTime() -
+                new Date(plan.estimasi_datang).getTime()) /
+                60000,
+            );
           }
           plan.status = 'DONE';
           plan.tanggal_realisasi = arrivalDate;
@@ -224,6 +233,11 @@ export class InventoryService {
           shift: shift || undefined,
           batch_no: stock.batch_no,
           expiry_date: stock.expiry_date,
+          note: item.note,
+          keterangan: item.keterangan,
+          jam_datang: item.jam_datang,
+          jam_bongkar: item.jam_bongkar,
+          jam_selesai: item.jam_selesai,
         } as any);
         await manager.save(StockLog, log);
         logs.push(log);
@@ -265,12 +279,15 @@ export class InventoryService {
           );
         }
 
-        const actualQty = item.actual_qty !== undefined && item.actual_qty !== null ? item.actual_qty : item.qty;
+        const actualQty =
+          item.actual_qty !== undefined && item.actual_qty !== null
+            ? item.actual_qty
+            : item.qty;
         const availableQty = stock.qty - stock.reserved_qty;
         if (availableQty < actualQty) {
           throw new BadRequestException(
             `Stok tersedia tidak cukup untuk ${barang.nama} di ${gudang.name}. ` +
-            `Tersedia: ${availableQty} (Total: ${stock.qty}, Reserved: ${stock.reserved_qty}), Diminta: ${actualQty}`
+              `Tersedia: ${availableQty} (Total: ${stock.qty}, Reserved: ${stock.reserved_qty}), Diminta: ${actualQty}`,
           );
         }
 
@@ -313,7 +330,9 @@ export class InventoryService {
       });
 
       if (!logs.length) {
-        throw new NotFoundException('Picking plan dengan status RESERVED tidak ditemukan');
+        throw new NotFoundException(
+          'Picking plan dengan status RESERVED tidak ditemukan',
+        );
       }
 
       for (const log of logs) {
@@ -329,16 +348,19 @@ export class InventoryService {
         if (!stock) {
           throw new BadRequestException(
             `Stok tidak ditemukan untuk ${log.barang?.nama || 'item'} di ${log.gudang?.name || 'gudang'}. ` +
-            `Stok mungkin telah dipindahkan atau dihapus setelah picking dibuat.`
+              `Stok mungkin telah dipindahkan atau dihapus setelah picking dibuat.`,
           );
         }
 
-        const actualQty = log.actual_qty !== undefined && log.actual_qty !== null ? log.actual_qty : log.qty;
+        const actualQty =
+          log.actual_qty !== undefined && log.actual_qty !== null
+            ? log.actual_qty
+            : log.qty;
         if (stock.qty < actualQty) {
           throw new BadRequestException(
             `Stok fisik tidak cukup untuk ${log.barang?.nama || 'item'} di ${log.gudang?.name || 'gudang'}. ` +
-            `Tersedia: ${stock.qty}, Diminta: ${actualQty}. ` +
-            `Stok mungkin telah dikeluarkan oleh transaksi lain.`
+              `Tersedia: ${stock.qty}, Diminta: ${actualQty}. ` +
+              `Stok mungkin telah dikeluarkan oleh transaksi lain.`,
           );
         }
 
@@ -385,7 +407,10 @@ export class InventoryService {
         });
 
         if (stock) {
-          const actualQty = log.actual_qty !== undefined && log.actual_qty !== null ? log.actual_qty : log.qty;
+          const actualQty =
+            log.actual_qty !== undefined && log.actual_qty !== null
+              ? log.actual_qty
+              : log.qty;
           stock.reserved_qty = Math.max(0, stock.reserved_qty - actualQty);
           await manager.save(Stock, stock);
         }
@@ -423,7 +448,6 @@ export class InventoryService {
 
     return Object.values(groups);
   }
-
 
   // ========== REVERT OUTBOUND ==========
   async revertOutbound(noRef: string, userId?: number) {
@@ -604,9 +628,10 @@ export class InventoryService {
 
         await this.syncBarangStok(manager, primaryStock.barang.id);
 
-        existingLog.qty = dto.qty_opname;
-        existingLog.note = `Opname Rak (Update): ${totalOldQty} → ${dto.qty_opname} (diff: ${diff > 0 ? '+' : ''}${diff})`;
-        existingLog.created_at = new Date();
+         existingLog.qty = dto.qty_opname;
+         existingLog.note = dto.note || `Opname Rak (Update): ${totalOldQty} → ${dto.qty_opname} (diff: ${diff > 0 ? '+' : ''}${diff})`;
+         existingLog.keterangan = dto.keterangan ?? null;
+         existingLog.created_at = new Date();
         await manager.save(StockLog, existingLog);
 
         return { stock: primaryStock, log: existingLog, diff, updated: true };
@@ -640,15 +665,16 @@ export class InventoryService {
         ? await manager.findOneBy(Shift, { id: dto.shift_id })
         : null;
 
-      const log = manager.create(StockLog, {
-        type: LogType.OPNAME,
-        barang: primaryStock.barang,
-        gudang: primaryStock.gudang,
-        qty: dto.qty_opname,
-        satuan: primaryStock.satuan,
-        shift: shift || undefined,
-        note: `Opname Rak: ${totalOldQty} → ${dto.qty_opname} (diff: ${diff > 0 ? '+' : ''}${diff})`,
-      } as any);
+       const log = manager.create(StockLog, {
+         type: LogType.OPNAME,
+         barang: primaryStock.barang,
+         gudang: primaryStock.gudang,
+         qty: dto.qty_opname,
+         satuan: primaryStock.satuan,
+         shift: shift || undefined,
+         note: dto.note || `Opname Rak: ${totalOldQty} → ${dto.qty_opname} (diff: ${diff > 0 ? '+' : ''}${diff})`,
+         keterangan: dto.keterangan,
+       } as any);
       await manager.save(StockLog, log);
 
       return { stock: primaryStock, log, diff };
@@ -708,22 +734,62 @@ export class InventoryService {
 
   // Dashboard stats
   async getDashboardStats() {
-    const totalSku = await this.barangRepo.count();
-    const totalStock = await this.barangRepo
-      .createQueryBuilder('b')
-      .select('SUM(b.stok)', 'total')
+    // totalSku: count distinct barang that has stock (qty > 0)
+    const totalSkuResult = await this.stockRepo
+      .createQueryBuilder('s')
+      .select('COUNT(DISTINCT s.barangId)', 'cnt')
+      .where('s.qty > 0')
       .getRawOne();
+    const totalSku = Number(totalSkuResult?.cnt || 0);
 
-    const inboundCount = await this.logRepo.count({
-      where: { type: LogType.INBOUND },
-    });
-    const outboundCount = await this.logRepo.count({
-      where: { type: LogType.OUTBOUND },
-    });
+    // totalStock: sum all stock quantities
+    const totalStockResult = await this.stockRepo
+      .createQueryBuilder('s')
+      .select('SUM(s.qty)', 'total')
+      .getRawOne();
+    const totalStock = Number(totalStockResult?.total || 0);
+
+    // inboundHariIni: count inbound logs created today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const inboundHariIniResult = await this.logRepo
+      .createQueryBuilder('l')
+      .where(
+        'l.type = :type AND l.created_at >= :today AND l.created_at < :tomorrow',
+        {
+          type: LogType.INBOUND,
+          today,
+          tomorrow,
+        },
+      )
+      .select('COUNT(l.id)', 'cnt')
+      .getRawOne();
+    const inboundHariIni = Number(inboundHariIniResult?.cnt || 0);
+
+    // outboundHariIni: count outbound logs created today
+    const outboundHariIniResult = await this.logRepo
+      .createQueryBuilder('l')
+      .where(
+        'l.type = :type AND l.created_at >= :today AND l.created_at < :tomorrow',
+        {
+          type: LogType.OUTBOUND,
+          today,
+          tomorrow,
+        },
+      )
+      .select('COUNT(l.id)', 'cnt')
+      .getRawOne();
+    const outboundHariIni = Number(outboundHariIniResult?.cnt || 0);
 
     const pickingPendingCountRaw = await this.logRepo
       .createQueryBuilder('l')
-      .where('l.type = :type AND l.status = :status', { type: LogType.PICKING, status: 'RESERVED' })
+      .where('l.type = :type AND l.status = :status', {
+        type: LogType.PICKING,
+        status: 'RESERVED',
+      })
       .select('COUNT(DISTINCT l.no_ref)', 'cnt')
       .getRawOne();
     const pickingPendingCount = Number(pickingPendingCountRaw?.cnt || 0);
@@ -749,7 +815,10 @@ export class InventoryService {
 
     const nearExpiredCountRaw = await this.stockRepo
       .createQueryBuilder('s')
-      .where('s.expiry_date >= :now AND s.expiry_date <= :thirtyDaysFromNow', { now, thirtyDaysFromNow })
+      .where('s.expiry_date >= :now AND s.expiry_date <= :thirtyDaysFromNow', {
+        now,
+        thirtyDaysFromNow,
+      })
       .select('COUNT(s.id)', 'cnt')
       .getRawOne();
     const nearExpiredCount = Number(nearExpiredCountRaw?.cnt || 0);
@@ -780,7 +849,7 @@ export class InventoryService {
       where: {
         type: LogType.INBOUND,
         created_at: Between(thirtyDaysAgo, new Date()),
-      }
+      },
     });
 
     let totalWaitTime = 0;
@@ -794,36 +863,50 @@ export class InventoryService {
       const tSelesai = parseTimeToMinutes(log.jam_selesai);
 
       if (tDatang !== null && tBongkar !== null && tBongkar >= tDatang) {
-        totalWaitTime += (tBongkar - tDatang);
+        totalWaitTime += tBongkar - tDatang;
         waitCount++;
       }
       if (tBongkar !== null && tSelesai !== null && tSelesai >= tBongkar) {
-        totalUnloadTime += (tSelesai - tBongkar);
+        totalUnloadTime += tSelesai - tBongkar;
         unloadCount++;
       }
     }
 
-    const avgWaitingTime = waitCount > 0 ? Math.round(totalWaitTime / waitCount) : 0;
-    const avgUnloadingTime = unloadCount > 0 ? Math.round(totalUnloadTime / unloadCount) : 0;
+    const avgWaitingTime =
+      waitCount > 0 ? Math.round(totalWaitTime / waitCount) : 0;
+    const avgUnloadingTime =
+      unloadCount > 0 ? Math.round(totalUnloadTime / unloadCount) : 0;
 
     // Inbound Driver Planning stats
-    const planWaitCount = await this.stockRepo.manager.count(InboundPlanning, { where: { status: 'WAIT' } });
-    const planFailCount = await this.stockRepo.manager.count(InboundPlanning, { where: { status: 'FAIL' } });
-    const planDoneCount = await this.stockRepo.manager.count(InboundPlanning, { where: { status: 'DONE' } });
+    const planWaitCount = await this.stockRepo.manager.count(InboundPlanning, {
+      where: { status: 'WAIT' },
+    });
+    const planFailCount = await this.stockRepo.manager.count(InboundPlanning, {
+      where: { status: 'FAIL' },
+    });
+    const planDoneCount = await this.stockRepo.manager.count(InboundPlanning, {
+      where: { status: 'DONE' },
+    });
 
     const delayResult = await this.stockRepo.manager
       .getRepository(InboundPlanning)
       .createQueryBuilder('p')
-      .where('p.status = :status AND p.selisih_menit IS NOT NULL', { status: 'DONE' })
+      .where('p.status = :status AND p.selisih_menit IS NOT NULL', {
+        status: 'DONE',
+      })
       .select('AVG(p.selisih_menit)', 'avg')
       .getRawOne();
-    const avgDelay = delayResult?.avg ? Math.round(parseFloat(delayResult.avg)) : 0;
+    const avgDelay = delayResult?.avg
+      ? Math.round(parseFloat(delayResult.avg))
+      : 0;
 
     return {
       totalSku,
-      totalStock: Number(totalStock?.total || 0),
-      inboundCount,
-      outboundCount,
+      totalStock,
+      inboundCount: inboundHariIni,
+      outboundCount: outboundHariIni,
+      inboundHariIni,
+      outboundHariIni,
       pickingPendingCount,
       totalSlots,
       filledSlots: Number(filledSlots?.cnt || 0),
@@ -854,7 +937,8 @@ export class InventoryService {
       order: { created_at: 'ASC' },
     });
 
-    const weeklyData: Record<string, { inbound: number; outbound: number }> = {};
+    const weeklyData: Record<string, { inbound: number; outbound: number }> =
+      {};
 
     const getMonday = (d: Date) => {
       const date = new Date(d);
@@ -865,7 +949,8 @@ export class InventoryService {
     };
 
     for (const log of logs) {
-      if (log.type !== LogType.INBOUND && log.type !== LogType.OUTBOUND) continue;
+      if (log.type !== LogType.INBOUND && log.type !== LogType.OUTBOUND)
+        continue;
       const monStr = getMonday(log.created_at);
       if (!weeklyData[monStr]) {
         weeklyData[monStr] = { inbound: 0, outbound: 0 };
@@ -893,7 +978,11 @@ export class InventoryService {
 
     // Generate date range
     const dates: string[] = [];
-    for (let d = new Date(thirtyDaysAgo); d <= today; d.setDate(d.getDate() + 1)) {
+    for (
+      let d = new Date(thirtyDaysAgo);
+      d <= today;
+      d.setDate(d.getDate() + 1)
+    ) {
       dates.push(d.toISOString().split('T')[0]);
     }
 
@@ -905,7 +994,10 @@ export class InventoryService {
     // Get logs in date range (only INBOUND/OUTBOUND)
     const logs = await this.logRepo.find({
       where: {
-        created_at: Between(thirtyDaysAgo, new Date(today.getTime() + 86400000)),
+        created_at: Between(
+          thirtyDaysAgo,
+          new Date(today.getTime() + 86400000),
+        ),
         type: In([LogType.INBOUND, LogType.OUTBOUND]),
         ...(barangId ? { barang: { id: barangId } } : {}),
       },
@@ -920,7 +1012,9 @@ export class InventoryService {
       const bid = log.barang.id;
       const dt = log.created_at.toISOString().split('T')[0];
       if (!changes[bid]) changes[bid] = {};
-      changes[bid][dt] = (changes[bid][dt] || 0) + (log.type === LogType.INBOUND ? log.qty : -log.qty);
+      changes[bid][dt] =
+        (changes[bid][dt] || 0) +
+        (log.type === LogType.INBOUND ? log.qty : -log.qty);
     }
 
     // Get current stock per product
@@ -963,7 +1057,12 @@ export class InventoryService {
         id: brg.id,
         nama: brg.nama,
         satuan: brg.satuan,
-        color: brg.kategori === 'Wet' ? '#fcc419' : brg.kategori === 'Waste' ? '#845ef7' : '#1c7ed6',
+        color:
+          brg.kategori === 'Wet'
+            ? '#fcc419'
+            : brg.kategori === 'Waste'
+              ? '#845ef7'
+              : '#1c7ed6',
         data: stockData,
       });
     }
@@ -977,18 +1076,22 @@ export class InventoryService {
     const stocks = await this.stockRepo.find({ relations: ['gudang'] });
 
     const zoneColor: Record<string, string> = {
-      'A': '#228be6',
-      'B': '#40c057',
-      'C': '#fd7e14',
-      'D': '#be4bdb',
-      'E': '#1098ad',
+      A: '#228be6',
+      B: '#40c057',
+      C: '#fd7e14',
+      D: '#be4bdb',
+      E: '#1098ad',
     };
 
     // Aggregate by zone: count total racks and occupied racks (racks with any stock)
-    const zoneMap: Record<string, { totalRacks: number; occupiedRacks: number; count: number }> = {};
+    const zoneMap: Record<
+      string,
+      { totalRacks: number; occupiedRacks: number; count: number }
+    > = {};
     for (const g of gudangs) {
       const z = g.zone || 'UNKNOWN';
-      if (!zoneMap[z]) zoneMap[z] = { totalRacks: 0, occupiedRacks: 0, count: 0 };
+      if (!zoneMap[z])
+        zoneMap[z] = { totalRacks: 0, occupiedRacks: 0, count: 0 };
       zoneMap[z].totalRacks++;
       zoneMap[z].count++;
     }
@@ -1004,8 +1107,14 @@ export class InventoryService {
     }
 
     const gauges = Object.entries(zoneMap).map(([z, data]) => {
-      const pct = data.totalRacks > 0 ? Math.min(100, Math.round((data.occupiedRacks / data.totalRacks) * 100)) : 0;
-      let color = zoneColor[z] || '#868e96';
+      const pct =
+        data.totalRacks > 0
+          ? Math.min(
+              100,
+              Math.round((data.occupiedRacks / data.totalRacks) * 100),
+            )
+          : 0;
+      const color = zoneColor[z] || '#868e96';
       return {
         id: z,
         name: `Zone ${z}`,
@@ -1024,7 +1133,11 @@ export class InventoryService {
 
     // Daily data for the selected range
     const dailyData: Record<string, number> = {};
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    for (
+      let d = new Date(startDate);
+      d <= endDate;
+      d.setDate(d.getDate() + 1)
+    ) {
       const key = d.toISOString().split('T')[0];
       dailyData[key] = 0;
     }
@@ -1056,11 +1169,11 @@ export class InventoryService {
       }));
 
       // Get items in this zone
-      const zoneGudangs = gudangs.filter(g => g.zone === zone);
-      const zoneGudangIds = zoneGudangs.map(g => g.id);
+      const zoneGudangs = gudangs.filter((g) => g.zone === zone);
+      const zoneGudangIds = zoneGudangs.map((g) => g.id);
       const items = stocks
-        .filter(s => s.gudang && zoneGudangIds.includes(s.gudang.id))
-        .map(s => ({
+        .filter((s) => s.gudang && zoneGudangIds.includes(s.gudang.id))
+        .map((s) => ({
           id: s.id,
           barang: s.barang?.nama || '-',
           batch: s.batch_no || '-',
@@ -1076,7 +1189,10 @@ export class InventoryService {
         selectedZone: zone,
         dailySeries,
         items,
-        range: { from: startDate.toISOString().split('T')[0], to: endDate.toISOString().split('T')[0] },
+        range: {
+          from: startDate.toISOString().split('T')[0],
+          to: endDate.toISOString().split('T')[0],
+        },
       };
     }
 
@@ -1090,7 +1206,10 @@ export class InventoryService {
       weeks.push(mon.toISOString().split('T')[0]);
     }
 
-    const zoneGroups: Record<string, { label: string; color: string; data: number[] }> = {};
+    const zoneGroups: Record<
+      string,
+      { label: string; color: string; data: number[] }
+    > = {};
 
     for (let w = 0; w < weeks.length; w++) {
       const weekEnd = new Date(weeks[w]);
@@ -1105,7 +1224,11 @@ export class InventoryService {
       }
       for (const [z, qty] of Object.entries(zoneQty)) {
         if (!zoneGroups[z]) {
-          zoneGroups[z] = { label: `Zone ${z}`, color: zoneColor[z] || '#868e96', data: new Array(weeks.length).fill(0) };
+          zoneGroups[z] = {
+            label: `Zone ${z}`,
+            color: zoneColor[z] || '#868e96',
+            data: new Array(weeks.length).fill(0),
+          };
         }
         zoneGroups[z].data[w] = Math.round(qty);
       }
@@ -1115,7 +1238,10 @@ export class InventoryService {
       gauges,
       weeks: weeks.map((w, i) => ({ key: w, label: `W${i + 1}` })),
       series: Object.values(zoneGroups),
-      range: { from: startDate.toISOString().split('T')[0], to: endDate.toISOString().split('T')[0] },
+      range: {
+        from: startDate.toISOString().split('T')[0],
+        to: endDate.toISOString().split('T')[0],
+      },
     };
   }
 
@@ -1131,52 +1257,81 @@ export class InventoryService {
     });
 
     const dayNames = ['M', 'Se', 'R', 'K', 'J', 'Sb', 'M'];
-    const daily: Record<string, { ontime: number; late: number; label: string }> = {};
+    const daily: Record<
+      string,
+      { ontime: number; late: number; label: string }
+    > = {};
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = d.toISOString().split('T')[0];
       daily[key] = { ontime: 0, late: 0, label: dayNames[d.getDay()] };
     }
 
-    const weekly: Record<string, { ontime: number; late: number; label: string }> = {};
+    const weekly: Record<
+      string,
+      { ontime: number; late: number; planned: number; label: string }
+    > = {};
 
     for (const p of plans) {
       if (!p.estimasi_datang) continue;
-      const planDate = new Date(p.estimasi_datang);
-      const key = planDate.toISOString().split('T')[0];
+
+      // Get week key from estimasi_datang (planned date)
+      const tmp = new Date(p.estimasi_datang);
+      tmp.setHours(0, 0, 0, 0);
+      tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
+      const yearStart = new Date(tmp.getFullYear(), 0, 1);
+      const weekNo = Math.ceil(
+        ((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+      );
+      const wKey = `W${String(weekNo).padStart(2, '0')}`;
+      if (!weekly[wKey])
+        weekly[wKey] = { ontime: 0, late: 0, planned: 0, label: wKey };
+
+      // Count as planned
+      weekly[wKey].planned += 1;
+
+      // If DONE with realisasi, check if ontime or late
       if (p.status === 'DONE' && p.tanggal_realisasi) {
+        const planDate = new Date(p.estimasi_datang);
+        const key = planDate.toISOString().split('T')[0];
         const real = new Date(p.tanggal_realisasi);
-        const isLate = p.selisih_menit !== null && p.selisih_menit > 0;
+        // tepat waktu = selisih_menit <= 0
+        const isOnTime = p.selisih_menit !== null && p.selisih_menit <= 0;
         if (daily[key]) {
-          if (isLate) daily[key].late += 1;
-          else daily[key].ontime += 1;
+          if (isOnTime) daily[key].ontime += 1;
+          else daily[key].late += 1;
         }
-        // weekly bucket by ISO week number
-        const tmp = new Date(real);
-        tmp.setHours(0, 0, 0, 0);
-        tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
-        const yearStart = new Date(tmp.getFullYear(), 0, 1);
-        const weekNo = Math.ceil((((tmp.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-        const wKey = `W${String(weekNo).padStart(2, '0')}`;
-        if (!weekly[wKey]) weekly[wKey] = { ontime: 0, late: 0, label: wKey };
-        if (isLate) weekly[wKey].late += 1;
-        else weekly[wKey].ontime += 1;
-      } else if (p.status === 'WAIT') {
-        // still planned, count as planned (not actual)
+        // also update weekly
+        if (isOnTime) weekly[wKey].ontime += 1;
+        else weekly[wKey].late += 1;
       }
     }
 
-    const dailyArray = Object.entries(daily).map(([date, v]) => ({ date, ...v })).sort((a, b) => a.date.localeCompare(b.date));
-    const weeklyArray = Object.entries(weekly).map(([week, v]) => ({ week, ...v })).sort((a, b) => a.week.localeCompare(b.week));
+    const dailyArray = Object.entries(daily)
+      .map(([date, v]) => ({ date, ...v }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const weeklyArray = Object.entries(weekly)
+      .map(([week, v]) => ({ week, ...v }))
+      .sort((a, b) => a.week.localeCompare(b.week));
 
-    // OTIF weekly percentages
+    // OTIF weekly percentages and table
     const otifSeries = weeklyArray.map((w) => {
       const total = w.ontime + w.late;
       const otif = total > 0 ? Math.round((w.ontime / total) * 10000) / 100 : 0;
-      const notOtif = total > 0 ? Math.round((w.late / total) * 10000) / 100 : 0;
+      const notOtif =
+        total > 0 ? Math.round((w.late / total) * 10000) / 100 : 0;
       return { week: w.week, otif, notOtif };
     });
 
-    return { daily: dailyArray, weekly: otifSeries };
+    // Table: planned vs actual per week
+    const table = weeklyArray.map((w) => ({
+      week: w.week,
+      planned: w.planned,
+      actual: w.ontime + w.late,
+      ontime: w.ontime,
+      late: w.late,
+    }));
+
+    return { daily: dailyArray, weekly: otifSeries, table };
   }
 
   // Serapan Ayam data: planned vs actual outbound ayam (weekly for 1 year)
@@ -1187,11 +1342,9 @@ export class InventoryService {
 
     const plans = await this.planningAyamRepo.find({
       where: { tanggal_planning: Between(start, end) },
-      relations: ['barang'],
     });
     const outbounds = await this.outboundAyamRepo.find({
       where: { created_at: Between(start, end) },
-      relations: ['planning_ayam', 'planning_ayam.barang'],
     });
 
     // Group by ISO week
@@ -1200,24 +1353,41 @@ export class InventoryService {
       tmp.setHours(0, 0, 0, 0);
       tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
       const yearStart = new Date(tmp.getFullYear(), 0, 1);
-      const weekNo = Math.ceil((((tmp.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+      const weekNo = Math.ceil(
+        ((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+      );
       return `W${String(weekNo).padStart(2, '0')}`;
     };
 
-    const weeklyMap: Record<string, { week: string; planning: number; serapan: number }> = {};
+    const weeklyMap: Record<
+      string,
+      { week: string; planning: number; actual: number }
+    > = {};
 
     for (const p of plans) {
       const key = getWeekKey(new Date(p.tanggal_planning));
-      if (!weeklyMap[key]) weeklyMap[key] = { week: key, planning: 0, serapan: 0 };
+      if (!weeklyMap[key])
+        weeklyMap[key] = { week: key, planning: 0, actual: 0 };
       weeklyMap[key].planning += p.qty;
     }
     for (const o of outbounds) {
       const key = getWeekKey(o.created_at);
-      if (!weeklyMap[key]) weeklyMap[key] = { week: key, planning: 0, serapan: 0 };
-      weeklyMap[key].serapan += o.qty_aktual;
+      if (!weeklyMap[key])
+        weeklyMap[key] = { week: key, planning: 0, actual: 0 };
+      weeklyMap[key].actual += o.qty_aktual;
     }
 
-    const data = Object.values(weeklyMap).sort((a, b) => a.week.localeCompare(b.week));
+    const data = Object.values(weeklyMap)
+      .sort((a, b) => a.week.localeCompare(b.week))
+      .map((w) => ({
+        ...w,
+        serapan: w.actual,
+        serapan_persen:
+          w.planning > 0
+            ? Math.round((w.actual / w.planning) * 10000) / 100
+            : 0,
+      }));
+
     return { data };
   }
 
@@ -1312,7 +1482,10 @@ export class InventoryService {
         gudang: g,
         stocks,
         totalQty: stocks.reduce((s, st) => s + st.qty, 0),
-        totalReservedQty: stocks.reduce((s, st) => s + (st.reserved_qty || 0), 0),
+        totalReservedQty: stocks.reduce(
+          (s, st) => s + (st.reserved_qty || 0),
+          0,
+        ),
         filled: stocks.some((st) => st.qty > 0),
         opnamed: !!opnameLog,
       });

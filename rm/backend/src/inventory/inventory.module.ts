@@ -10,11 +10,24 @@ import { PlanningAyam } from '../planning-ayam/planning-ayam.entity';
 import { OutboundAyam } from '../outbound-ayam/outbound-ayam.entity';
 import { InventoryService } from './inventory.service';
 import { InventoryController } from './inventory.controller';
+import { RelocationModule } from './relocation.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Stock, StockLog, Barang, Gudang, Shift, InboundPlanning, PlanningAyam, OutboundAyam])],
-    controllers: [InventoryController],
-    providers: [InventoryService],
-    exports: [InventoryService],
+  imports: [
+    TypeOrmModule.forFeature([
+      Stock,
+      StockLog,
+      Barang,
+      Gudang,
+      Shift,
+      InboundPlanning,
+      PlanningAyam,
+      OutboundAyam,
+    ]),
+    RelocationModule,
+  ],
+  controllers: [InventoryController],
+  providers: [InventoryService],
+  exports: [InventoryService],
 })
-export class InventoryModule { }
+export class InventoryModule {}

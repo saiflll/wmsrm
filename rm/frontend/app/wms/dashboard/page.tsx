@@ -294,14 +294,9 @@ const OccupancyGauge = ({ pct, label, subLabel, color, onClick, selected }) => {
     return d;
   };
 
-  const statusColor =
-    pct > 90
-      ? "#e03131"
-      : pct > 75
-        ? "#f59f00"
-        : pct > 50
-          ? "#228be6"
-          : "#40c057";
+  const statusColor = "#000000";
+  const gaugeBlue = "#228be6";
+  const gaugeFill = "#74c0fc";
   const clipId = `cc-${label.replace(/\s+/g, "-")}`;
   const gradId = `lg-${label.replace(/\s+/g, "-")}`;
 
@@ -332,8 +327,8 @@ const OccupancyGauge = ({ pct, label, subLabel, color, onClick, selected }) => {
             <circle cx={cx} cy={cy} r={r} />
           </clipPath>
           <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={color} stopOpacity={0.9} />
-            <stop offset="100%" stopColor={color} stopOpacity={0.45} />
+            <stop offset="0%" stopColor={gaugeBlue} stopOpacity={0.9} />
+            <stop offset="100%" stopColor={gaugeBlue} stopOpacity={0.45} />
           </linearGradient>
         </defs>
         <circle
@@ -341,8 +336,8 @@ const OccupancyGauge = ({ pct, label, subLabel, color, onClick, selected }) => {
           cy={cy}
           r={r}
           fill="#f1f3f5"
-          stroke="#dee2e6"
-          strokeWidth={1.5}
+          stroke={gaugeBlue}
+          strokeWidth={2}
         />
         <g clipPath={`url(#${clipId})`}>
           <rect
@@ -1460,7 +1455,7 @@ export default function DashboardPage() {
           />
           <KpiCard
             label="Inbound Hari Ini"
-            value={s.todayInbound?.toLocaleString() ?? "0"}
+            value={s.inboundHariIni?.toLocaleString() ?? "0"}
             icon={IconTrendingUp}
             accent="#0ca678"
             bg="#c3fae8"
@@ -1468,7 +1463,7 @@ export default function DashboardPage() {
           />
           <KpiCard
             label="Outbound Hari Ini"
-            value={s.todayOutbound?.toLocaleString() ?? "0"}
+            value={s.outboundHariIni?.toLocaleString() ?? "0"}
             icon={IconTrendingDown}
             accent="#e03131"
             bg="#ffe3e3"

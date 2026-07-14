@@ -15,7 +15,7 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
         [`Periode: ${periodeStr}`],
         filterBarangNama ? [`Filter Produk: ${filterBarangNama}`] : [],
         [],
-        ['ID Transaksi', 'Item / Produk', 'Tujuan', 'Shift', 'Tanggal Transaksi', 'Tanggal Expired', 'Qty', 'Satuan', 'Status', 'Zone', 'Lokasi Rak', 'Batch No'],
+        ['ID Transaksi', 'Item / Produk', 'Tujuan', 'Shift', 'Tanggal Transaksi', 'Tanggal Expired', 'Qty', 'Satuan', 'Status', 'Zone', 'Lokasi Rak', 'Batch No', 'Jam Datang', 'Jam Bongkar', 'Jam Selesai', 'Keterangan'],
     ].filter(r => r.length > 0);
     const rows = data.map((r: any) => [
         r.no_ref || '-',
@@ -30,17 +30,22 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
         r.gudang?.zone || '-',
         r.gudang?.name || '-',
         r.batch_no || '-',
+        r.jam_datang || '-',
+        r.jam_bongkar || '-',
+        r.jam_selesai || '-',
+        r.note || r.keterangan || '-',
     ]);
     const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
     ws['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 11 } },
-        { s: { r: 2, c: 0 }, e: { r: 2, c: 11 } },
-        ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 11 } }] : []),
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 15 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 15 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 15 } },
+        ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 15 } }] : []),
     ];
     ws['!cols'] = [
         { wch: 16 }, { wch: 28 }, { wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 14 },
         { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 16 },
+        { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 20 },
     ];
     const wb = XLSX.utils.book_new();
     const sheetName = filterBarangNama ? `Outbound-${filterBarangNama.slice(0, 20)}` : 'Outbound';
@@ -137,6 +142,10 @@ export default function ReportOutboundPage() {
                             <th>Satuan</th>
                             <th>Status</th>
                             <th>Zone / Rak</th>
+                            <th>Jam Datang</th>
+                            <th>Jam Bongkar</th>
+                            <th>Jam Selesai</th>
+                            <th>Keterangan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -154,6 +163,10 @@ export default function ReportOutboundPage() {
                                     <td>${r.satuan || ''}</td>
                                     <td>${statusLabel(r.expiry_date)}</td>
                                     <td>${r.gudang?.name || '-'} (${r.gudang?.zone || '-'})</td>
+                                    ${idx === 0 ? `<td rowspan="${items.length}">${r.jam_datang || '-'}</td>` : ''}
+                                    ${idx === 0 ? `<td rowspan="${items.length}">${r.jam_bongkar || '-'}</td>` : ''}
+                                    ${idx === 0 ? `<td rowspan="${items.length}">${r.jam_selesai || '-'}</td>` : ''}
+                                    <td>${r.note || r.keterangan || '-'}</td>
                                 </tr>
                             `).join('');
         }).join('')}
@@ -214,15 +227,18 @@ export default function ReportOutboundPage() {
                             <Table.Th style={{ color: '#fff', fontSize: 11 }}>Item</Table.Th>
                             <Table.Th style={{ color: '#fff', fontSize: 11 }}>Tujuan</Table.Th>
                             <Table.Th style={{ color: '#fff', fontSize: 11, textAlign: 'center' }}>Shift</Table.Th>
+                            <Table.Th style={{ color: '#fff', fontSize: 11, textAlign: 'center' }}>Batch</Table.Th>
                             <Table.Th style={{ color: '#fff', fontSize: 11, textAlign: 'center' }}>Tgl.Expired</Table.Th>
                             <Table.Th style={{ color: '#fff', fontSize: 11, textAlign: 'center' }}>Qty</Table.Th>
                             <Table.Th style={{ color: '#fff', fontSize: 11, textAlign: 'center' }}>Status</Table.Th>
                             <Table.Th style={{ color: '#fff', fontSize: 11, textAlign: 'center' }}>Location</Table.Th>
+                            <Table.Th style={{ color: '#fff', fontSize: 11, textAlign: 'center' }}>Jam Operasional</Table.Th>
+                            <Table.Th style={{ color: '#fff', fontSize: 11 }}>Keterangan</Table.Th>
                             <Table.Th style={{ color: '#fff', fontSize: 11, textAlign: 'center' }}>Tanggal Permintaan</Table.Th>
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
-                        {filtered.length === 0 ? <Table.Tr><Table.Td colSpan={9} ta="center" c="dimmed">Tidak ada log/data ditemukan</Table.Td></Table.Tr> : null}
+                        {filtered.length === 0 ? <Table.Tr><Table.Td colSpan={12} ta="center" c="dimmed">Tidak ada log/data ditemukan</Table.Td></Table.Tr> : null}
                         {Object.entries(groupedLogs).map(([transId, items]: [string, any[]]) =>
                             items.map((r: any, idx: number) => (
                                 <Table.Tr key={r.id} style={{ background: '#fff', borderTop: idx === 0 ? '1px solid #e5e7eb' : 'none', borderBottom: 'none' }}>
@@ -233,11 +249,19 @@ export default function ReportOutboundPage() {
                                     {idx === 0 && <Table.Td ta="center" rowSpan={items.length} style={{ verticalAlign: 'middle', borderRight: '1px solid #eee' }}>{r.tujuan || '-'}</Table.Td>}
                                     {idx === 0 && <Table.Td ta="center" rowSpan={items.length} style={{ verticalAlign: 'middle', borderRight: '1px solid #eee' }}>{r.shift?.name || '-'}</Table.Td>}
 
+                                    <Table.Td ta="center">{r.batch_no || '-'}</Table.Td>
                                     <Table.Td ta="center">{r.expiry_date ? fmt(r.expiry_date).split(' ')[0] : '-'}</Table.Td>
                                     <Table.Td ta="center">{r.qty} {r.satuan}</Table.Td>
 
                                     <Table.Td ta="center" fw={700} c={statusColor(r.expiry_date)} style={{ textTransform: 'uppercase' }}>{statusLabel(r.expiry_date)}</Table.Td>
                                     <Table.Td ta="center" fw={700} c="#111827">{r.gudang?.zone || '-'}</Table.Td>
+
+                                    {idx === 0 && <Table.Td ta="center" rowSpan={items.length} style={{ verticalAlign: 'middle', borderLeft: '1px solid #eee' }}>
+                                        <div style={{fontSize:'10px'}}>Datang: {r.jam_datang||'-'}</div>
+                                        <div style={{fontSize:'10px'}}>Bongkar: {r.jam_bongkar||'-'}</div>
+                                        <div style={{fontSize:'10px'}}>Selesai: {r.jam_selesai||'-'}</div>
+                                    </Table.Td>}
+                                    <Table.Td>{r.note || r.keterangan || '-'}</Table.Td>
 
                                     {idx === 0 && <Table.Td ta="center" rowSpan={items.length} style={{ verticalAlign: 'middle', borderLeft: '1px solid #eee' }}>{fmt(r.created_at).split(' ')[0]}</Table.Td>}
                                 </Table.Tr>
