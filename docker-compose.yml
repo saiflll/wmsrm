@@ -1,16 +1,16 @@
 services:
-  wms-test:
+  test-wms:
     build:
       context: .
       dockerfile: wms-test/Dockerfile
-    container_name: wms-test
+    container_name: test-wms
     restart: unless-stopped
     ports:
       - "3012:5432"
       - "3011:3011"
       - "3015:3000"
     volumes:
-      - wms-test-postgres_data:/var/lib/postgresql/data
+      - test-wms-postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=wms_user
       - POSTGRES_PASSWORD=wms_password
@@ -18,4 +18,4 @@ services:
       - JWT_SECRET=rm_super_secret_key_change_me
 
 volumes:
-  wms-test-postgres_data:
+  test-wms-postgres_data:

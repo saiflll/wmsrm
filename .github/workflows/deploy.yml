@@ -16,7 +16,7 @@ jobs:
       - name: Bersihin container lama
         run: |
           docker compose down --remove-orphans --volumes 2>$null
-          docker rm -f wms-test 2>$null
+          docker rm -f test-wms 2>$null
 
       - name: Build & start
         run: |
@@ -25,5 +25,5 @@ jobs:
 
       - name: Cek status
         run: |
-          docker ps --filter "name=wms-test"
-          docker logs wms-test --tail 20
+          docker ps --filter "name=test-wms"
+          docker logs test-wms --tail 20
