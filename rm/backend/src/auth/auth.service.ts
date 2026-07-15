@@ -49,7 +49,7 @@ export class AuthService {
   async loginFailed(username: string, ip?: string, userAgent?: string) {
     await this.loginLogRepo.save(
       this.loginLogRepo.create({
-        userId: 0,
+        userId: null,
         username: username || 'unknown',
         ip: ip || '',
         userAgent: userAgent || '',

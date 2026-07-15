@@ -13,8 +13,8 @@ export class LoginLog {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  userId: number;
+  @Column({ nullable: true })
+  userId: number | null;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })
