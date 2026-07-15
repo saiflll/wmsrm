@@ -9,13 +9,14 @@ services:
       - "3012:5432"
       - "3011:3011"
       - "3015:3000"
-    volumes:
-      - test-wms-postgres_data:/var/lib/postgresql/data
+    # volumes:
+    #   - test-wms-postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=wms_user
       - POSTGRES_PASSWORD=wms_password
       - POSTGRES_DB=wms_db
       - JWT_SECRET=rm_super_secret_key_change_me
 
-volumes:
-  test-wms-postgres_data:
+# volumes:
+#   test-wms-postgres_data:
+#     driver: local
