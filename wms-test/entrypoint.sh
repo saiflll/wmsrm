@@ -29,6 +29,8 @@ if [ ! -f "$PGDATA/PG_VERSION" ]; then
     su postgres -c "$POSTGRES_BIN/psql -c \"CREATE USER ${POSTGRES_USER} WITH PASSWORD '${POSTGRES_PASSWORD}';\""
     su postgres -c "$POSTGRES_BIN/psql -c \"CREATE DATABASE ${POSTGRES_DB} OWNER ${POSTGRES_USER};\""
     su postgres -c "$POSTGRES_BIN/psql -c \"GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER};\""
+    su postgres -c "$POSTGRES_BIN/psql -d ${POSTGRES_DB} -c \"ALTER SCHEMA public OWNER TO ${POSTGRES_USER};\""
+    su postgres -c "$POSTGRES_BIN/psql -d ${POSTGRES_DB} -c \"GRANT ALL ON SCHEMA public TO ${POSTGRES_USER};\""
 
     su postgres -c "$POSTGRES_BIN/pg_ctl -D $PGDATA -w stop"
     echo "=== PostgreSQL initialized ==="

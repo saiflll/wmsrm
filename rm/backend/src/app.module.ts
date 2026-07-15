@@ -64,7 +64,7 @@ import { SeedService } from './seed.service';
           Relocation,
           PlanningOutbound,
         ],
-        synchronize: true, // HATI-HATI: bisa drop tabel jika terjadi error sync. Gunakan migration untuk production.
+        synchronize: process.env.NODE_ENV !== 'production', // HATI-HATI: bisa drop tabel jika terjadi error sync. Gunakan migration untuk production.
       }),
       inject: [ConfigService],
     }),
