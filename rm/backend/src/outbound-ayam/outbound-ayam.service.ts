@@ -4,15 +4,20 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { OutboundAyam } from './outbound-ayam.entity';
 import {
   CreateOutboundAyamDto,
   UpdateOutboundAyamDto,
+  ProcessOutboundAyamDto,
+  PublishOutboundAyamDto,
 } from './outbound-ayam.dto';
 import { PlanningAyam } from '../planning-ayam/planning-ayam.entity';
 import { Shift } from '../shifts/shift.entity';
 import { Stock } from '../inventory/stock.entity';
+import { StockLog, LogType } from '../inventory/stock-log.entity';
+import { Barang } from '../barang/barang.entity';
+import { Gudang } from '../gudang/gudang.entity';
 
 @Injectable()
 export class OutboundAyamService {
@@ -22,6 +27,10 @@ export class OutboundAyamService {
     private planningRepo: Repository<PlanningAyam>,
     @InjectRepository(Shift) private shiftRepo: Repository<Shift>,
     @InjectRepository(Stock) private stockRepo: Repository<Stock>,
+    @InjectRepository(StockLog) private logRepo: Repository<StockLog>,
+    @InjectRepository(Barang) private barangRepo: Repository<Barang>,
+    @InjectRepository(Gudang) private gudangRepo: Repository<Gudang>,
+    private dataSource: DataSource,
   ) {}
 
   async findAll() {
@@ -136,5 +145,175 @@ export class OutboundAyamService {
       }
     }
     return this.repo.remove(item);
+  }
+
+  async processOutbound(id: number, dto: ProcessOutboundAyamDto) {
+    const outbound = await this.findOne(id);
+    if (!outbound.planning_ayam) {
+      throw new BadRequestException('Planning ayam tidak ditemukan');
+    }
+
+    const planning = await this.planningRepo.findOne({
+      where: { id: outbound.planning_ayam.id },
+    });
+    if (!planning) {
+      throw new NotFoundException('Planning ayam tidak ditemukan');
+    }
+
+    // Validate planning status is WAIT
+    if (planning.status !== 'WAIT') {
+      throw new BadRequestException(
+        `Cannot process planning with status '${planning.status}'. Only 'WAIT' plans can be processed.`,
+      );
+    }
+
+    // Save draft process data
+    outbound.process_data = dto;
+
+    // Update planning status to PROGRESS (draft state)
+    planning.status = 'PROGRESS';
+    await this.planningRepo.save(planning);
+
+    return this.repo.save(outbound);
+  }
+
+  async publishOutbound(
+    id: number,
+    dto: PublishOutboundAyamDto,
+  ): Promise<OutboundAyam> {
+    return this.dataSource.transaction(async (manager) => {
+      // 1. Lock outbound row
+      const outbound = await manager.findOne(OutboundAyam, {
+        where: { id },
+        relations: ['planning_ayam'],
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!outbound) {
+        throw new NotFoundException(`Outbound ayam with ID ${id} not found`);
+      }
+
+      if (!outbound.process_data || !outbound.process_data.items) {
+        throw new BadRequestException(
+          'Outbound belum diproses. Lakukan process terlebih dahulu.',
+        );
+      }
+
+      // 2. Validate planning status is PROGRESS
+      const planning = await manager.findOne(PlanningAyam, {
+        where: { id: outbound.planning_ayam.id },
+      });
+      if (!planning || planning.status !== 'PROGRESS') {
+        throw new BadRequestException(
+          `Planning status harus PROGRESS untuk publish. Status saat ini: ${planning?.status}`,
+        );
+      }
+
+      // 3. Process items: deduct stock and create logs
+      for (const item of outbound.process_data.items) {
+        // Validate barang exists
+        const barang = await manager.findOneBy(Barang, {
+          id: item.barangId,
+        });
+        if (!barang) {
+          throw new BadRequestException(`Barang ID ${item.barangId} not found`);
+        }
+
+        // Handle different tujuan categories
+        if (
+          item.tujuan === 'RETURN_TO_WH' ||
+          item.tujuan === 'MISSING' ||
+          item.tujuan === 'WASTE' ||
+          item.tujuan === 'REJECT'
+        ) {
+          // These are loss/return categories, deduct from stock
+          if (item.gudangId) {
+            const gudang = await manager.findOneBy(Gudang, {
+              id: item.gudangId,
+            });
+            if (!gudang) {
+              throw new BadRequestException(
+                `Gudang ID ${item.gudangId} not found`,
+              );
+            }
+
+            // Find stock and deduct
+            const stock = await manager.findOne(Stock, {
+              where: {
+                barang: { id: barang.id },
+                gudang: { id: gudang.id },
+                batch_no: item.batch_no || '',
+              },
+            });
+
+            if (stock) {
+              stock.qty -= item.qty;
+              if (stock.qty < 0) stock.qty = 0;
+              await manager.save(Stock, stock);
+            }
+
+            // Log the outbound/loss
+            const log = manager.create(StockLog, {
+              type: LogType.OUTBOUND,
+              barang,
+              gudang,
+              qty: item.qty,
+              satuan: stock?.satuan || barang.satuan,
+              batch_no: item.batch_no,
+              expiry_date: stock?.expiry_date,
+              tujuan: item.tujuan,
+              keterangan: dto.keterangan || `Outbound: ${item.tujuan}`,
+            });
+            await manager.save(StockLog, log);
+          }
+        } else {
+          // Normal destination: deduct from current gudang
+          if (outbound.planning_ayam) {
+            // Use the gudang from outbound's stock source or param
+            const sourceGudang = item.gudangId
+              ? await manager.findOneBy(Gudang, { id: item.gudangId })
+              : null;
+
+            if (sourceGudang) {
+              const stock = await manager.findOne(Stock, {
+                where: {
+                  barang: { id: barang.id },
+                  gudang: { id: sourceGudang.id },
+                  batch_no: item.batch_no || '',
+                },
+              });
+
+              if (stock) {
+                stock.qty -= item.qty;
+                if (stock.qty < 0) stock.qty = 0;
+                await manager.save(Stock, stock);
+              }
+
+              const log = manager.create(StockLog, {
+                type: LogType.OUTBOUND,
+                barang,
+                gudang: sourceGudang,
+                qty: item.qty,
+                satuan: stock?.satuan || barang.satuan,
+                batch_no: item.batch_no,
+                expiry_date: stock?.expiry_date,
+                tujuan: item.tujuan,
+                keterangan: dto.keterangan,
+              });
+              await manager.save(StockLog, log);
+            }
+          }
+        }
+      }
+
+      // 4. Update planning status to DONE
+      planning.status = 'DONE';
+      await manager.save(PlanningAyam, planning);
+
+      // 5. Mark outbound as published
+      outbound.published_at = new Date();
+      await manager.save(OutboundAyam, outbound);
+
+      return outbound;
+    });
   }
 }

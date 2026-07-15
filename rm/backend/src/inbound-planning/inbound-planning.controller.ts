@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { InboundPlanningService } from './inbound-planning.service';
 import {
@@ -27,7 +28,7 @@ export class InboundPlanningController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.svc.findOne(id);
   }
 
@@ -37,17 +38,17 @@ export class InboundPlanningController {
   }
 
   @Put(':id')
-  update(@Param('id') id: number, @Body() dto: UpdateInboundPlanningDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateInboundPlanningDto) {
     return this.svc.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.svc.remove(id);
   }
 
   @Post(':id/process')
-  processInbound(@Param('id') id: number, @Body() dto: ProcessInboundDto) {
+  processInbound(@Param('id', ParseIntPipe) id: number, @Body() dto: ProcessInboundDto) {
     return this.svc.processInbound(id, dto);
   }
 }

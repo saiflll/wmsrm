@@ -14,6 +14,7 @@ import {
   IconChevronUp,
   IconBuildingWarehouse,
   IconCheck,
+  IconX,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -94,6 +95,7 @@ function InboundContent() {
     }
     return [];
   });
+  const [dbPlannings, setDbPlannings] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const barcodeRef = useRef<any>(null);
@@ -120,8 +122,8 @@ function InboundContent() {
     gudang_id: "",
   });
 
-  // Process Inbound Modal state
-  const [processModalOpen, setProcessModalOpen] = useState(false);
+  // Process Inbound Side Form state
+  const [processingMode, setProcessingMode] = useState(false);
   const [selectedPlanningId, setSelectedPlanningId] = useState<number | null>(null);
   const [selectedPlanning, setSelectedPlanning] = useState<any>(null);
   const [processItems, setProcessItems] = useState<any[]>([]);
@@ -133,6 +135,15 @@ function InboundContent() {
       setBarangs(unwrap(r));
     } catch (e) {
       console.error("Load barangs failed:", e);
+    }
+  };
+
+  const loadDbPlannings = async () => {
+    try {
+      const r = await api().get("/inbound-planning");
+      setDbPlannings(unwrap(r));
+    } catch (e) {
+      console.error("Load db plannings failed:", e);
     }
   };
 
@@ -152,6 +163,7 @@ function InboundContent() {
   useEffect(() => {
     loadBarangs();
     loadGudangsAndStocks();
+    loadDbPlannings();
     api()
       .get("/customers")
       .then((r) => setCustomers(unwrap(r)));
@@ -470,23 +482,26 @@ function InboundContent() {
     return sortDir === "asc" ? " ▲" : " ▼";
   };
 
-  const openProcessModal = (planning: any) => {
+  const openProcessSideForm = (planning: any) => {
     setSelectedPlanning(planning);
     setSelectedPlanningId(planning.id);
-    setProcessItems([
-      {
-        id: Date.now(),
-        barang_id: "",
-        gudang_id: "",
-        qty: 1,
-        batch_no: "",
-        expiry_date: "",
-        shift_id: "",
-        jam_datang: "",
-        jam_bongkar: "",
-      }
-    ]);
-    setProcessModalOpen(true);
+    setForm({
+      no_po: planning.no_po,
+      barang_id: "",
+      item_manual: "",
+      qty: 1,
+      satuan: "",
+      batch_no: "",
+      expiry_date: "",
+      supplier: planning.supplier || "",
+      shift_id: "",
+      tanggal_income: new Date().toISOString().split("T")[0],
+      jam_datang: "",
+      jam_bongkar: "",
+      jam_selesai: "",
+      gudang_id: "",
+    });
+    setProcessingMode(true);
   };
 
   const addProcessItem = () => {
@@ -1104,8 +1119,8 @@ function InboundContent() {
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
-                    {filtered.slice(0, 100).map((r: any) => (
-                      <Table.Tr key={r.id}>
+                    {filtered.slice(0, 100).map((r: any, index: number) => (
+                      <Table.Tr key={r.id} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8f9fa' }}>
                         <Table.Td fw={600}>{r.no_po || "-"}</Table.Td>
                         <Table.Td fw={700}>{r.barang?.nama}</Table.Td>
                         <Table.Td>

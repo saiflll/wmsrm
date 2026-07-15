@@ -10,22 +10,22 @@ import {
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
-import { OutboundAyamService } from './outbound-ayam.service';
+import { PlanningOutboundService } from './planning-outbound.service';
 import {
-  CreateOutboundAyamDto,
-  UpdateOutboundAyamDto,
-  ProcessOutboundAyamDto,
-  PublishOutboundAyamDto,
-} from './outbound-ayam.dto';
+  CreatePlanningOutboundDto,
+  UpdatePlanningOutboundDto,
+  ProcessPlanningOutboundDto,
+  PublishPlanningOutboundDto,
+} from './planning-outbound.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user.entity';
 
-@Controller('outbound-ayam')
+@Controller('planning-outbound')
 @UseGuards(JwtAuthGuard, RolesGuard)
-export class OutboundAyamController {
-  constructor(private readonly svc: OutboundAyamService) {}
+export class PlanningOutboundController {
+  constructor(private readonly svc: PlanningOutboundService) {}
 
   @Get()
   @Roles(
@@ -65,27 +65,22 @@ export class OutboundAyamController {
   }
 
   @Post()
-  @Roles(
-    UserRole.SUPERVISOR,
-    UserRole.KOORDINATOR,
-    UserRole.SUPER_ADMIN,
-    UserRole.CHECKER,
-  )
-  create(@Body() dto: CreateOutboundAyamDto) {
+  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
+  create(@Body() dto: CreatePlanningOutboundDto) {
     return this.svc.create(dto);
   }
 
   @Put(':id')
-  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateOutboundAyamDto,
+    @Body() dto: UpdatePlanningOutboundDto,
   ) {
     return this.svc.update(id, dto);
   }
 
   @Delete(':id')
-  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.svc.remove(id);
   }
@@ -94,7 +89,7 @@ export class OutboundAyamController {
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
   processOutbound(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: ProcessOutboundAyamDto,
+    @Body() dto: ProcessPlanningOutboundDto,
   ) {
     return this.svc.processOutbound(id, dto);
   }
@@ -103,7 +98,7 @@ export class OutboundAyamController {
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
   publishOutbound(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: PublishOutboundAyamDto,
+    @Body() dto: PublishPlanningOutboundDto,
   ) {
     return this.svc.publishOutbound(id, dto);
   }

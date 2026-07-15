@@ -16,9 +16,11 @@ import {
   Text,
   TextInput,
   Title,
+  ActionIcon,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { api, fmt, unwrap } from "../lib/api";
+import { IconPrinter } from "@tabler/icons-react";
 
 const rowStyle = (index: number) => ({
   backgroundColor: index % 2 === 0 ? "#fff" : "#f8f9fa",
@@ -94,17 +96,29 @@ export default function RelocationPage() {
     [stocks, stockId],
   );
 
+  const [sourceZone, setSourceZone] = useState("");
+  const [targetZone, setTargetZone] = useState("");
+
+  const zones = useMemo(
+    () => Array.from(new Set(gudangs.map((g) => g.zone).filter(Boolean))),
+    [gudangs],
+  );
+
   const stockOptions = useMemo(
     () =>
       stocks
-        .filter((stock: any) => Number(stock.qty) > 0)
+        .filter(
+          (stock: any) =>
+            Number(stock.qty) > 0 &&
+            (!sourceZone || stock.gudang?.zone === sourceZone),
+        )
         .map((stock: any) => ({
           value: String(stock.id),
           label: `${stock.barang?.nama || "Item"} • ${
             stock.gudang?.name || "Rak -"
           } • ${stock.qty} ${stock.satuan || ""}`,
         })),
-    [stocks],
+    [stocks, sourceZone],
   );
 
   const targetOptions = useMemo(
@@ -112,15 +126,24 @@ export default function RelocationPage() {
       gudangs
         .filter(
           (gudang: any) =>
-            String(gudang.id) !== String(selectedStock?.gudang?.id),
+            String(gudang.id) !== String(selectedStock?.gudang?.id) &&
+            (!targetZone || gudang.zone === targetZone),
         )
-        .map((gudang: any) => ({
-          value: String(gudang.id),
-          label: gudang.zone
-            ? `${gudang.name} — ${gudang.zone}`
-            : gudang.name,
-        })),
-    [gudangs, selectedStock],
+        .map((gudang: any) => {
+          const stocksInRack = stocks.filter(
+            (s: any) => String(s.gudang?.id) === String(gudang.id),
+          );
+          const isEmpty = stocksInRack.length === 0;
+          return {
+            value: String(gudang.id),
+            label: isEmpty
+              ? `${gudang.name} (KOSONG)`
+              : gudang.zone
+              ? `${gudang.name} — ${gudang.zone}`
+              : gudang.name,
+          };
+        }),
+    [gudangs, targetZone, selectedStock, stocks],
   );
 
   const resetForm = () => {
@@ -246,6 +269,19 @@ export default function RelocationPage() {
 
           <Stack gap="sm">
             <Select
+              label="Source Zone"
+              placeholder="Filter zone asal"
+              searchable
+              clearable
+              data={zones}
+              value={sourceZone}
+              onChange={(value) => {
+                setSourceZone(value || "");
+                setStockId("");
+              }}
+            />
+
+            <Select
               label="Source Stock"
               description="Item dan rak asal"
               placeholder="Pilih stok tersedia"
@@ -280,6 +316,19 @@ export default function RelocationPage() {
                 </Text>
               </Box>
             )}
+
+            <Select
+              label="Target Zone"
+              placeholder="Filter zone tujuan"
+              searchable
+              clearable
+              data={zones}
+              value={targetZone}
+              onChange={(value) => {
+                setTargetZone(value || "");
+                setTargetGudangId("");
+              }}
+            />
 
             <Select
               label="Target Gudang"
@@ -417,14 +466,14 @@ export default function RelocationPage() {
                   Riwayat relocation yang sudah dieksekusi.
                 </Text>
               </Box>
-              <Button
-                size="xs"
+              <ActionIcon
                 variant="outline"
                 color="dark"
                 onClick={() => window.print()}
+                title="Print History"
               >
-                PRINT HISTORY
-              </Button>
+                <IconPrinter size={16} />
+              </ActionIcon>
             </Group>
 
             {loading ? (

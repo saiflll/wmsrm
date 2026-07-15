@@ -38,6 +38,23 @@ export class OutboundAyam {
   @Column({ type: 'text', nullable: true })
   keterangan: string;
 
+  // ponytail: draft split-processing data, stored as JSON until publish
+  @Column({ type: 'simple-json', nullable: true })
+  process_data: {
+    items: {
+      barangId: number;
+      qty: number;
+      tujuan: string;
+      gudangId?: number;
+      batch_no?: string;
+    }[];
+    shift_id?: number;
+    keterangan?: string;
+  } | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  published_at: Date;
+
   @CreateDateColumn()
   created_at: Date;
 

@@ -19,6 +19,7 @@ import { InboundPlanning } from './inbound-planning/inbound-planning.entity';
 import { PlanningAyam } from './planning-ayam/planning-ayam.entity';
 import { OutboundAyam } from './outbound-ayam/outbound-ayam.entity';
 import { Relocation } from './inventory/relocation.entity';
+import { PlanningOutbound } from './planning-outbound/planning-outbound.entity';
 
 // Modules
 import { AuthModule } from './auth/auth.module';
@@ -33,6 +34,7 @@ import { InboundPlanningModule } from './inbound-planning/inbound-planning.modul
 import { PlanningAyamModule } from './planning-ayam/planning-ayam.module';
 import { OutboundAyamModule } from './outbound-ayam/outbound-ayam.module';
 import { RelocationModule } from './inventory/relocation.module';
+import { PlanningOutboundModule } from './planning-outbound/planning-outbound.module';
 import { ShiftsController } from './shifts/shifts.controller';
 
 import { SeedService } from './seed.service';
@@ -60,6 +62,7 @@ import { SeedService } from './seed.service';
           PlanningAyam,
           OutboundAyam,
           Relocation,
+          PlanningOutbound,
         ],
         synchronize: true, // HATI-HATI: bisa drop tabel jika terjadi error sync. Gunakan migration untuk production.
       }),
@@ -79,6 +82,7 @@ import { SeedService } from './seed.service';
       OutboundAyam,
       InboundPlanning,
       Relocation,
+      PlanningOutbound,
     ]),
     AuthModule,
     UsersModule,
@@ -92,6 +96,7 @@ import { SeedService } from './seed.service';
     PlanningAyamModule,
     OutboundAyamModule,
     RelocationModule,
+    PlanningOutboundModule,
   ],
   controllers: [AppController, ShiftsController],
   providers: [AppService, SeedService],

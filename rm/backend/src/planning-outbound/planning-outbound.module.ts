@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { OutboundAyam } from './outbound-ayam.entity';
-import { OutboundAyamService } from './outbound-ayam.service';
-import { OutboundAyamController } from './outbound-ayam.controller';
-import { PlanningAyam } from '../planning-ayam/planning-ayam.entity';
+import { PlanningOutbound } from './planning-outbound.entity';
+import { PlanningOutboundService } from './planning-outbound.service';
+import { PlanningOutboundController } from './planning-outbound.controller';
+import { Customer } from '../customers/customer.entity';
 import { Shift } from '../shifts/shift.entity';
 import { Stock } from '../inventory/stock.entity';
 import { StockLog } from '../inventory/stock-log.entity';
@@ -13,8 +13,8 @@ import { Gudang } from '../gudang/gudang.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      OutboundAyam,
-      PlanningAyam,
+      PlanningOutbound,
+      Customer,
       Shift,
       Stock,
       StockLog,
@@ -22,8 +22,8 @@ import { Gudang } from '../gudang/gudang.entity';
       Gudang,
     ]),
   ],
-  controllers: [OutboundAyamController],
-  providers: [OutboundAyamService],
-  exports: [OutboundAyamService],
+  controllers: [PlanningOutboundController],
+  providers: [PlanningOutboundService],
+  exports: [PlanningOutboundService],
 })
-export class OutboundAyamModule {}
+export class PlanningOutboundModule {}

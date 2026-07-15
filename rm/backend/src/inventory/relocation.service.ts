@@ -22,6 +22,14 @@ export class RelocationService {
     private dataSource: DataSource,
   ) {}
 
+  async findAll(): Promise<Relocation[]> {
+    return this.relocationRepo.find({
+      where: { status: RelocationStatus.DRAFT },
+      relations: ['source_stock', 'source_stock.barang', 'target_gudang'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
   async createRelocation(dto: CreateRelocationDto): Promise<Relocation> {
     const stock = await this.stockRepo.findOne({
       where: { id: dto.stock_id },

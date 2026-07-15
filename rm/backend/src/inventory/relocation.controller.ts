@@ -1,4 +1,4 @@
-import { Controller, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
 import { RelocationService } from './relocation.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -10,6 +10,12 @@ import { CreateRelocationDto } from './relocation.dto';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class RelocationController {
   constructor(private readonly relocationService: RelocationService) {}
+
+  @Get()
+  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
+  findAll() {
+    return this.relocationService.findAll();
+  }
 
   @Post()
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
