@@ -1,7 +1,7 @@
 services:
-  wms-db:
+  wms-test-db:
     image: postgres:15-alpine
-    container_name: wms-db-test
+    container_name: wms-test-db
     restart: unless-stopped
     ports:
       - "3013:5432"
@@ -12,36 +12,20 @@ services:
     volumes:
       - wms_db_data:/var/lib/postgresql/data
 
-  wms-backend:
+  wms-test:
     build:
-      context: ./rm/backend
-      dockerfile: Dockerfile
-    container_name: wms-backend
+      context: .
+      dockerfile: wms-test/Dockerfile
+    container_name: wms-test
     restart: unless-stopped
     ports:
       - "3014:3011"
-    environment:
-      - PORT=3011
-      - JWT_SECRET=rm_super_secret_key_change_me
-      - DATABASE_URL=postgres://wms_user:wms_password@wms-db:5432/wms_db
-    depends_on:
-      - wms-db
-
-  wms-frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-      args:
-        - BACKEND_API_URL=http://wms-backend:3011
-    container_name: wms-frontend
-    restart: unless-stopped
-    ports:
       - "3015:3000"
     environment:
-      - BACKEND_API_URL=http://wms-backend:3011
-      - NEXT_PUBLIC_API_URL=http://localhost:3014
+      - DATABASE_URL=postgresql://wms_user:wms_password@wms-test-db:5432/wms_db
+      - JWT_SECRET=rm_super_secret_key_change_me
     depends_on:
-      - wms-backend
+      - wms-test-db
 
 volumes:
   wms_db_data:
