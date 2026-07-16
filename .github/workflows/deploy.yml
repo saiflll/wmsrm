@@ -23,5 +23,4 @@ jobs:
       - name: Cek status
         run: |
           docker ps --filter "name=wms-"
-          docker logs wms-frontend --tail 20
-          docker logs wms-backend --tail 20
+          docker logs wms-test --tail 50
