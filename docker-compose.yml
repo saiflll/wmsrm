@@ -4,7 +4,7 @@ services:
     container_name: wms-db-test
     restart: unless-stopped
     ports:
-      - "3022:5432"
+      - "3013:5432"
     environment:
       - POSTGRES_USER=wms_user
       - POSTGRES_PASSWORD=wms_password
@@ -19,7 +19,7 @@ services:
     container_name: wms-backend
     restart: unless-stopped
     ports:
-      - "3011:3011"
+      - "3014:3011"
     environment:
       - PORT=3011
       - JWT_SECRET=rm_super_secret_key_change_me
@@ -39,7 +39,7 @@ services:
       - "3015:3000"
     environment:
       - BACKEND_API_URL=http://wms-backend:3011
-      - NEXT_PUBLIC_API_URL=http://localhost:3011
+      - NEXT_PUBLIC_API_URL=http://localhost:3014
     depends_on:
       - wms-backend
 
