@@ -1,7 +1,7 @@
 "use client";
 // @ts-nocheck
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, Autocomplete, Grid, ActionIcon, NumberInput, Tooltip } from "@mantine/core";
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, MultiSelect, Autocomplete, Grid, ActionIcon, NumberInput, Tooltip } from "@mantine/core";
 import { Table } from '../components/Table';
 import {
   IconPlus,
@@ -19,6 +19,8 @@ export default function PlanningInboundPage() {
   const [plans, setPlans] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [barangs, setBarangs] = useState<any[]>([]);
+  const [gudangs, setGudangs] = useState<any[]>([]);
+  const [stocks, setStocks] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -56,26 +58,32 @@ export default function PlanningInboundPage() {
   // Current item being added inside the form
   const [selectedBarangId, setSelectedBarangId] = useState("");
   const [itemQty, setItemQty] = useState(1);
+  const [selectedZone, setSelectedZone] = useState("");
+  const [selectedRackIds, setSelectedRackIds] = useState<string[]>([]);
 
   const load = async () => {
     try {
-      const [pRes, cRes, lRes, bRes] = await Promise.all([
+      const [pRes, cRes, lRes, bRes, gRes, sRes] = await Promise.all([
         api().get("/inbound-planning"),
         api().get("/customers"),
         api().get("/inventory/logs/inbound"),
         api().get("/barang"),
+        api().get("/gudang"),
+        api().get("/inventory/stock"),
       ]);
       setPlans(unwrap(pRes));
       setCustomers(unwrap(cRes));
       setLogs(unwrap(lRes));
       setBarangs(unwrap(bRes));
+      setGudangs(unwrap(gRes));
+      setStocks(unwrap(sRes));
     } catch (e) {
       console.error("Load planning inbound data failed:", e);
     }
   };
 
   const [mounted, setMounted] = useState(false);
- 
+
   useEffect(() => {
     setMounted(true);
     load();
@@ -124,6 +132,8 @@ export default function PlanningInboundPage() {
             qty: it.qty,
             _name: bObj ? bObj.nama : '-',
             satuan: it.satuan || bObj?.satuan || '',
+            zone: it.zone || '',
+            rackAllocations: it.rackAllocations || [],
           };
         });
         setForm({
@@ -139,6 +149,44 @@ export default function PlanningInboundPage() {
 
   if (!mounted) return null;
 
+  const zones = Array.from(new Set(gudangs.map((g: any) => g.zone).filter(Boolean))).sort();
+  const rackCapacity = (rack: any) => Number(rack?.capacity ?? rack?.kapasitas ?? rack?.max_capacity ?? rack?.maxCapacity ?? 1000);
+  const rackUsedQty = (rackId: any) => stocks
+    .filter((s: any) => String(s.gudang?.id) === String(rackId))
+    .reduce((sum: number, s: any) => sum + Number(s.qty || 0), 0);
+  const rackPlannedQty = (rackId: any) => form.items
+    .flatMap((it: any) => it.rackAllocations || [])
+    .filter((a: any) => String(a.gudangId) === String(rackId))
+    .reduce((sum: number, a: any) => sum + Number(a.qty || 0), 0);
+  const rackAcceptsItem = (rackId: any, barangId: any) => !stocks
+    .filter((s: any) => String(s.gudang?.id) === String(rackId))
+    .some((s: any) => s.barang && String(s.barang.id) !== String(barangId));
+
+  const rackOptions = gudangs
+    .filter((g: any) => g.status !== false && g.zone?.toUpperCase() === selectedZone.toUpperCase() && rackAcceptsItem(g.id, selectedBarangId))
+    .map((g: any) => {
+      const capacity = rackCapacity(g);
+      const available = Math.max(0, capacity - rackUsedQty(g.id) - rackPlannedQty(g.id));
+      return { value: String(g.id), label: `${g.name} — sisa ${available}/${capacity}`, disabled: available <= 0 };
+    });
+
+  const buildRackAllocations = () => {
+    let remaining = Number(itemQty || 0);
+    const allocations: any[] = [];
+    for (const rackId of selectedRackIds) {
+      if (remaining <= 0) break;
+      const rack = gudangs.find((g: any) => String(g.id) === String(rackId));
+      if (!rack) continue;
+      const available = Math.max(0, rackCapacity(rack) - rackUsedQty(rack.id) - rackPlannedQty(rack.id));
+      const qty = Math.min(remaining, available);
+      if (qty > 0) {
+        allocations.push({ gudangId: Number(rack.id), gudangName: rack.name, qty });
+        remaining -= qty;
+      }
+    }
+    return { allocations, remaining };
+  };
+
   const addItemToForm = () => {
     if (!selectedBarangId) {
       return notifications.show({ title: "Error", message: "Pilih barang terlebih dahulu", color: "red" });
@@ -146,32 +194,31 @@ export default function PlanningInboundPage() {
     if (itemQty <= 0) {
       return notifications.show({ title: "Error", message: "Qty harus lebih dari 0", color: "red" });
     }
+    if (!selectedZone || !selectedRackIds.length) {
+      return notifications.show({ title: "Error", message: "Pilih zone dan minimal satu rak", color: "red" });
+    }
     const bObj = barangs.find((b: any) => String(b.id) === selectedBarangId);
     if (!bObj) return;
 
-    const exists = form.items.some((it: any) => String(it.barangId) === selectedBarangId);
-    if (exists) {
-      setForm((p: any) => ({
-        ...p,
-        items: p.items.map((it: any) =>
-          String(it.barangId) === selectedBarangId
-            ? { ...it, qty: it.qty + itemQty }
-            : it
-        ),
-      }));
-    } else {
-      setForm((p: any) => ({
-        ...p,
-        items: [...p.items, {
-          barangId: Number(selectedBarangId),
-          qty: itemQty,
-          _name: bObj.nama,
-          satuan: bObj.satuan || 'Pcs',
-        }],
-      }));
+    const { allocations, remaining } = buildRackAllocations();
+    if (remaining > 0) {
+      return notifications.show({
+        title: "Kapasitas rak tidak cukup",
+        message: `Masih ada ${remaining} ${bObj.satuan || "qty"}. Pilih rak tambahan.`,
+        color: "red",
+      });
     }
+    setForm((p: any) => ({
+      ...p,
+      items: [...p.items, {
+        barangId: Number(selectedBarangId), qty: itemQty, _name: bObj.nama,
+        satuan: bObj.satuan || 'Pcs', zone: selectedZone, rackAllocations: allocations,
+      }],
+    }));
     setSelectedBarangId("");
     setItemQty(1);
+    setSelectedZone("");
+    setSelectedRackIds([]);
   };
 
   const removeItemFromForm = (idx: number) => {
@@ -198,6 +245,8 @@ export default function PlanningInboundPage() {
         barangId: Number(it.barangId),
         qty: Number(it.qty),
         satuan: it.satuan || undefined,
+        zone: it.zone || undefined,
+        rackAllocations: it.rackAllocations?.map((a: any) => ({ gudangId: Number(a.gudangId), qty: Number(a.qty) })),
       })),
     };
 
@@ -274,6 +323,8 @@ export default function PlanningInboundPage() {
             barangId: Number(it.barangId),
             qty: Number(it.qty),
             satuan: it.satuan || undefined,
+            zone: it.zone || undefined,
+            rackAllocations: it.rackAllocations?.map((a: any) => ({ gudangId: Number(a.gudangId), qty: Number(a.qty) })),
           })),
         });
       }
@@ -367,7 +418,7 @@ export default function PlanningInboundPage() {
                 <Text fw={800} size="sm" c="indigo" mb={4} style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: 4 }}>
                   {editPlanId !== null ? "EDIT PLANNING INBOUND" : "BUAT PLANNING INBOUND"}
                 </Text>
-                
+
                 <Autocomplete
                   label="No PO / SJ"
                   size="xs"
@@ -389,7 +440,7 @@ export default function PlanningInboundPage() {
 
                 <Box style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginTop: 4 }}>
                   <Text fw={700} size="xs" c="indigo" mb={4}>Sub-Draft Items</Text>
-                  
+
                   <Select
                     label="Pilih Barang"
                     size="xs"
@@ -399,6 +450,32 @@ export default function PlanningInboundPage() {
                     value={selectedBarangId}
                     onChange={(v) => setSelectedBarangId(v || "")}
                   />
+
+                  <Select
+                    label="Zone Gudang"
+                    size="xs"
+                    mt="xs"
+                    placeholder="Pilih zone..."
+                    searchable
+                    data={zones}
+                    value={selectedZone}
+                    onChange={(v) => { setSelectedZone(v || ""); setSelectedRackIds([]); }}
+                  />
+
+                  {selectedZone && selectedBarangId && (
+                    <MultiSelect
+                      label="Pilih Beberapa Rak"
+                      description="Urutan pilihan menentukan urutan pengisian"
+                      size="xs"
+                      mt="xs"
+                      placeholder="Pilih rak sampai kapasitas cukup..."
+                      searchable
+                      clearable
+                      data={rackOptions}
+                      value={selectedRackIds}
+                      onChange={setSelectedRackIds}
+                    />
+                  )}
 
                   <Group gap="xs" mt="xs" align="flex-end">
                     <NumberInput
@@ -425,7 +502,14 @@ export default function PlanningInboundPage() {
                         <tbody>
                           {form.items.map((it: any, idx: number) => (
                             <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                              <td style={{ padding: 4 }}>{it._name}</td>
+                              <td style={{ padding: 4 }}>
+                                <div>{it._name}</div>
+                                {it.rackAllocations?.map((a: any) => (
+                                  <div key={a.gudangId} style={{ color: "#64748b", fontSize: 9 }}>
+                                    {a.gudangName || `Rak #${a.gudangId}`}: {a.qty}
+                                  </div>
+                                ))}
+                              </td>
                               <td style={{ padding: 4, textAlign: "right", fontWeight: 700 }}>{it.qty} {it.satuan}</td>
                               <td style={{ padding: 4, textAlign: "center" }}>
                                 <ActionIcon size="xs" color="red" variant="subtle" onClick={() => removeItemFromForm(idx)}>
@@ -522,6 +606,11 @@ export default function PlanningInboundPage() {
                                   return (
                                     <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '2px 0' }}>
                                       {name} <b>x{item.qty} {item.satuan || ''}</b>
+                                      {item.rackAllocations?.map((a: any) => (
+                                        <div key={a.gudangId} style={{ color: "#64748b", fontSize: 9 }}>
+                                          {a.gudangName || `Rak #${a.gudangId}`}: {a.qty}
+                                        </div>
+                                      ))}
                                     </div>
                                   );
                                 })}
@@ -658,6 +747,11 @@ export default function PlanningInboundPage() {
                                 return (
                                   <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '2px 0' }}>
                                     {bName} <b>x{item.qty} {item.satuan || ''}</b>
+                                    {item.rackAllocations?.map((a: any) => (
+                                      <div key={a.gudangId} style={{ color: "#64748b", fontSize: 9 }}>
+                                        {a.gudangName || `Rak #${a.gudangId}`}: {a.qty}
+                                      </div>
+                                    ))}
                                   </div>
                                 );
                               })}
@@ -687,6 +781,8 @@ export default function PlanningInboundPage() {
                                             qty: it.qty,
                                             _name: bObj ? bObj.nama : '-',
                                             satuan: it.satuan || bObj?.satuan || '',
+                                            zone: it.zone || '',
+                                            rackAllocations: it.rackAllocations || [],
                                           };
                                         });
                                         setForm({

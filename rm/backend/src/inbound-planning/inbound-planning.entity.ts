@@ -18,7 +18,13 @@ export class InboundPlanning {
   supplier: string;
 
   @Column({ type: 'simple-json', nullable: true })
-  items: { barangId: number; qty: number; satuan?: string }[];
+  items: {
+    barangId: number;
+    qty: number;
+    satuan?: string;
+    zone?: string;
+    rackAllocations?: { gudangId: number; qty: number }[];
+  }[];
 
   @Column({ type: 'float', nullable: true })
   qty: number; // planned qty
@@ -55,4 +61,20 @@ export class InboundPlanning {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  zone?: string;
+
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+    default: () => "'[]'",
+  })
+  rackAllocations?: {
+    gudangId: number;
+    qty: number;
+  }[];
 }

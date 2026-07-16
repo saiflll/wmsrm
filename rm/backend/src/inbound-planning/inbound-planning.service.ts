@@ -171,8 +171,27 @@ export class InboundPlanningService {
       }
 
       // 6. Update planning: status='DONE', received_quantity, published_at=now
+      let arrivalDate = new Date();
+      const firstItem = dto.items[0];
+      if (firstItem && firstItem.jam_datang) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const parsed = new Date(`${todayStr}T${firstItem.jam_datang}`);
+        if (!isNaN(parsed.getTime())) {
+          arrivalDate = parsed;
+        }
+      }
+      let selisih = 0;
+      if (plan.estimasi_datang) {
+        selisih = Math.round(
+          (arrivalDate.getTime() - new Date(plan.estimasi_datang).getTime()) /
+            60000,
+        );
+      }
+      plan.tanggal_realisasi = arrivalDate;
+      plan.selisih_menit = selisih;
       plan.status = 'DONE';
       plan.received_quantity = totalReceived;
+      plan.qty_diterima = totalReceived;
       plan.published_at = new Date();
       if (dto.note) {
         plan.note = dto.note;

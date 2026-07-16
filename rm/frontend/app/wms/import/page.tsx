@@ -4,13 +4,13 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import {
     Box, Paper, Title, Text, Button, Group, Stack, FileInput, Alert,
-    Badge, Table, Loader, ScrollArea, Center
+    Badge, Table, Loader, ScrollArea, Center, Progress, Overlay, ThemeIcon
 } from '@mantine/core';
 import {
     IconUpload, IconDownload, IconFileSpreadsheet, IconAlertCircle,
     IconCheck, IconTruck, IconPackage, IconBuildingWarehouse, IconUsers,
     IconBoxSeam, IconMapPin, IconTransferIn, IconTransferOut, IconClipboardList,
-    IconRefresh
+    IconRefresh, IconDatabase, IconCircleCheck
 } from '@tabler/icons-react';
 import { api, unwrap, saveXlsx, parseExcelDate } from '../lib/api';
 
@@ -50,7 +50,7 @@ interface ImportConfig {
     filename: string;
     headers: string[];
     sampleRows: any[][];
-    process: (rows: any[], refs: RefData, apiInstance: any) => Promise<{ success: number; fail: number; errors: string[] }>;
+    process: (rows: any[], refs: RefData, apiInstance: any, onProgress?: (completed: number, total: number) => void) => Promise<{ success: number; fail: number; errors: string[] }>;
 }
 
 interface RefData {
@@ -99,7 +99,7 @@ const IMPORT_CONFIGS: ImportConfig[] = [
             ['PO-002', 'Beras Premium', 200, 'Kg', 'BATCH-003', '2027-06-30', 'PT Bulog', 'Shift 2', 'DRY A', 'DRY-A-01-01'],
             ['PO-003', 'Minyak Goreng', 100, 'Liter', 'BATCH-004', '2027-03-15', 'PT Bimoli', 'Shift 2', 'DRY B', 'DRY-B-02-01'],
         ],
-        process: async (rows, refs, apiInstance) => {
+        process: async (rows, refs, apiInstance, onProgress) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
             for (let i = 0; i < rows.length; i++) {
@@ -127,6 +127,8 @@ const IMPORT_CONFIGS: ImportConfig[] = [
                 } catch (e: any) {
                     fail++;
                     errors.push(`Baris ${i + 1}: ${e?.response?.data?.message || e.message || 'Gagal'}`);
+                } finally {
+                    onProgress?.(i + 1, rows.length);
                 }
             }
             return { success, fail, errors };
@@ -145,7 +147,7 @@ const IMPORT_CONFIGS: ImportConfig[] = [
             ['SJ-001', 'Paha Ayam Atas', 'CH-01-02', 'BATCH-002', 30, 'Kg', 'PT Produksi Ayam', 'Shift 1'],
             ['SJ-002', 'Beras Premium', 'DRY-A-01-01', 'BATCH-003', 100, 'Kg', 'Customer A', 'Shift 2'],
         ],
-        process: async (rows, refs, apiInstance) => {
+        process: async (rows, refs, apiInstance, onProgress) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
             for (let i = 0; i < rows.length; i++) {
@@ -172,6 +174,8 @@ const IMPORT_CONFIGS: ImportConfig[] = [
                 } catch (e: any) {
                     fail++;
                     errors.push(`Baris ${i + 1}: ${e?.response?.data?.message || e.message || 'Gagal'}`);
+                } finally {
+                    onProgress?.(i + 1, rows.length);
                 }
             }
             return { success, fail, errors };
@@ -190,7 +194,7 @@ const IMPORT_CONFIGS: ImportConfig[] = [
             ['PK-001', 'Paha Ayam Atas', 'CH-01-02', 'BATCH-002', 30, 'Kg', 'PT Produksi Ayam', 'Shift 1', '2026-07-15'],
             ['PK-002', 'Beras Premium', 'DRY-A-01-01', 'BATCH-003', 100, 'Kg', 'Customer A', 'Shift 2', '2026-07-16'],
         ],
-        process: async (rows, refs, apiInstance) => {
+        process: async (rows, refs, apiInstance, onProgress) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
             for (let i = 0; i < rows.length; i++) {
@@ -211,13 +215,14 @@ const IMPORT_CONFIGS: ImportConfig[] = [
                             tujuan: String(r.Tujuan || ''),
                             shift_id: shift?.id,
                             batch_no: String(r.Batch || ''),
-                            tanggal_permintaan: parseExcelDate(r.TanggalPermintaan),
                         }]
                     });
                     success++;
                 } catch (e: any) {
                     fail++;
                     errors.push(`Baris ${i + 1}: ${e?.response?.data?.message || e.message || 'Gagal'}`);
+                } finally {
+                    onProgress?.(i + 1, rows.length);
                 }
             }
             return { success, fail, errors };
@@ -235,7 +240,7 @@ const IMPORT_CONFIGS: ImportConfig[] = [
             ['RL-001', 'Dada Ayam Broiler', 'CS-F-01-01', 'CS-F-02-01', 'BATCH-001', 30, 'Pindah ke rak lebih dekat'],
             ['RL-002', 'Beras Premium', 'DRY-A-01-01', 'DRY-A-02-01', 'BATCH-003', 50, 'Reorganisasi gudang'],
         ],
-        process: async (rows, refs, apiInstance) => {
+        process: async (rows, refs, apiInstance, onProgress) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
             for (let i = 0; i < rows.length; i++) {
@@ -251,15 +256,16 @@ const IMPORT_CONFIGS: ImportConfig[] = [
                     if (!stock) { fail++; errors.push(`Baris ${i + 1}: Stok tidak ditemukan untuk ${r.Item} di ${r.RakAsal}`); continue; }
                     await apiInstance.post('/inventory/relocation', {
                         stock_id: stock.id,
-                        gudang_tujuan_id: gudTujuan.id,
+                        target_gudang_id: gudTujuan.id,
                         qty: Number(r.Qty) || 0,
-                        no_po: String(r.NoPO || ''),
                         note: String(r.Note || ''),
                     });
                     success++;
                 } catch (e: any) {
                     fail++;
                     errors.push(`Baris ${i + 1}: ${e?.response?.data?.message || e.message || 'Gagal'}`);
+                } finally {
+                    onProgress?.(i + 1, rows.length);
                 }
             }
             return { success, fail, errors };
@@ -278,7 +284,7 @@ const IMPORT_CONFIGS: ImportConfig[] = [
             ['CHILL', 'CH-01-02', 'Paha Ayam Atas', 'BATCH-002', 48, 'Shift 1', ''],
             ['DRY A', 'DRY-A-01-01', 'Beras Premium', 'BATCH-003', 198, 'Shift 2', 'Selisih -2kg'],
         ],
-        process: async (rows, refs, apiInstance) => {
+        process: async (rows, refs, apiInstance, onProgress) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
             for (let i = 0; i < rows.length; i++) {
@@ -303,6 +309,8 @@ const IMPORT_CONFIGS: ImportConfig[] = [
                 } catch (e: any) {
                     fail++;
                     errors.push(`Baris ${i + 1}: ${e?.response?.data?.message || e.message || 'Gagal'}`);
+                } finally {
+                    onProgress?.(i + 1, rows.length);
                 }
             }
             return { success, fail, errors };
@@ -315,15 +323,15 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         color: 'blue',
         icon: <IconPackage size={20} />,
         filename: 'Template_Produk.xlsx',
-        headers: ['SKU', 'Nama', 'Satuan', 'Kategori', 'MinStok', 'MaxStok'],
+        headers: ['SKU', 'Nama', 'Satuan', 'Kategori'],
         sampleRows: [
-            ['SKU-001', 'Dada Ayam Broiler', 'Kg', 'Wet', 50, 1000],
-            ['SKU-002', 'Paha Ayam Atas', 'Kg', 'Wet', 30, 800],
-            ['SKU-003', 'Beras Premium', 'Kg', 'Dry', 100, 2000],
-            ['SKU-004', 'Minyak Goreng', 'Liter', 'Dry', 50, 1500],
-            ['SKU-005', 'Telur Ayam', 'Butir', 'Wet', 200, 5000],
+            ['SKU-001', 'Dada Ayam Broiler', 'Kg', 'Wet'],
+            ['SKU-002', 'Paha Ayam Atas', 'Kg', 'Wet'],
+            ['SKU-003', 'Beras Premium', 'Kg', 'Dry'],
+            ['SKU-004', 'Minyak Goreng', 'Liter', 'Dry'],
+            ['SKU-005', 'Telur Ayam', 'Butir', 'Wet'],
         ],
-        process: async (rows, refs, apiInstance) => {
+        process: async (rows, refs, apiInstance, onProgress) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
             for (let i = 0; i < rows.length; i++) {
@@ -334,13 +342,13 @@ const IMPORT_CONFIGS: ImportConfig[] = [
                         nama: String(r.Nama || ''),
                         satuan: String(r.Satuan || 'Kg'),
                         kategori: String(r.Kategori || 'Dry'),
-                        min_stok: Number(r.MinStok) || 0,
-                        max_stok: Number(r.MaxStok) || 1000,
                     });
                     success++;
                 } catch (e: any) {
                     fail++;
                     errors.push(`Baris ${i + 1}: ${e?.response?.data?.message || e.message || 'Gagal'}`);
+                } finally {
+                    onProgress?.(i + 1, rows.length);
                 }
             }
             return { success, fail, errors };
@@ -353,15 +361,15 @@ const IMPORT_CONFIGS: ImportConfig[] = [
         color: 'cyan',
         icon: <IconMapPin size={20} />,
         filename: 'Template_Lokasi.xlsx',
-        headers: ['NamaRak', 'Zone', 'Kolom', 'Level', 'Type'],
+        headers: ['NamaRak', 'Zone', 'Kolom', 'Level', 'Type', 'Capacity'],
         sampleRows: [
-            ['CS-F-01-01', 'CS FROZEN', '01', 1, 'Single Deep'],
-            ['CS-F-01-02', 'CS FROZEN', '01', 2, 'Single Deep'],
-            ['CH-01-01', 'CHILL', '01', 1, 'Single Deep'],
-            ['DRY-A-01-01', 'DRY A', '01', 1, 'Double Deep'],
-            ['DRY-B-02-01', 'DRY B', '02', 1, 'Single Deep'],
+            ['CS-F-01-01', 'CS FROZEN', '01', 1, 'Single Deep', 1000],
+            ['CS-F-01-02', 'CS FROZEN', '01', 2, 'Single Deep', 1000],
+            ['CH-01-01', 'CHILL', '01', 1, 'Single Deep', 750],
+            ['DRY-A-01-01', 'DRY A', '01', 1, 'Double Deep', 2000],
+            ['DRY-B-02-01', 'DRY B', '02', 1, 'Single Deep', 1500],
         ],
-        process: async (rows, refs, apiInstance) => {
+        process: async (rows, refs, apiInstance, onProgress) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
             for (let i = 0; i < rows.length; i++) {
@@ -374,6 +382,7 @@ const IMPORT_CONFIGS: ImportConfig[] = [
                         kolom: String(r.Kolom || ''),
                         level: Number(r.Level) || 1,
                         type: String(r.Type || 'Single Deep'),
+                        capacity: Number(r.Capacity) || 0,
                         side: ['DRY A', 'DRY B', 'DRY FG'].includes(zone),
                         status: true,
                     });
@@ -381,6 +390,8 @@ const IMPORT_CONFIGS: ImportConfig[] = [
                 } catch (e: any) {
                     fail++;
                     errors.push(`Baris ${i + 1}: ${e?.response?.data?.message || e.message || 'Gagal'}`);
+                } finally {
+                    onProgress?.(i + 1, rows.length);
                 }
             }
             return { success, fail, errors };
@@ -400,7 +411,7 @@ const IMPORT_CONFIGS: ImportConfig[] = [
             ['PT Bulog', 'Jl. Gatot Subroto No.1, Jakarta', '021-55555555', 'customer'],
             ['Customer A', 'Jl. Mawar No.10, Bandung', '022-11111111', 'customer'],
         ],
-        process: async (rows, refs, apiInstance) => {
+        process: async (rows, refs, apiInstance, onProgress) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
             for (let i = 0; i < rows.length; i++) {
@@ -416,43 +427,108 @@ const IMPORT_CONFIGS: ImportConfig[] = [
                 } catch (e: any) {
                     fail++;
                     errors.push(`Baris ${i + 1}: ${e?.response?.data?.message || e.message || 'Gagal'}`);
+                } finally {
+                    onProgress?.(i + 1, rows.length);
                 }
             }
             return { success, fail, errors };
         }
     },
     {
-        key: 'driver',
-        title: 'Driver Planning',
-        description: 'Import bulk jadwal kedatangan driver inbound.',
+        key: 'inbound-planning',
+        title: 'Inbound Planning',
+        description: 'Import bulk rencana kedatangan inbound.',
         color: 'indigo',
         icon: <IconTruck size={20} />,
-        filename: 'Template_Driver_Planning.xlsx',
-        headers: ['NoPO', 'DriverName', 'PlatNomor', 'Supplier', 'ETA', 'Status', 'Note'],
+        filename: 'Template_Inbound_Planning.xlsx',
+        headers: ['NoPO', 'Supplier', 'Item', 'Qty', 'Satuan', 'ETA', 'Zone', 'Rak', 'Status', 'Note'],
         sampleRows: [
-            ['PO-001', 'Budi Santoso', 'B 1234 ABC', 'PT JAPFA', '2026-07-15 08:00', 'WAIT', ''],
-            ['PO-002', 'Ahmad Hidayat', 'B 5678 DEF', 'PT Bulog', '2026-07-15 10:00', 'WAIT', ''],
-            ['PO-003', 'Cahyo Wibowo', 'B 9012 GHI', 'PT Bimoli', '2026-07-16 07:30', 'WAIT', 'Delivery pagi'],
+            ['PO-001', 'PT JAPFA', 'Dada Ayam Broiler', 600, 'Kg', '2026-07-15 08:00', 'CS FROZEN', 'CS-F-01-01', 'WAIT', ''],
+            ['PO-001', 'PT JAPFA', 'Dada Ayam Broiler', 400, 'Kg', '2026-07-15 08:00', 'CS FROZEN', 'CS-F-01-02', 'WAIT', ''],
+            ['PO-002', 'PT Bulog', 'Beras Premium', 500, 'Kg', '2026-07-15 10:00', 'DRY A', 'DRY-A-01-01', 'WAIT', ''],
         ],
-        process: async (rows, refs, apiInstance) => {
+        process: async (rows, refs, apiInstance, onProgress) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
-            for (let i = 0; i < rows.length; i++) {
-                const r = rows[i];
+
+            // Group rows by NoPO
+            const groups: Record<string, any[]> = {};
+            for (const r of rows) {
+                const po = String(r.NoPO || '').trim();
+                if (!po) continue;
+                if (!groups[po]) groups[po] = [];
+                groups[po].push(r);
+            }
+
+            const poKeys = Object.keys(groups);
+            for (let i = 0; i < poKeys.length; i++) {
+                const po = poKeys[i];
+                const poRows = groups[po];
+                const firstRow = poRows[0];
+
                 try {
-                    await apiInstance.post('/inbound-planning', {
-                        no_po: String(r.NoPO || ''),
-                        driver_name: String(r.DriverName || ''),
-                        plat_nomor: String(r.PlatNomor || ''),
-                        supplier: String(r.Supplier || ''),
-                        estimasi_datang: parseDateTime(r.ETA),
-                        status: String(r.Status || 'WAIT'),
-                        note: String(r.Note || ''),
-                    });
+                    const itemsMap: Record<number, {
+                        barangId: number;
+                        qty: number;
+                        satuan: string;
+                        zone: string;
+                        rackAllocations: { gudangId: number; qty: number }[];
+                    }> = {};
+
+                    let totalQty = 0;
+
+                    for (let rIdx = 0; rIdx < poRows.length; rIdx++) {
+                        const r = poRows[rIdx];
+                        const brg = findBarang(refs, r.Item);
+                        if (!brg) {
+                            throw new Error(`Baris ${rIdx + 1}: Item "${r.Item}" tidak ditemukan`);
+                        }
+                        const gud = r.Rak ? findGudang(refs, r.Rak) : null;
+                        const rowQty = Number(r.Qty) || 0;
+                        totalQty += rowQty;
+
+                        if (!itemsMap[brg.id]) {
+                            itemsMap[brg.id] = {
+                                barangId: brg.id,
+                                qty: 0,
+                                satuan: String(r.Satuan || brg.satuan || ''),
+                                zone: String(r.Zone || ''),
+                                rackAllocations: []
+                            };
+                        }
+
+                        itemsMap[brg.id].qty += rowQty;
+                        if (gud) {
+                            itemsMap[brg.id].rackAllocations.push({
+                                gudangId: gud.id,
+                                qty: rowQty
+                            });
+                            if (!itemsMap[brg.id].zone && gud.zone) {
+                                itemsMap[brg.id].zone = gud.zone;
+                            }
+                        }
+                    }
+
+                    const payload = {
+                        no_po: po,
+                        supplier: String(firstRow.Supplier || ''),
+                        qty: totalQty,
+                        estimasi_datang: parseDateTime(firstRow.ETA) || undefined,
+                        status: String(firstRow.Status || 'WAIT'),
+                        note: String(firstRow.Note || ''),
+                        items: Object.values(itemsMap).map(it => ({
+                            ...it,
+                            rackAllocations: it.rackAllocations.length > 0 ? it.rackAllocations : undefined
+                        }))
+                    };
+
+                    await apiInstance.post('/inbound-planning', payload);
                     success++;
                 } catch (e: any) {
                     fail++;
-                    errors.push(`Baris ${i + 1}: ${e?.response?.data?.message || e.message || 'Gagal'}`);
+                    errors.push(`PO "${po}": ${e?.response?.data?.message || e.message || 'Gagal'}`);
+                } finally {
+                    onProgress?.(i + 1, poKeys.length);
                 }
             }
             return { success, fail, errors };
@@ -473,7 +549,7 @@ const IMPORT_CONFIGS: ImportConfig[] = [
             ['supervisor1', 'super123', 4],
             ['superadmin', 'superadmin123', 5],
         ],
-        process: async (rows, refs, apiInstance) => {
+        process: async (rows, refs, apiInstance, onProgress) => {
             let success = 0, fail = 0;
             const errors: string[] = [];
             for (let i = 0; i < rows.length; i++) {
@@ -488,6 +564,8 @@ const IMPORT_CONFIGS: ImportConfig[] = [
                 } catch (e: any) {
                     fail++;
                     errors.push(`Baris ${i + 1}: ${e?.response?.data?.message || e.message || 'Gagal'}`);
+                } finally {
+                    onProgress?.(i + 1, rows.length);
                 }
             }
             return { success, fail, errors };
@@ -501,6 +579,8 @@ interface SheetImport {
     rows: any[];
     status: 'pending' | 'importing' | 'success' | 'error';
     results?: { success: number; fail: number; errors: string[] };
+    completedRows: number;
+    progress: number;
 }
 
 const statusColor = (status: SheetImport['status']): string => {
@@ -513,6 +593,37 @@ const statusColor = (status: SheetImport['status']): string => {
     }
 };
 
+const fetchRefData = async (apiInstance: any): Promise<RefData> => {
+    const [barangRes, gudangRes, stockRes, shiftRes, customerRes] = await Promise.all([
+        apiInstance.get('/barang'),
+        apiInstance.get('/gudang'),
+        apiInstance.get('/inventory/stock'),
+        apiInstance.get('/shifts'),
+        apiInstance.get('/customers'),
+    ]);
+
+    return {
+        barangs: unwrap(barangRes) || [],
+        gudangs: unwrap(gudangRes) || [],
+        stocks: unwrap(stockRes) || [],
+        shifts: unwrap(shiftRes) || [],
+        customers: unwrap(customerRes) || [],
+    };
+};
+
+const IMPORT_PRIORITY: Record<string, number> = {
+    produk: 1,
+    lokasi: 2,
+    customer: 3,
+    users: 4,
+    'inbound-planning': 5,
+    inbound: 6,
+    picking: 7,
+    outbound: 8,
+    relocation: 9,
+    opname: 10,
+};
+
 export default function ImportPage() {
     const [userRole, setUserRole] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
@@ -521,6 +632,15 @@ export default function ImportPage() {
     const [sheetImports, setSheetImports] = useState<SheetImport[]>([]);
     const [unrecognizedSheets, setUnrecognizedSheets] = useState<string[]>([]);
     const [importingAll, setImportingAll] = useState(false);
+    const [importPhase, setImportPhase] = useState<'idle' | 'reading' | 'importing' | 'done' | 'error'>('idle');
+    const [activeSheetName, setActiveSheetName] = useState('');
+
+    const totalRows = useMemo(() => sheetImports.reduce((sum, sheet) => sum + sheet.rows.length, 0), [sheetImports]);
+    const completedRows = useMemo(() => sheetImports.reduce((sum, sheet) => sum + sheet.completedRows, 0), [sheetImports]);
+    const successfulRows = useMemo(() => sheetImports.reduce((sum, sheet) => sum + (sheet.results?.success || 0), 0), [sheetImports]);
+    const failedRows = useMemo(() => sheetImports.reduce((sum, sheet) => sum + (sheet.results?.fail || 0), 0), [sheetImports]);
+    const overallProgress = totalRows === 0 ? 0 : Math.min(100, Math.round((completedRows / totalRows) * 100));
+    const allRowsStored = totalRows > 0 && completedRows === totalRows && failedRows === 0 && successfulRows === totalRows;
 
     useEffect(() => {
         const u = JSON.parse(localStorage.getItem('user') || '{}');
@@ -531,20 +651,7 @@ export default function ImportPage() {
         const loadRefs = async () => {
             try {
                 const apiInstance = api();
-                const [barangRes, gudangRes, stockRes, shiftRes, customerRes] = await Promise.all([
-                    apiInstance.get('/barang'),
-                    apiInstance.get('/gudang'),
-                    apiInstance.get('/inventory/stock'),
-                    apiInstance.get('/shifts'),
-                    apiInstance.get('/customers'),
-                ]);
-                setRefs({
-                    barangs: unwrap(barangRes) || [],
-                    gudangs: unwrap(gudangRes) || [],
-                    stocks: unwrap(stockRes) || [],
-                    shifts: unwrap(shiftRes) || [],
-                    customers: unwrap(customerRes) || [],
-                });
+                setRefs(await fetchRefData(apiInstance));
             } catch (e: any) {
                 setError('Gagal memuat data referensi: ' + (e?.message || 'Unknown error'));
             }
@@ -553,13 +660,48 @@ export default function ImportPage() {
         loadRefs();
     }, []);
 
+    const runSheetImport = useCallback(async (sheetImport: SheetImport, apiInstance: any, currentRefs: RefData = refs) => {
+        setActiveSheetName(sheetImport.sheetName);
+        setSheetImports(prev => prev.map(sheet => sheet.sheetName === sheetImport.sheetName
+            ? { ...sheet, status: 'importing', completedRows: 0, progress: 0, results: undefined }
+            : sheet
+        ));
+
+        try {
+            const results = await sheetImport.config.process(sheetImport.rows, currentRefs, apiInstance, (completed, total) => {
+                const progress = total === 0 ? 100 : Math.round((completed / total) * 100);
+                setSheetImports(prev => prev.map(sheet => sheet.sheetName === sheetImport.sheetName
+                    ? { ...sheet, completedRows: completed, progress }
+                    : sheet
+                ));
+            });
+
+            setSheetImports(prev => prev.map(sheet => sheet.sheetName === sheetImport.sheetName
+                ? { ...sheet, status: results.fail === 0 ? 'success' : 'error', completedRows: sheetImport.rows.length, progress: 100, results }
+                : sheet
+            ));
+            return results;
+        } catch (err: any) {
+            const results = { success: 0, fail: sheetImport.rows.length, errors: [err?.message || 'Gagal mengimport'] };
+            setSheetImports(prev => prev.map(sheet => sheet.sheetName === sheetImport.sheetName
+                ? { ...sheet, status: 'error', completedRows: sheetImport.rows.length, progress: 100, results }
+                : sheet
+            ));
+            return results;
+        }
+    }, [refs]);
+
     const handleFileUpload = async (file: File | null) => {
         if (!file) {
+            setImportPhase('idle');
+            setActiveSheetName('');
             setSheetImports([]);
             setUnrecognizedSheets([]);
             return;
         }
         try {
+            setError(null);
+            setImportPhase('reading');
             const data = await file.arrayBuffer();
             const wb = XLSX.read(data, { type: 'array', cellDates: true });
 
@@ -578,74 +720,82 @@ export default function ImportPage() {
                     config,
                     rows: json,
                     status: 'pending',
+                    completedRows: 0,
+                    progress: 0,
                 });
             }
+
+            recognized.sort((a, b) => (IMPORT_PRIORITY[a.config.key] || 999) - (IMPORT_PRIORITY[b.config.key] || 999));
 
             setSheetImports(recognized);
             setUnrecognizedSheets(unrecognized);
 
-            // Auto-import all recognized sheets
+            // Auto-import semua sheet yang dikenali secara berurutan.
             if (recognized.length > 0) {
                 setImportingAll(true);
+                setImportPhase('importing');
                 const apiInstance = api();
+                let totalFail = 0;
+                let latestRefs = await fetchRefData(apiInstance);
+                setRefs(latestRefs);
+
                 for (const sheet of recognized) {
-                    setSheetImports(prev => prev.map(s =>
-                        s.sheetName === sheet.sheetName ? { ...s, status: 'importing' } : s
-                    ));
-                    try {
-                        const results = await sheet.config.process(sheet.rows, refs, apiInstance);
-                        setSheetImports(prev => prev.map(s =>
-                            s.sheetName === sheet.sheetName
-                                ? { ...s, status: results.fail === 0 ? 'success' : 'error', results }
-                                : s
-                        ));
-                    } catch (err: any) {
-                        setSheetImports(prev => prev.map(s =>
-                            s.sheetName === sheet.sheetName
-                                ? { ...s, status: 'error', results: { success: 0, fail: sheet.rows.length, errors: [err?.message || 'Gagal mengimport'] } }
-                                : s
-                        ));
-                    }
+                    const result = await runSheetImport(sheet, apiInstance, latestRefs);
+                    totalFail += result.fail;
+
+                    // Ambil ulang referensi setelah setiap sheet agar produk, rak, dan stok
+                    // yang baru disimpan langsung tersedia untuk sheet berikutnya.
+                    latestRefs = await fetchRefData(apiInstance);
+                    setRefs(latestRefs);
                 }
+                setActiveSheetName('');
                 setImportingAll(false);
+                setImportPhase(totalFail === 0 ? 'done' : 'error');
+            } else {
+                setImportPhase('idle');
             }
         } catch (err) {
             setSheetImports([]);
             setUnrecognizedSheets([]);
+            setImportPhase('error');
             setError('Gagal membaca file Excel: ' + (err instanceof Error ? err.message : 'Unknown error'));
         }
     };
 
     const importSheet = async (sheetImport: SheetImport) => {
-        setSheetImports(prev => prev.map(s =>
-            s.sheetName === sheetImport.sheetName ? { ...s, status: 'importing' } : s
-        ));
-
-        try {
-            const apiInstance = api();
-            const results = await sheetImport.config.process(sheetImport.rows, refs, apiInstance);
-            setSheetImports(prev => prev.map(s =>
-                s.sheetName === sheetImport.sheetName
-                    ? { ...s, status: results.fail === 0 ? 'success' : 'error', results }
-                    : s
-            ));
-        } catch (err: any) {
-            setSheetImports(prev => prev.map(s =>
-                s.sheetName === sheetImport.sheetName
-                    ? { ...s, status: 'error', results: { success: 0, fail: sheetImport.rows.length, errors: [err?.message || 'Gagal mengimport'] } }
-                    : s
-            ));
-        }
+        setImportingAll(true);
+        setImportPhase('importing');
+        const apiInstance = api();
+        const latestRefs = await fetchRefData(apiInstance);
+        setRefs(latestRefs);
+        const result = await runSheetImport(sheetImport, apiInstance, latestRefs);
+        setRefs(await fetchRefData(apiInstance));
+        setActiveSheetName('');
+        setImportingAll(false);
+        setImportPhase(result.fail === 0 ? 'done' : 'error');
     };
 
     const importAll = async () => {
         setImportingAll(true);
-        for (const sheet of sheetImports) {
-            if (sheet.status === 'pending') {
-                await importSheet(sheet);
-            }
+        setImportPhase('importing');
+        const apiInstance = api();
+        let totalFail = 0;
+        let latestRefs = await fetchRefData(apiInstance);
+        setRefs(latestRefs);
+
+        const pendingSheets = sheetImports
+            .filter(sheet => sheet.status !== 'success')
+            .sort((a, b) => (IMPORT_PRIORITY[a.config.key] || 999) - (IMPORT_PRIORITY[b.config.key] || 999));
+
+        for (const sheet of pendingSheets) {
+            const result = await runSheetImport(sheet, apiInstance, latestRefs);
+            totalFail += result.fail;
+            latestRefs = await fetchRefData(apiInstance);
+            setRefs(latestRefs);
         }
+        setActiveSheetName('');
         setImportingAll(false);
+        setImportPhase(totalFail === 0 ? 'done' : 'error');
     };
 
     const downloadTemplate = (config: ImportConfig) => {
@@ -714,14 +864,46 @@ export default function ImportPage() {
             <Paper withBorder p="md" mb="md" radius="md" style={{ background: '#fff' }}>
                 <FileInput
                     label="Upload Excel File"
-                    description="File akan otomatis diimport setelah dipilih. Sheet harus sesuai nama: inbound, outbound, picking, relocation, opname, produk, lokasi, customer, driver, users"
+                    description="File akan otomatis diimport setelah dipilih. Sheet harus sesuai nama: inbound, outbound, picking, relocation, opname, produk, lokasi, customer, inbound-planning, users"
                     placeholder="Pilih file Excel..."
                     accept=".xlsx,.xls"
                     onChange={handleFileUpload}
+                    disabled={importingAll}
                     leftSection={<IconFileSpreadsheet size={16} />}
                     size="md"
                 />
             </Paper>
+
+            {(importPhase !== 'idle' || sheetImports.length > 0) && (
+                <Paper withBorder p="lg" mb="md" radius="md" pos="relative" style={{ overflow: 'hidden' }}>
+                    {importingAll && <Overlay backgroundOpacity={0.02} blur={0} zIndex={0} />}
+                    <Stack gap="sm" pos="relative" style={{ zIndex: 1 }}>
+                        <Group justify="space-between" align="flex-start">
+                            <Group gap="sm">
+                                <ThemeIcon size="lg" radius="xl" color={allRowsStored ? 'green' : importPhase === 'error' ? 'red' : 'blue'} variant="light">
+                                    {allRowsStored ? <IconCircleCheck size={22} /> : <IconDatabase size={22} />}
+                                </ThemeIcon>
+                                <div>
+                                    <Text fw={700}>
+                                        {importPhase === 'reading' && 'Membaca file Excel...'}
+                                        {importPhase === 'importing' && `Menyimpan data${activeSheetName ? `: ${activeSheetName}` : ''}`}
+                                        {allRowsStored && 'Import selesai — seluruh data tersimpan'}
+                                        {importPhase === 'error' && !allRowsStored && 'Import selesai dengan data gagal'}
+                                    </Text>
+                                    <Text size="xs" c="dimmed">{completedRows} dari {totalRows} baris diproses · {successfulRows} tersimpan · {failedRows} gagal</Text>
+                                </div>
+                            </Group>
+                            <Text fw={800} size="xl" c={allRowsStored ? 'green' : undefined}>{allRowsStored ? 100 : overallProgress}%</Text>
+                        </Group>
+                        <Progress value={allRowsStored ? 100 : overallProgress} size="xl" radius="xl" animated={importingAll} striped={importingAll} color={allRowsStored ? 'green' : importPhase === 'error' ? 'red' : 'blue'} />
+                        {allRowsStored && (
+                            <Alert color="green" variant="light" icon={<IconCheck size={18} />}>
+                                Seluruh request berhasil. Progress 100% hanya tampil saat semua baris sudah tersimpan tanpa kegagalan.
+                            </Alert>
+                        )}
+                    </Stack>
+                </Paper>
+            )}
 
             {/* Error banner (non-fatal, e.g. read error after file was already loaded) */}
             {error && (
@@ -793,6 +975,16 @@ export default function ImportPage() {
 
                             {sheet.rows.length === 0 && (
                                 <Text size="xs" c="dimmed" mb="sm">Sheet ini kosong, tidak ada data untuk diimport.</Text>
+                            )}
+
+                            {(sheet.status === 'importing' || sheet.progress > 0) && (
+                                <Box mb="sm">
+                                    <Group justify="space-between" mb={4}>
+                                        <Text size="xs" c="dimmed">{sheet.completedRows}/{sheet.rows.length} baris</Text>
+                                        <Text size="xs" fw={700}>{sheet.progress}%</Text>
+                                    </Group>
+                                    <Progress value={sheet.progress} size="sm" animated={sheet.status === 'importing'} striped={sheet.status === 'importing'} color={sheet.status === 'error' ? 'red' : sheet.status === 'success' ? 'green' : sheet.config.color} />
+                                </Box>
                             )}
 
                             {/* Results */}

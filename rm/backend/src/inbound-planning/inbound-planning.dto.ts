@@ -51,17 +51,40 @@ class ProcessInboundItemDto {
   jam_bongkar?: string;
 }
 
+class RackAllocationDto {
+  @Type(() => Number)
+  @IsNumber()
+  gudangId: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  qty: number;
+}
+
 class InboundPlanItemDto {
+  @Type(() => Number)
   @IsNumber()
   barangId: number;
 
+  @Type(() => Number)
   @IsNumber()
   qty: number;
 
   @IsOptional()
   @IsString()
   satuan?: string;
+
+  @IsOptional()
+  @IsString()
+  zone?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RackAllocationDto)
+  rackAllocations?: RackAllocationDto[];
 }
+
 
 export class CreateInboundPlanningDto {
   @IsNotEmpty()
@@ -169,3 +192,5 @@ export class ProcessInboundDto {
   @IsNumber()
   shiftId?: number;
 }
+
+

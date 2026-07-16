@@ -513,17 +513,40 @@ function InboundContent() {
       jam_bongkar: "",
       shift_id: "",
     });
-    const initialItems = (planning.items || []).map((item: any, idx: number) => ({
-      id: Date.now() + idx + Math.random(),
-      barang_id: String(item.barangId),
-      gudang_id: "",
-      qty: item.qty,
-      plan_qty: item.qty,
-      batch_no: "",
-      expiry_date: "",
-      shift_id: "",
-      satuan: item.satuan || "",
-    }));
+    const initialItems: any[] = [];
+    (planning.items || []).forEach((item: any, idx: number) => {
+      const bObj = barangs.find((b: any) => String(b.id) === String(item.barangId));
+      if (item.rackAllocations && item.rackAllocations.length > 0) {
+        item.rackAllocations.forEach((alloc: any, aIdx: number) => {
+          const gdg = allGudangs.find((g: any) => String(g.id) === String(alloc.gudangId));
+          initialItems.push({
+            id: Date.now() + idx + aIdx + Math.random(),
+            barang_id: String(item.barangId),
+            gudang_id: String(alloc.gudangId),
+            zone: gdg ? gdg.zone : (item.zone || ""),
+            qty: alloc.qty,
+            plan_qty: alloc.qty,
+            batch_no: "",
+            expiry_date: "",
+            shift_id: "",
+            satuan: item.satuan || bObj?.satuan || "",
+          });
+        });
+      } else {
+        initialItems.push({
+          id: Date.now() + idx + Math.random(),
+          barang_id: String(item.barangId),
+          gudang_id: "",
+          zone: item.zone || "",
+          qty: item.qty,
+          plan_qty: item.qty,
+          batch_no: "",
+          expiry_date: "",
+          shift_id: "",
+          satuan: item.satuan || bObj?.satuan || "",
+        });
+      }
+    });
     setProcessItems(initialItems);
   };
 
