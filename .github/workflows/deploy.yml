@@ -12,11 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Bersihin container lama
-        run: |
-          docker compose down --remove-orphans --volumes 2>/dev/null
-          docker rm -f test-wms 2>/dev/null
+        with:
+          clean: false
 
       - name: Build & start
         run: |
