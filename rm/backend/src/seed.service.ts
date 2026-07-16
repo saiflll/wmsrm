@@ -37,6 +37,7 @@ export class SeedService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     await this.seedUsers();
+    /*
     const shifts = await this.seedShifts();
     const barangs = await this.seedBarang();
     const gudangs = await this.seedGudang(barangs);
@@ -52,6 +53,7 @@ export class SeedService implements OnApplicationBootstrap {
     });
     await this.seedOutboundAyam(plannings, shifts);
     await this.seedInboundPlanning();
+    */
     console.log('🌱 All seed data inserted successfully!');
   }
 
