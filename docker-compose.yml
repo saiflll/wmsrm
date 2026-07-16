@@ -1,10 +1,10 @@
 services:
   wms-db:
     image: postgres:15-alpine
-    container_name: wms-db
+    container_name: wms-db-test
     restart: unless-stopped
     ports:
-      - "3012:5432"
+      - "3022:5432"
     environment:
       - POSTGRES_USER=wms_user
       - POSTGRES_PASSWORD=wms_password
