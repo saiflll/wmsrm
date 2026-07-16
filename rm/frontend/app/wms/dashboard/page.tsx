@@ -1,5 +1,6 @@
-"use client";
 // @ts-nocheck
+"use client";
+
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Box,
@@ -71,6 +72,64 @@ const TABS = [
 const cardShadow = "0 2px 12px rgba(0,0,0,0.07)";
 const sectionShadow = "0 2px 8px rgba(0,0,0,0.05)";
 
+/* ─────────────────────────── data helpers ─────────────────────────── */
+const asArray = (value: any) => (Array.isArray(value) ? value : []);
+const toNumber = (value: string) => {
+  const parsed = typeof value === "string" ? Number(value.replace(/,/g, "")) : Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+const toNullableNumber = (value: string | null | undefined) => value === null || value === undefined || value === "" ? null : toNumber(value);
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const percentage = (part: number, total: number) => total > 0 ? clamp(Math.round((part / total) * 100), 0, 100) : 0;
+
+const normalizeStats = (raw: { totalSku: any; skuCount: any; totalStock: any; inboundHariIni: any; outboundHariIni: any; expiredCount: any; nearExpiredCount: any; wasteCount: any; }) => ({
+  ...(raw || {}),
+  totalSku: toNullableNumber(raw?.totalSku ?? raw?.skuCount),
+  totalStock: toNullableNumber(raw?.totalStock),
+  inboundHariIni: toNullableNumber(raw?.inboundHariIni),
+  outboundHariIni: toNullableNumber(raw?.outboundHariIni),
+  expiredCount: toNullableNumber(raw?.expiredCount),
+  nearExpiredCount: toNullableNumber(raw?.nearExpiredCount),
+  wasteCount: toNullableNumber(raw?.wasteCount),
+});
+
+const normalizeOccupancy = (raw: { gauges: any; dailySeries: any; items: any; weeks: any; series: any; } | null) => ({
+  ...(raw || {}),
+  gauges: asArray(raw?.gauges).map((g) => {
+    const occupiedRacks = toNumber(g.occupiedRacks);
+    const totalRacks = toNumber(g.totalRacks);
+    const pct = totalRacks > 0 ? percentage(occupiedRacks, totalRacks) : clamp(toNumber(g.pct), 0, 100);
+    return { ...g, occupiedRacks, totalRacks, pct };
+  }),
+  dailySeries: asArray(raw?.dailySeries).map((d) => ({ ...d, value: toNumber(d.value) })),
+  items: asArray(raw?.items).map((item) => ({ ...item, qty: toNumber(item.qty) })),
+  weeks: asArray(raw?.weeks),
+  series: asArray(raw?.series).map((s) => ({ ...s, data: asArray(s.data).map(toNumber) })),
+});
+
+const normalizeOfti = (raw: { weekly: any; } | null) => ({
+  ...(raw || {}),
+  weekly: asArray(raw?.weekly).map((d) => ({
+    ...d,
+    ontime: toNumber(d.ontime),
+    late: toNumber(d.late),
+    otif: toNumber(d.otif ?? d.ontime),
+    notOtif: toNumber(d.notOtif ?? d.late),
+  })),
+});
+
+const normalizeSerapan = (raw: { data: any; } | null) => ({
+  ...(raw || {}),
+  data: asArray(raw?.data).map((d) => ({ ...d, planning: toNumber(d.planning), serapan: toNumber(d.serapan) })),
+});
+
+const normalizeReport = (raw: any) => asArray(raw).map((d) => ({
+  ...d,
+  inbound: toNumber(d.inbound),
+  outbound: toNumber(d.outbound),
+}));
+const csvCell = (value: any) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+
 /* ─────────────────────────── responsive helpers ─────────────────────────── */
 
 /**
@@ -100,7 +159,7 @@ function useContainerWidth(fallback = 760) {
 /**
  * useBarAnimation — men-trigger transisi CSS dari 0 -> tinggi asli setiap kali data berubah.
  */
-function useBarAnimation(dataSignature) {
+function useBarAnimation(dataSignature: unknown) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     setReady(false);
@@ -114,7 +173,7 @@ function useBarAnimation(dataSignature) {
 }
 
 /** Pilih rotasi label berdasarkan spasi yang tersedia per label (px). */
-function labelRotationFor(spacePerLabel) {
+function labelRotationFor(spacePerLabel: number) {
   if (spacePerLabel > 40) return 0;
   if (spacePerLabel > 22) return -30;
   return -45;
@@ -125,7 +184,7 @@ const ChartLegend = ({ series }) => {
   if (!series?.length) return null;
   return (
     <Group gap={14} mt={8} wrap="wrap" justify="center">
-      {series.map((s) => (
+      {series.map((s: { label: boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | React.Key | null | undefined; color: any; }) => (
         <Group key={s.label} gap={5} wrap="nowrap">
           <Box
             style={{
@@ -178,7 +237,7 @@ const ChartTooltip = ({ tooltip }) => {
           {tooltip.title}
         </div>
       )}
-      {tooltip.lines.map((l, i) => (
+      {tooltip.lines.map((l: { color: any; label: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; value: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }, i: React.Key | null | undefined) => (
         <div
           key={i}
           style={{
@@ -267,14 +326,13 @@ const KpiCard = ({ label, value, sub, icon: Icon, accent, bg, trend }) => (
 
 /* ─────────────────────────── Occupancy Gauge ─────────────────────────── */
 const OccupancyGauge = ({ pct, label, subLabel, color, onClick, selected }) => {
+  const safePct = clamp(toNumber(pct), 0, 100);
   const size = 90;
   const cx = size / 2;
   const cy = size / 2;
   const r = 36;
   const waveHeight = 4;
-  const fillY = isNaN(cy + r - ((pct || 0) / 100) * (r * 2))
-    ? cy + r
-    : cy + r - ((pct || 0) / 100) * (r * 2);
+  const fillY = cy + r - (safePct / 100) * (r * 2);
 
   const wavePath = () => {
     const startX = cx - r;
@@ -366,7 +424,7 @@ const OccupancyGauge = ({ pct, label, subLabel, color, onClick, selected }) => {
           fontWeight={800}
           fill={statusColor}
         >
-          {pct}%
+          {safePct}%
         </text>
         <text
           x={cx}
@@ -457,7 +515,7 @@ const OccupancyYearChart = ({ series, labels }) => {
   const [containerRef, containerWidth] = useContainerWidth(800);
   const [tooltip, setTooltip] = useState(null);
   const dataSignature = JSON.stringify([
-    series?.map((s) => s.data),
+    series?.map((s: { data: any; }) => s.data),
     labels?.length,
   ]);
   const ready = useBarAnimation(dataSignature);
@@ -485,7 +543,7 @@ const OccupancyYearChart = ({ series, labels }) => {
   const chartW = Math.max(containerWidth - pad.left - pad.right, minChartW);
   const totalW = chartW + pad.left + pad.right;
   const chartH = height - pad.top - pad.bottom;
-  const maxVal = Math.max(...series.flatMap((s) => s.data), 1);
+  const maxVal = Math.max(...series.flatMap((s: { data: any; }) => s.data), 1);
   const gridLines = [0, 0.25, 0.5, 0.75, 1];
 
   const groupW = chartW / nGroups;
@@ -541,12 +599,12 @@ const OccupancyYearChart = ({ series, labels }) => {
           );
         })}
 
-        {labels.map((l, wIdx) => {
+        {labels.map((l: { key: any; label: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }, wIdx: number) => {
           const gx = pad.left + wIdx * groupW;
           const gCenter = gx + groupW / 2;
           return (
             <g key={l.key ?? wIdx}>
-              {series.map((s, sIdx) => {
+              {series.map((s: { data: { [x: string]: number; }; label: React.Key | null | undefined; color: string | undefined; }, sIdx: number) => {
                 const val = s.data[wIdx] || 0;
                 const fullH = isNaN((val / maxVal) * chartH)
                   ? 0
@@ -592,10 +650,10 @@ const OccupancyYearChart = ({ series, labels }) => {
                       setTooltip((t) =>
                         t
                           ? {
-                              ...t,
-                              x: e.clientX - rect.left,
-                              y: e.clientY - rect.top,
-                            }
+                            ...t,
+                            x: e.clientX - rect.left,
+                            y: e.clientY - rect.top,
+                          }
                           : t,
                       );
                     }}
@@ -632,12 +690,12 @@ const SimpleBarChart = ({ series, labels }) => {
   const [containerRef, containerWidth] = useContainerWidth(760);
   const [tooltip, setTooltip] = useState(null);
   const dataSignature = JSON.stringify([
-    series?.map((s) => s.data),
+    series?.map((s: { data: any; }) => s.data),
     labels?.length,
   ]);
   const ready = useBarAnimation(dataSignature);
 
-  if (!series?.length)
+  if (!series?.length || !labels?.length)
     return (
       <Text size="xs" c="dimmed" ta="center" py="md">
         Tidak ada data.
@@ -659,7 +717,7 @@ const SimpleBarChart = ({ series, labels }) => {
   const chartW = Math.max(containerWidth - pad.left - pad.right, minChartW);
   const totalW = chartW + pad.left + pad.right;
   const chartH = height - pad.top - pad.bottom;
-  const maxVal = Math.max(...series.flatMap((s) => s.data), 1);
+  const maxVal = Math.max(...series.flatMap((s: { data: any; }) => s.data), 1);
 
   const groupW = chartW / nGroups;
   const barW = Math.min(
@@ -709,12 +767,12 @@ const SimpleBarChart = ({ series, labels }) => {
             </g>
           );
         })}
-        {labels.map((l, wIdx) => {
+        {labels.map((l: { key: any; label: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }, wIdx: number) => {
           const gx = pad.left + wIdx * groupW;
           const gCenter = gx + groupW / 2;
           return (
             <g key={l.key ?? wIdx}>
-              {series.map((s, sIdx) => {
+              {series.map((s: { data: { [x: string]: number; }; label: React.Key | null | undefined; color: string | undefined; }, sIdx: number) => {
                 const val = s.data[wIdx] || 0;
                 const fullH = isNaN((val / maxVal) * chartH)
                   ? 0
@@ -760,10 +818,10 @@ const SimpleBarChart = ({ series, labels }) => {
                       setTooltip((t) =>
                         t
                           ? {
-                              ...t,
-                              x: e.clientX - rect.left,
-                              y: e.clientY - rect.top,
-                            }
+                            ...t,
+                            x: e.clientX - rect.left,
+                            y: e.clientY - rect.top,
+                          }
                           : t,
                       );
                     }}
@@ -806,7 +864,7 @@ const HorizontalBarChart = ({
   const [containerRef, containerWidth] = useContainerWidth(760);
   const [tooltip, setTooltip] = useState(null);
   const dataSignature = JSON.stringify(
-    data?.map((d) => [d[leftKey], d[rightKey]]),
+    data?.map((d: { [x: string]: any; }) => [d[leftKey], d[rightKey]]),
   );
   const ready = useBarAnimation(dataSignature);
 
@@ -838,7 +896,7 @@ const HorizontalBarChart = ({
           stroke="#dee2e6"
           strokeDasharray="3,3"
         />
-        {data.map((d, i) => {
+        {data.map((d: { [x: string]: any; week: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }, i: React.Key | null | undefined) => {
           const y = pad.top + i * 26;
           const total = (d[leftKey] || 0) + (d[rightKey] || 0);
           const fullLeftW =
@@ -851,10 +909,8 @@ const HorizontalBarChart = ({
               : 0;
           const leftW = ready ? fullLeftW : 0;
           const rightW = ready ? fullRightW : 0;
-          const leftPct =
-            total > 0 ? Math.round((d[leftKey] / total) * 100) : 0;
-          const rightPct =
-            total > 0 ? Math.round((d[rightKey] / total) * 100) : 0;
+          const leftPct = percentage(d[leftKey], total);
+          const rightPct = percentage(d[rightKey], total);
           return (
             <g key={i}>
               <text
@@ -899,10 +955,10 @@ const HorizontalBarChart = ({
                   setTooltip((t) =>
                     t
                       ? {
-                          ...t,
-                          x: e.clientX - rect.left,
-                          y: e.clientY - rect.top,
-                        }
+                        ...t,
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top,
+                      }
                       : t,
                   );
                 }}
@@ -940,10 +996,10 @@ const HorizontalBarChart = ({
                   setTooltip((t) =>
                     t
                       ? {
-                          ...t,
-                          x: e.clientX - rect.left,
-                          y: e.clientY - rect.top,
-                        }
+                        ...t,
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top,
+                      }
                       : t,
                   );
                 }}
@@ -993,7 +1049,7 @@ const ReportChart = ({ data }) => {
   const [containerRef, containerWidth] = useContainerWidth(760);
   const [tooltip, setTooltip] = useState(null);
   const dataSignature = JSON.stringify(
-    data?.map((d) => [d.inbound, d.outbound]),
+    data?.map((d: { inbound: any; outbound: any; }) => [d.inbound, d.outbound]),
   );
   const ready = useBarAnimation(dataSignature);
 
@@ -1013,7 +1069,7 @@ const ReportChart = ({ data }) => {
   const totalW = chartW + pad.left + pad.right;
   const chartH = height - pad.top - pad.bottom;
   const maxVal = Math.max(
-    ...data.flatMap((d) => [d.inbound || 0, d.outbound || 0]),
+    ...data.flatMap((d: { inbound: any; outbound: any; }) => [d.inbound || 0, d.outbound || 0]),
     1,
   );
   const groupW = chartW / data.length;
@@ -1056,7 +1112,7 @@ const ReportChart = ({ data }) => {
             </g>
           );
         })}
-        {data.map((d, wIdx) => {
+        {data.map((d: { inbound: any; outbound: any; week: string | any[]; }, wIdx: React.Key | null | undefined) => {
           const fullInH = isNaN(((d.inbound || 0) / maxVal) * chartH)
             ? 0
             : Math.max(((d.inbound || 0) / maxVal) * chartH, 0);
@@ -1102,10 +1158,10 @@ const ReportChart = ({ data }) => {
                   setTooltip((t) =>
                     t
                       ? {
-                          ...t,
-                          x: e.clientX - rect.left,
-                          y: e.clientY - rect.top,
-                        }
+                        ...t,
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top,
+                      }
                       : t,
                   );
                 }}
@@ -1144,10 +1200,10 @@ const ReportChart = ({ data }) => {
                   setTooltip((t) =>
                     t
                       ? {
-                          ...t,
-                          x: e.clientX - rect.left,
-                          y: e.clientY - rect.top,
-                        }
+                        ...t,
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top,
+                      }
                       : t,
                   );
                 }}
@@ -1216,8 +1272,8 @@ export default function DashboardPage() {
         api().get("/inventory/dashboard"),
         api().get("/inventory/logs"),
       ]);
-      setStats(unwrap(dashRes));
-      setLogs(unwrap(logRes));
+      setStats(normalizeStats(unwrap(dashRes)));
+      setLogs(asArray(unwrap(logRes)));
     } catch (e) {
       console.error("Dashboard load error", e);
     }
@@ -1227,11 +1283,12 @@ export default function DashboardPage() {
   const loadOccupancy = async (zone?: string) => {
     try {
       const params = zone ? `?zone=${zone}` : "";
-      setOccupancyData(
+      setOccupancyData(normalizeOccupancy(
         unwrap(await api().get(`/inventory/dashboard/occupancy${params}`)),
-      );
+      ));
     } catch (e) {
       console.error("Occupancy load error", e);
+      setOccupancyData(normalizeOccupancy(null));
     }
   };
 
@@ -1247,22 +1304,31 @@ export default function DashboardPage() {
 
   const loadOFTI = async () => {
     try {
-      setOftiData(unwrap(await api().get("/inventory/dashboard/ofti")));
-    } catch (e) {}
+      setOftiData(normalizeOfti(unwrap(await api().get("/inventory/dashboard/ofti"))));
+    } catch (e) {
+      console.error("OFTI load error", e);
+      setOftiData(normalizeOfti(null));
+    }
   };
   const loadSerapan = async () => {
     try {
-      setSerapanData(
+      setSerapanData(normalizeSerapan(
         unwrap(await api().get("/inventory/dashboard/serapan-ayam")),
-      );
-    } catch (e) {}
+      ));
+    } catch (e) {
+      console.error("Serapan ayam load error", e);
+      setSerapanData(normalizeSerapan(null));
+    }
   };
   const loadReport = async () => {
     try {
-      setReportData(
+      setReportData(normalizeReport(
         unwrap(await api().get("/inventory/dashboard/inout-chart")),
-      );
-    } catch (e) {}
+      ));
+    } catch (e) {
+      console.error("Report load error", e);
+      setReportData([]);
+    }
   };
 
   const filteredLogs = useMemo(() => {
@@ -1327,7 +1393,7 @@ export default function DashboardPage() {
             log.tanggal_income || fmt(log.created_at),
             log.supplier || log.tujuan || "-",
             log.note || "-",
-          ].join(","),
+          ].map(csvCell).join(","),
         ),
       )
       .join("\n");
@@ -1437,7 +1503,7 @@ export default function DashboardPage() {
         >
           <KpiCard
             label="Total SKU"
-            value={s.totalSku?.toLocaleString() ?? s.skuCount?.toLocaleString()}
+            value={s.totalSku == null ? "—" : s.totalSku.toLocaleString()}
             icon={IconPackage}
             accent="#228be6"
             bg="#e7f5ff"
@@ -1445,9 +1511,7 @@ export default function DashboardPage() {
           />
           <KpiCard
             label="Total Stock"
-            value={
-              s.totalStock ? `${Number(s.totalStock).toLocaleString()} kg` : "—"
-            }
+            value={s.totalStock == null ? "—" : `${s.totalStock.toLocaleString()} kg`}
             icon={IconDatabase}
             accent="#40c057"
             bg="#d3f9d8"
@@ -1455,7 +1519,7 @@ export default function DashboardPage() {
           />
           <KpiCard
             label="Inbound Hari Ini"
-            value={s.inboundHariIni?.toLocaleString() ?? "0"}
+            value={s.inboundHariIni == null ? "—" : s.inboundHariIni.toLocaleString()}
             icon={IconTrendingUp}
             accent="#0ca678"
             bg="#c3fae8"
@@ -1463,7 +1527,7 @@ export default function DashboardPage() {
           />
           <KpiCard
             label="Outbound Hari Ini"
-            value={s.outboundHariIni?.toLocaleString() ?? "0"}
+            value={s.outboundHariIni == null ? "—" : s.outboundHariIni.toLocaleString()}
             icon={IconTrendingDown}
             accent="#e03131"
             bg="#ffe3e3"
@@ -1471,7 +1535,7 @@ export default function DashboardPage() {
           />
           <KpiCard
             label="Expired"
-            value={s.expiredCount ?? 0}
+            value={s.expiredCount ?? "—"}
             icon={IconAlertTriangle}
             accent="#e03131"
             bg="#ffe3e3"
@@ -1479,7 +1543,7 @@ export default function DashboardPage() {
           />
           <KpiCard
             label="Near Expired"
-            value={s.nearExpiredCount ?? 0}
+            value={s.nearExpiredCount ?? "—"}
             icon={IconCalendarStats}
             accent="#f59f00"
             bg="#fff3bf"
@@ -1533,7 +1597,7 @@ export default function DashboardPage() {
                   sub="Klik zone untuk melihat detail item & trend harian"
                 />
                 <Box style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {occupancyData?.gauges?.map((g) => (
+                  {occupancyData?.gauges?.map((g: { id: React.Key | null | undefined; pct: unknown; name: unknown; occupiedRacks: any; totalRacks: any; color: unknown; }) => (
                     <Box
                       key={g.id}
                       style={{ flex: "1 1 0", minWidth: 100, maxWidth: 150 }}
@@ -1551,6 +1615,11 @@ export default function DashboardPage() {
                   {!occupancyData && (
                     <Box py="xl" ta="center" style={{ width: "100%" }}>
                       <Loader size="sm" />
+                    </Box>
+                  )}
+                  {occupancyData && occupancyData.gauges.length === 0 && (
+                    <Box py="xl" ta="center" style={{ width: "100%" }}>
+                      <Text size="xs" c="dimmed">Tidak ada data okupansi dari server.</Text>
                     </Box>
                   )}
                 </Box>
@@ -1596,15 +1665,15 @@ export default function DashboardPage() {
                             label: "Qty",
                             color:
                               occupancyData?.gauges?.find(
-                                (g) => g.id === selectedZone,
+                                (g: { id: any; }) => g.id === selectedZone,
                               )?.color || "#228be6",
                             data:
-                              occupancyData?.dailySeries?.map((d) => d.value) ||
+                              occupancyData?.dailySeries?.map((d: { value: any; }) => d.value) ||
                               [],
                           },
                         ]}
                         labels={
-                          occupancyData?.dailySeries?.map((d) => ({
+                          occupancyData?.dailySeries?.map((d: { date: string | any[]; }) => ({
                             key: d.date,
                             label: d.date.slice(5),
                           })) || []
@@ -1677,7 +1746,7 @@ export default function DashboardPage() {
                         <Box component="tbody">
                           {occupancyData?.items
                             ?.filter(
-                              (item) =>
+                              (item: { barang: string; batch: string; }) =>
                                 !tableSearch ||
                                 item.barang
                                   .toLowerCase()
@@ -1686,7 +1755,7 @@ export default function DashboardPage() {
                                   .toLowerCase()
                                   .includes(tableSearch.toLowerCase()),
                             )
-                            .map((item, idx) => (
+                            .map((item: { id: React.Key | null | undefined; barang: unknown; batch: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; qty: { toLocaleString: () => unknown; }; satuan: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; expiry: string | number | bigint | boolean | Date | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; rack: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }, idx: number) => (
                               <Box
                                 component="tr"
                                 key={item.id}
@@ -1750,18 +1819,18 @@ export default function DashboardPage() {
                             ))}
                           {(!occupancyData?.items ||
                             occupancyData.items.length === 0) && (
-                            <Box component="tr">
-                              <Box
-                                component="td"
-                                colSpan={6}
-                                style={{ padding: 20, textAlign: "center" }}
-                              >
-                                <Text size="xs" c="dimmed">
-                                  Tidak ada item di zone ini.
-                                </Text>
+                              <Box component="tr">
+                                <Box
+                                  component="td"
+                                  colSpan={6}
+                                  style={{ padding: 20, textAlign: "center" }}
+                                >
+                                  <Text size="xs" c="dimmed">
+                                    Tidak ada item di zone ini.
+                                  </Text>
+                                </Box>
                               </Box>
-                            </Box>
-                          )}
+                            )}
                         </Box>
                       </Box>
                     </Box>
@@ -1862,13 +1931,13 @@ export default function DashboardPage() {
                         <Box component="tbody">
                           {occupancyData?.gauges
                             ?.filter(
-                              (g) =>
+                              (g: { name: string; }) =>
                                 !tableSearch ||
                                 g.name
                                   .toLowerCase()
                                   .includes(tableSearch.toLowerCase()),
                             )
-                            .map((g, idx) => {
+                            .map((g: { pct: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; id: React.Key | null | undefined; name: unknown; occupiedRacks: unknown; totalRacks: unknown; color: any; }, idx: number) => {
                               const pctColor =
                                 g.pct > 90
                                   ? "red"
@@ -2006,16 +2075,16 @@ export default function DashboardPage() {
                     {
                       label: "On Time",
                       color: "#40c057",
-                      data: oftiData?.weekly?.map((d) => d.ontime) || [],
+                      data: oftiData?.weekly?.map((d: { ontime: any; }) => d.ontime) || [],
                     },
                     {
                       label: "Late",
                       color: "#e03131",
-                      data: oftiData?.weekly?.map((d) => d.late) || [],
+                      data: oftiData?.weekly?.map((d: { late: any; }) => d.late) || [],
                     },
                   ]}
                   labels={
-                    oftiData?.weekly?.map((d) => ({
+                    oftiData?.weekly?.map((d: { week: any; }) => ({
                       key: d.week,
                       label: d.week,
                     })) || []
@@ -2118,14 +2187,9 @@ export default function DashboardPage() {
                         </Box>
                       </Box>
                       <Box component="tbody">
-                        {oftiData.weekly.map((d, idx) => {
-                          const total = (d.ontime || 0) + (d.late || 0);
-                          const otifPct =
-                            total > 0
-                              ? Math.round(
-                                  ((d.otif || d.ontime || 0) / total) * 100,
-                                )
-                              : 0;
+                        {oftiData.weekly.map((d: { otif: any; notOtif: any; week: unknown; ontime: { toLocaleString: () => string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }; late: { toLocaleString: () => string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }; }, idx: number) => {
+                          const total = d.otif + d.notOtif;
+                          const otifPct = percentage(d.otif, total);
                           return (
                             <Box
                               component="tr"
@@ -2138,12 +2202,12 @@ export default function DashboardPage() {
                               <TD style={{ fontWeight: 700 }}>{d.week}</TD>
                               <TD right>
                                 <Badge size="xs" color="green" variant="light">
-                                  {d.ontime ?? 0}
+                                  {d.ontime.toLocaleString()}
                                 </Badge>
                               </TD>
                               <TD right>
                                 <Badge size="xs" color="red" variant="light">
-                                  {d.late ?? 0}
+                                  {d.late.toLocaleString()}
                                 </Badge>
                               </TD>
                               <TD right style={{ fontWeight: 700 }}>
@@ -2166,7 +2230,7 @@ export default function DashboardPage() {
                               </TD>
                               <TD right>
                                 <Text size="10px" c="dimmed">
-                                  {100 - otifPct}%
+                                  {total > 0 ? 100 - otifPct : 0}%
                                 </Text>
                               </TD>
                             </Box>
@@ -2204,16 +2268,16 @@ export default function DashboardPage() {
                     {
                       label: "Planning",
                       color: "#4c6ef5",
-                      data: serapanData?.data?.map((d) => d.planning) || [],
+                      data: serapanData?.data?.map((d: { planning: any; }) => d.planning) || [],
                     },
                     {
                       label: "Serapan",
                       color: "#be4bdb",
-                      data: serapanData?.data?.map((d) => d.serapan) || [],
+                      data: serapanData?.data?.map((d: { serapan: any; }) => d.serapan) || [],
                     },
                   ]}
                   labels={
-                    serapanData?.data?.map((d) => ({
+                    serapanData?.data?.map((d: { week: any; }) => ({
                       key: d.week,
                       label: d.week,
                     })) || []
@@ -2286,12 +2350,9 @@ export default function DashboardPage() {
                         </Box>
                       </Box>
                       <Box component="tbody">
-                        {serapanData.data.map((d, idx) => {
-                          const pct =
-                            d.planning > 0
-                              ? Math.round((d.serapan / d.planning) * 100)
-                              : 0;
-                          const selisih = (d.serapan || 0) - (d.planning || 0);
+                        {serapanData.data.map((d: { planning: number; serapan: number; week: unknown; }, idx: number) => {
+                          const pct = d.planning > 0 ? Math.round((d.serapan / d.planning) * 100) : 0;
+                          const selisih = d.serapan - d.planning;
                           return (
                             <Box
                               component="tr"
@@ -2433,13 +2494,11 @@ export default function DashboardPage() {
                         </Box>
                       </Box>
                       <Box component="tbody">
-                        {reportData.map((d, idx) => {
+                        {reportData.map((d: { inbound: any; outbound: any; week: unknown; }, idx: number) => {
                           const net = (d.inbound || 0) - (d.outbound || 0);
                           const total = (d.inbound || 0) + (d.outbound || 0);
                           const ratio =
-                            total > 0
-                              ? Math.round(((d.inbound || 0) / total) * 100)
-                              : 50;
+                            total > 0 ? percentage(d.inbound, total) : 0;
                           return (
                             <Box
                               component="tr"

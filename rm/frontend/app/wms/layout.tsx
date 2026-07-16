@@ -24,7 +24,7 @@ const roleLineColor: Record<number, string> = {
 
 const menuPermissions: Record<string, number[]> = {
     '/wms/dashboard': [1, 2, 3, 4, 5, 6],
-    '/wms/driver-planning': [1, 3, 4, 5],
+    '/wms/planning-inbound': [1, 3, 4, 5],
     '/wms/inbound': [1, 2, 3, 4, 5],
     '/wms/outbound': [1, 2, 3, 4, 5],
     '/wms/picking': [1, 3, 4, 5],
@@ -58,7 +58,7 @@ const menuGroups: { label: string; links: { label: string; href: string; c: stri
         label: 'MAIN MENU',
         links: [
             { label: 'Dashboard', href: '/wms/dashboard', c: 'blue' },
-            { label: 'Planning Inbound', href: '/wms/driver-planning', c: 'indigo' },
+            { label: 'Planning Inbound', href: '/wms/planning-inbound', c: 'indigo' },
             { label: 'Inbound', href: '/wms/inbound', c: 'green' },
             { label: 'Planning Outbound', href: '/wms/picking', c: 'red' },
             { label: 'Outbound', href: '/wms/outbound', c: 'red' },

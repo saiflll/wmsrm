@@ -5,6 +5,7 @@ import { Stock } from '../inventory/stock.entity';
 import { StockLog } from '../inventory/stock-log.entity';
 import { Barang } from '../barang/barang.entity';
 import { Gudang } from '../gudang/gudang.entity';
+import { Shift } from '../shifts/shift.entity';
 import { InboundPlanningService } from './inbound-planning.service';
 import { InboundPlanningController } from './inbound-planning.controller';
 
@@ -16,6 +17,7 @@ import { InboundPlanningController } from './inbound-planning.controller';
       StockLog,
       Barang,
       Gudang,
+      Shift,
     ]),
   ],
   controllers: [InboundPlanningController],

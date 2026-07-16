@@ -228,7 +228,7 @@ export class PlanningAyamService {
         );
 
         return {
-          date: p.tanggal_planning?.toISOString().split('T')[0] || '-',
+          date: p.tanggal_planning ? new Date(p.tanggal_planning).toISOString().split('T')[0] : '-',
           planning: p.qty || 0,
           outbound: totalOutbound,
           serapan:

@@ -1,22 +1,50 @@
 services:
-  test-wms:
-    build:
-      context: .
-      dockerfile: wms-test/Dockerfile
-    container_name: test-wms
+  wms-db:
+    image: postgres:15-alpine
+    container_name: wms-db
     restart: unless-stopped
     ports:
       - "3012:5432"
-      - "3011:3011"
-      - "3015:3000"
-    # volumes:
-    #   - test-wms-postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=wms_user
       - POSTGRES_PASSWORD=wms_password
       - POSTGRES_DB=wms_db
-      - JWT_SECRET=rm_super_secret_key_change_me
+    volumes:
+      - wms_db_data:/var/lib/postgresql/data
 
-# volumes:
-#   test-wms-postgres_data:
-#     driver: local
+  wms-backend:
+    image: node:20-alpine
+    container_name: wms-backend
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "3011:3011"
+    environment:
+      - JWT_SECRET=rm_super_secret_key_change_me
+      - DATABASE_URL=postgres://wms_user:wms_password@wms-db:5432/wms_db
+    volumes:
+      - ./rm/backend:/app
+      - /app/node_modules
+    depends_on:
+      - wms-db
+    command: sh -c "npm install --no-audit --no-fund && npm run build && npm run start:prod"
+
+  wms-frontend:
+    image: node:20-alpine
+    container_name: wms-frontend
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "3015:3000"
+    environment:
+      - BACKEND_API_URL=http://wms-backend:3011
+      - NEXT_PUBLIC_API_URL=http://localhost:3011
+    volumes:
+      - ./rm/frontend:/app
+      - /app/node_modules
+    depends_on:
+      - wms-backend
+    command: sh -c "npm install --no-audit --no-fund && npm run build && npm run start"
+
+volumes:
+  wms_db_data:

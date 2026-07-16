@@ -114,9 +114,8 @@ export default function RelocationPage() {
         )
         .map((stock: any) => ({
           value: String(stock.id),
-          label: `${stock.barang?.nama || "Item"} • ${
-            stock.gudang?.name || "Rak -"
-          } • ${stock.qty} ${stock.satuan || ""}`,
+          label: `${stock.barang?.nama || "Item"} • ${stock.gudang?.name || "Rak -"
+            } • ${stock.qty} ${stock.satuan || ""}`,
         })),
     [stocks, sourceZone],
   );
@@ -139,8 +138,8 @@ export default function RelocationPage() {
             label: isEmpty
               ? `${gudang.name} (KOSONG)`
               : gudang.zone
-              ? `${gudang.name} — ${gudang.zone}`
-              : gudang.name,
+                ? `${gudang.name} — ${gudang.zone}`
+                : gudang.name,
           };
         }),
     [gudangs, targetZone, selectedStock, stocks],
@@ -245,7 +244,7 @@ export default function RelocationPage() {
           Warehouse Movement
         </Text>
         <Title order={2} style={{ letterSpacing: "-0.04em" }}>
-          Relocation Plan → Execute
+          Relocation
         </Title>
         <Text size="sm" c="dimmed" mt={4}>
           Rencanakan perpindahan stok terlebih dahulu, lalu eksekusi saat
@@ -261,7 +260,7 @@ export default function RelocationPage() {
           style={{ width: 330, flexShrink: 0 }}
         >
           <Text fw={800} size="sm" mb={2}>
-            01 — Planning
+            Planning
           </Text>
           <Text size="xs" c="dimmed" mb="md">
             Buat draft perpindahan stok.
@@ -374,7 +373,7 @@ export default function RelocationPage() {
             <Group justify="space-between" mb="md">
               <Box>
                 <Text fw={800} size="sm">
-                  02 — Draft Relocation
+                  Draft Relocation
                 </Text>
                 <Text size="xs" c="dimmed">
                   Draft belum memengaruhi stok sampai dieksekusi.
@@ -460,7 +459,7 @@ export default function RelocationPage() {
             <Group justify="space-between" mb="md">
               <Box>
                 <Text fw={800} size="sm">
-                  03 — Execution History
+                  Execution History
                 </Text>
                 <Text size="xs" c="dimmed">
                   Riwayat relocation yang sudah dieksekusi.

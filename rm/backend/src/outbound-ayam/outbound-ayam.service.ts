@@ -185,11 +185,20 @@ export class OutboundAyamService {
       // 1. Lock outbound row
       const outbound = await manager.findOne(OutboundAyam, {
         where: { id },
-        relations: ['planning_ayam'],
         lock: { mode: 'pessimistic_write' },
+        loadEagerRelations: false,
       });
       if (!outbound) {
         throw new NotFoundException(`Outbound ayam with ID ${id} not found`);
+      }
+
+      const fullOutbound = await manager.findOne(OutboundAyam, {
+        where: { id },
+        relations: ['planning_ayam', 'shift'],
+      });
+      if (fullOutbound) {
+        outbound.planning_ayam = fullOutbound.planning_ayam;
+        outbound.shift = fullOutbound.shift;
       }
 
       if (!outbound.process_data || !outbound.process_data.items) {

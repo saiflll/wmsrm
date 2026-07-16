@@ -15,6 +15,7 @@ import { Stock } from '../inventory/stock.entity';
 import { StockLog, LogType } from '../inventory/stock-log.entity';
 import { Barang } from '../barang/barang.entity';
 import { Gudang } from '../gudang/gudang.entity';
+import { Shift } from '../shifts/shift.entity';
 
 @Injectable()
 export class InboundPlanningService {
@@ -29,6 +30,8 @@ export class InboundPlanningService {
     private readonly barangRepo: Repository<Barang>,
     @InjectRepository(Gudang)
     private readonly gudangRepo: Repository<Gudang>,
+    @InjectRepository(Shift)
+    private readonly shiftRepo: Repository<Shift>,
     private dataSource: DataSource,
   ) {}
 
@@ -97,6 +100,12 @@ export class InboundPlanningService {
         );
       }
 
+      // Load shift if provided
+      let shift: Shift | null = null;
+      if (dto.shiftId) {
+        shift = await manager.findOneBy(Shift, { id: dto.shiftId });
+      }
+
       let totalReceived = 0;
 
       for (const item of dto.items) {
@@ -153,6 +162,8 @@ export class InboundPlanningService {
           expiry_date: item.expiry_date
             ? new Date(item.expiry_date)
             : undefined,
+          supplier: plan.supplier,
+          shift: shift || undefined,
           jam_datang: item.jam_datang,
           jam_bongkar: item.jam_bongkar,
         });
@@ -163,6 +174,9 @@ export class InboundPlanningService {
       plan.status = 'DONE';
       plan.received_quantity = totalReceived;
       plan.published_at = new Date();
+      if (dto.note) {
+        plan.note = dto.note;
+      }
       await manager.save(InboundPlanning, plan);
 
       return plan;

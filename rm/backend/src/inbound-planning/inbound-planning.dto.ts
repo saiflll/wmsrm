@@ -51,18 +51,22 @@ class ProcessInboundItemDto {
   jam_bongkar?: string;
 }
 
+class InboundPlanItemDto {
+  @IsNumber()
+  barangId: number;
+
+  @IsNumber()
+  qty: number;
+
+  @IsOptional()
+  @IsString()
+  satuan?: string;
+}
+
 export class CreateInboundPlanningDto {
   @IsNotEmpty()
   @IsString()
   no_po: string;
-
-  @IsOptional()
-  @IsString()
-  driver_name?: string;
-
-  @IsOptional()
-  @IsString()
-  plat_nomor?: string;
 
   @IsOptional()
   @IsString()
@@ -81,6 +85,12 @@ export class CreateInboundPlanningDto {
   @ValidateNested({ each: true })
   @Type(() => AlokasiItemDto)
   alokasi?: AlokasiItemDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => InboundPlanItemDto)
+  items?: InboundPlanItemDto[];
 
   @IsOptional()
   @IsDateString()
@@ -102,14 +112,6 @@ export class UpdateInboundPlanningDto {
 
   @IsOptional()
   @IsString()
-  driver_name?: string;
-
-  @IsOptional()
-  @IsString()
-  plat_nomor?: string;
-
-  @IsOptional()
-  @IsString()
   supplier?: string;
 
   @IsOptional()
@@ -125,6 +127,12 @@ export class UpdateInboundPlanningDto {
   @ValidateNested({ each: true })
   @Type(() => AlokasiItemDto)
   alokasi?: AlokasiItemDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => InboundPlanItemDto)
+  items?: InboundPlanItemDto[];
 
   @IsOptional()
   @IsDateString()
@@ -152,4 +160,12 @@ export class ProcessInboundDto {
   @ValidateNested({ each: true })
   @Type(() => ProcessInboundItemDto)
   items: ProcessInboundItemDto[];
+
+  @IsOptional()
+  @IsString()
+  note?: string;
+
+  @IsOptional()
+  @IsNumber()
+  shiftId?: number;
 }

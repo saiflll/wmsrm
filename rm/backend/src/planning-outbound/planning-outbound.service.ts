@@ -109,96 +109,119 @@ export class PlanningOutboundService {
   }
 
   async publishOutbound(id: number, dto: PublishPlanningOutboundDto) {
-    return this.dataSource.transaction(async (manager) => {
-      const planning = await manager.findOne(PlanningOutbound, {
-        where: { id },
-        lock: { mode: 'pessimistic_write' },
-      });
+    try {
+      return await this.dataSource.transaction(async (manager) => {
+        const planning = await manager.findOne(PlanningOutbound, {
+          where: { id },
+          lock: { mode: 'pessimistic_write' },
+          loadEagerRelations: false,
+        });
 
-      if (!planning) throw new NotFoundException(`Planning with ID ${id} not found`);
-      
-      if (!planning.process_data || !planning.process_data.items) {
-        throw new BadRequestException('Planning belum diproses. Lakukan process terlebih dahulu.');
-      }
-      if (planning.status !== 'PROGRESS') {
-        throw new BadRequestException(`Planning status harus PROGRESS untuk publish.`);
-      }
+        if (!planning) throw new NotFoundException(`Planning with ID ${id} not found`);
 
-      for (const item of planning.process_data.items) {
-        const barang = await manager.findOneBy(Barang, { id: item.barangId });
-        if (!barang) throw new BadRequestException(`Barang ID ${item.barangId} not found`);
+        const fullPlanning = await manager.findOne(PlanningOutbound, {
+          where: { id },
+          relations: ['customer', 'shift'],
+        });
+        if (fullPlanning) {
+          planning.customer = fullPlanning.customer;
+          planning.shift = fullPlanning.shift;
+        }
+        
+        if (!planning.process_data || !planning.process_data.items) {
+          throw new BadRequestException('Planning belum diproses. Lakukan process terlebih dahulu.');
+        }
+        if (planning.status !== 'PROGRESS') {
+          throw new BadRequestException(`Planning status harus PROGRESS untuk publish.`);
+        }
 
-        if (
-          item.tujuan === 'RETURN_TO_WH' ||
-          item.tujuan === 'MISSING' ||
-          item.tujuan === 'WASTE' ||
-          item.tujuan === 'REJECT'
-        ) {
-          // Special categories deduct stock physically (unless we handle reserved, but since we didn't reserve physical stock yet, we just deduct what is lost/wasted)
-          if (item.gudangId) {
-            const gudang = await manager.findOneBy(Gudang, { id: item.gudangId });
-            if (gudang) {
-              // Return to WH just adds back or ignores deduction. Since we didn't deduct yet, for RETURN_TO_WH we do NOT deduct physically, just log it.
-              if (item.tujuan !== 'RETURN_TO_WH') {
-                const stock = await manager.findOne(Stock, {
-                  where: { barang: { id: barang.id }, gudang: { id: gudang.id }, batch_no: item.batch_no || '' },
-                });
-                if (stock) {
-                  stock.qty -= item.qty;
-                  if (stock.qty < 0) stock.qty = 0;
-                  await manager.save(Stock, stock);
+        for (const item of planning.process_data.items) {
+          const barang = await manager.findOneBy(Barang, { id: item.barangId });
+          if (!barang) throw new BadRequestException(`Barang ID ${item.barangId} not found`);
+
+          if (
+            item.tujuan === 'RETURN_TO_WH' ||
+            item.tujuan === 'MISSING' ||
+            item.tujuan === 'WASTE' ||
+            item.tujuan === 'REJECT'
+          ) {
+            // Special categories deduct stock physically (unless we handle reserved, but since we didn't reserve physical stock yet, we just deduct what is lost/wasted)
+            if (item.gudangId) {
+              const gudang = await manager.findOneBy(Gudang, { id: item.gudangId });
+              if (gudang) {
+                // Return to WH just adds back or ignores deduction. Since we didn't deduct yet, for RETURN_TO_WH we do NOT deduct physically, just log it.
+                if (item.tujuan !== 'RETURN_TO_WH') {
+                  const stock = await manager.findOne(Stock, {
+                    where: {
+                      barang: { id: barang.id },
+                      gudang: { id: gudang.id },
+                      ...(item.batch_no ? { batch_no: item.batch_no } : {}),
+                    },
+                  });
+                  if (stock) {
+                    stock.qty -= item.qty;
+                    if (stock.qty < 0) stock.qty = 0;
+                    await manager.save(Stock, stock);
+                  }
                 }
-              }
 
+                const log = manager.create(StockLog, {
+                  type: LogType.OUTBOUND,
+                  no_ref: planning.no_ref,
+                  barang,
+                  gudang,
+                  qty: item.qty,
+                  satuan: barang.satuan,
+                  batch_no: item.batch_no,
+                  tujuan: item.tujuan,
+                  keterangan: dto.keterangan || `Outbound Split: ${item.tujuan}`,
+                  shift: planning.shift,
+                } as any);
+                await manager.save(StockLog, log);
+              }
+            }
+          } else {
+            // Normal category: deduct from physical stock
+            const gudang = item.gudangId ? await manager.findOneBy(Gudang, { id: item.gudangId }) : null;
+            if (gudang) {
+              const stock = await manager.findOne(Stock, {
+                where: {
+                  barang: { id: barang.id },
+                  gudang: { id: gudang.id },
+                  ...(item.batch_no ? { batch_no: item.batch_no } : {}),
+                },
+              });
+              if (stock) {
+                stock.qty -= item.qty;
+                if (stock.qty < 0) stock.qty = 0;
+                await manager.save(Stock, stock);
+              }
+              
               const log = manager.create(StockLog, {
                 type: LogType.OUTBOUND,
                 no_ref: planning.no_ref,
                 barang,
                 gudang,
                 qty: item.qty,
-                satuan: barang.satuan,
+                satuan: stock?.satuan || barang.satuan,
                 batch_no: item.batch_no,
+                expiry_date: stock?.expiry_date,
                 tujuan: item.tujuan,
-                keterangan: dto.keterangan || `Outbound Split: ${item.tujuan}`,
+                keterangan: dto.keterangan || planning.keterangan,
                 shift: planning.shift,
               } as any);
               await manager.save(StockLog, log);
             }
           }
-        } else {
-          // Normal category: deduct from physical stock
-          const gudang = item.gudangId ? await manager.findOneBy(Gudang, { id: item.gudangId }) : null;
-          if (gudang) {
-            const stock = await manager.findOne(Stock, {
-              where: { barang: { id: barang.id }, gudang: { id: gudang.id }, batch_no: item.batch_no || '' },
-            });
-            if (stock) {
-              stock.qty -= item.qty;
-              if (stock.qty < 0) stock.qty = 0;
-              await manager.save(Stock, stock);
-            }
-            
-            const log = manager.create(StockLog, {
-              type: LogType.OUTBOUND,
-              no_ref: planning.no_ref,
-              barang,
-              gudang,
-              qty: item.qty,
-              satuan: stock?.satuan || barang.satuan,
-              batch_no: item.batch_no,
-              expiry_date: stock?.expiry_date,
-              tujuan: item.tujuan,
-              keterangan: dto.keterangan || planning.keterangan,
-              shift: planning.shift,
-            } as any);
-            await manager.save(StockLog, log);
-          }
         }
-      }
 
-      planning.status = 'DONE';
-      planning.published_at = new Date();
-      return manager.save(PlanningOutbound, planning);
-    });
+        planning.status = 'DONE';
+        planning.published_at = new Date();
+        return manager.save(PlanningOutbound, planning);
+      });
+    } catch (error) {
+      console.error(`[PublishOutbound] Error publishing planning ${id}:`, error);
+      throw error;
+    }
   }
 }

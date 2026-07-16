@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Box, Group, Button, Title, Text, Table, Badge, Paper, Stack,
-    TextInput, Select, Loader, NumberInput, Autocomplete, ActionIcon, Tooltip, Grid
+    TextInput, Select, Loader, NumberInput, Autocomplete, ActionIcon, Tooltip, Grid, Divider
 } from '@mantine/core';
 import {
-    IconEdit, IconTrash, IconFileTypePdf, IconPlus, IconBuildingWarehouse
+    IconEdit, IconTrash, IconFileTypePdf, IconPlus, IconBuildingWarehouse, IconSend
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { api, unwrap, fmt, statusLabel, statusColor } from '../lib/api';
@@ -31,24 +31,15 @@ const renderColorfulOption: any = ({ option }: any) => {
 };
 
 export default function PickingPage() {
-    const [type, setType] = useState('wet');
     const [allGudangs, setAllGudangs] = useState<any[]>([]);
     const [stocks, setStocks] = useState<any[]>([]);
     const [barangs, setBarangs] = useState<any[]>([]);
     const [logs, setLogs] = useState<any[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
     const [shifts, setShifts] = useState<any[]>([]);
+    const [plans, setPlans] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [drafts, setDrafts] = useState<any[]>(() => {
-        if (typeof window !== "undefined") {
-            try {
-                const saved = localStorage.getItem("wms_picking_drafts");
-                return saved ? JSON.parse(saved) : [];
-            } catch (e) {}
-        }
-        return [];
-    });
-    const draftSavedRef = useRef(false);
+    const [editPlanId, setEditPlanId] = useState<number | null>(null);
 
     // Zone & Product filter for Rak Selector
     const [selectedZone, setSelectedZone] = useState('');
@@ -58,42 +49,71 @@ export default function PickingPage() {
     const [sortKey, setSortKey] = useState<string | null>(null);
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
-    const [form, setForm] = useState({
+    const handleSort = (key: string) => {
+        if (sortKey === key) {
+            setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDir('asc');
+        }
+    };
+
+    const sortIcon = (key: string) => {
+        if (sortKey !== key) return ' ↕';
+        return sortDir === 'asc' ? ' ▲' : ' ▼';
+    };
+
+    const printPDF = (plan: any) => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+        const itemsHtml = (plan.items || []).map((item: any, idx: number) =>
+            `<tr key=${idx}><td>${item.barangId}</td><td>${item.qty}</td><td>${item.satuan || '-'}</td></tr>`
+        ).join('');
+        printWindow.document.write(`
+            <html><head><title>Print - ${plan.no_ref || 'Picking'}</title>
+            <style>body{font-family:Arial;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px;text-align:left}th{background:#f5f5f5}h2{margin-bottom:10px}</style>
+            </head><body>
+            <h2>Picking Order: ${plan.no_ref || '-'}</h2>
+            <p>Tujuan: ${plan.tujuan || '-'} | Customer: ${plan.customer?.nama || plan.customer?.name || '-'}</p>
+            <table><thead><tr><th>Barang ID</th><th>Qty</th><th>Satuan</th></tr></thead><tbody>${itemsHtml}</tbody></table>
+            <script>window.print();window.close();<\/script>
+            </body></html>
+        `);
+        printWindow.document.close();
+    };
+
+    const [form, setForm] = useState<any>({
         stock_id: '', qty: 1, tujuan: '', no_ref: '', shift_id: '',
         tanggal_permintaan: new Date().toISOString().split('T')[0],
         nomor_batch: '',
+        items: [], // [{ stock_id: string, barangId: number, gudangId: number, qty: number, batch_no: string, satuan: string, _brg: string, _gdg: string, _zone: string }]
     });
 
     const ZONES_WET = ['CS FROZEN', 'CHILL', 'WASTE'];
     const ZONES_DRY = ['DRY A', 'DRY B', 'DRY FG'];
-    const zones = type === 'wet' ? ZONES_WET : ZONES_DRY;
+    const zones = [...ZONES_WET, ...ZONES_DRY];
 
-    useEffect(() => { load(); }, [type]);
-
-    // Save drafts to localStorage on change (skip initial render)
-    useEffect(() => {
-        if (!draftSavedRef.current) { draftSavedRef.current = true; return; }
-        localStorage.setItem("wms_picking_drafts", JSON.stringify(drafts));
-    }, [drafts]);
+    useEffect(() => { load(); }, []);
 
     const load = async () => {
         setLoading(true);
         try {
-            const side = type === 'dry';
-            const [s, l, c, sh, g, b] = await Promise.all([
-                api().get(`/inventory/stock?side=${side}`),
+            const [s, l, c, sh, g, b, p] = await Promise.all([
+                api().get('/inventory/stock'),
                 api().get('/inventory/logs/picking'),
                 api().get('/customers'),
                 api().get('/shifts'),
-                api().get(`/gudang?side=${side}`),
+                api().get('/gudang'),
                 api().get('/barang'),
+                api().get('/planning-outbound'),
             ]);
-            setStocks(unwrap(s));
-            setLogs(unwrap(l).filter((ll: any) => type === 'wet' ? !ll.barang?.side : ll.barang?.side));
-            setCustomers(unwrap(c));
-            setShifts(unwrap(sh));
-            setAllGudangs(unwrap(g));
-            setBarangs(unwrap(b));
+            setStocks(unwrap(s) || []);
+            setLogs(unwrap(l) || []);
+            setCustomers(unwrap(c) || []);
+            setShifts(unwrap(sh) || []);
+            setAllGudangs(unwrap(g) || []);
+            setBarangs(unwrap(b) || []);
+            setPlans(unwrap(p) || []);
         } catch (e) { console.error(e); }
         setLoading(false);
     };
@@ -126,67 +146,155 @@ export default function PickingPage() {
     // Get auto-fill data from selected stock
     const selStock = stocks.find((s: any) => s.id === +form.stock_id);
 
-    const addDraft = () => {
+    const addItemToForm = () => {
         if (!form.stock_id || !form.qty) return notifications.show({ title: 'Error', message: 'Pilih stock & qty', color: 'red' });
-        if (!form.tujuan) return notifications.show({ title: 'Error', message: 'Tujuan wajib diisi', color: 'red' });
         const st = stocks.find((s: any) => s.id === +form.stock_id);
         if (!st) return;
-        setDrafts(p => [...p, {
-            ...form, id: Date.now(), stock_id: +form.stock_id,
-            barang_id: st.barang?.id, gudang_id: st.gudang?.id,
-            _brg: st.barang?.nama, _gdg: st.gudang?.name,
-            _zone: st.gudang?.zone,
-            _exp: st.expiry_date,
-            satuan: st.satuan || st.barang?.satuan,
-            shift_id: form.shift_id ? +form.shift_id : undefined,
-        }]);
+
+        const exists = form.items.some((it: any) => String(it.stock_id) === String(form.stock_id));
+        if (exists) {
+            setForm((p: any) => ({
+                ...p,
+                items: p.items.map((it: any) =>
+                    String(it.stock_id) === String(form.stock_id)
+                        ? { ...it, qty: it.qty + form.qty }
+                        : it
+                ),
+            }));
+        } else {
+            setForm((p: any) => ({
+                ...p,
+                items: [...p.items, {
+                    stock_id: form.stock_id,
+                    barangId: st.barang?.id,
+                    gudangId: st.gudang?.id,
+                    qty: form.qty,
+                    batch_no: form.nomor_batch || st.batch_no || '',
+                    satuan: st.satuan || st.barang?.satuan || 'Pcs',
+                    _brg: st.barang?.nama || 'Unknown',
+                    _gdg: st.gudang?.name || '-',
+                    _zone: st.gudang?.zone || '-',
+                }]
+            }));
+        }
         setForm(p => ({ ...p, stock_id: '', qty: 1, nomor_batch: '' }));
     };
 
-    const editDraft = (idx: number) => {
-        const d = drafts[idx];
-        setForm({
-            stock_id: String(d.stock_id),
-            qty: d.qty,
-            tujuan: d.tujuan,
-            no_ref: d.no_ref,
-            shift_id: d.shift_id ? String(d.shift_id) : '',
-            tanggal_permintaan: d.tanggal_permintaan,
-            nomor_batch: d.nomor_batch || '',
-        });
-        setSelectedZone(d._zone);
-        setSelectedBarangId(String(d.barang_id));
-        setDrafts(p => p.filter((_, i) => i !== idx));
+    const removeItemFromForm = (idx: number) => {
+        setForm((p: any) => ({
+            ...p,
+            items: p.items.filter((_: any, i: number) => i !== idx),
+        }));
     };
 
-    // Sort functions
-    const handleSort = (key: string) => {
-        if (sortKey === key) {
-            setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortKey(key);
-            setSortDir('asc');
+    const submitPlanning = async () => {
+        if (!form.items.length) {
+            return notifications.show({ title: 'Error', message: 'Tambahkan minimal 1 item ke planning', color: 'red' });
+        }
+
+        const custName = form.tujuan;
+        const cust = customers.find((c: any) => (c.nama || c.name) === custName);
+
+        const payload = {
+            no_ref: form.no_ref || `PLAN-OUT-${Date.now()}`,
+            customer_id: cust ? cust.id : undefined,
+            shift_id: form.shift_id ? Number(form.shift_id) : undefined,
+            tanggal_planning: form.tanggal_permintaan,
+            tujuan: custName || undefined,
+            items: form.items.map((item: any) => ({
+                barangId: Number(item.barangId),
+                gudangId: Number(item.gudangId),
+                qty: Number(item.qty),
+                batch_no: item.batch_no || undefined,
+                satuan: item.satuan || undefined,
+            }))
+        };
+
+        try {
+            if (editPlanId !== null) {
+                await api().put(`/planning-outbound/${editPlanId}`, payload);
+                notifications.show({ title: 'Sukses', message: 'Planning Outbound berhasil diupdate', color: 'green' });
+            } else {
+                await api().post('/planning-outbound', payload);
+                notifications.show({ title: 'Sukses', message: 'Planning Outbound berhasil disimpan', color: 'green' });
+            }
+            setEditPlanId(null);
+            setForm({
+                stock_id: '', qty: 1, tujuan: '', no_ref: '', shift_id: '',
+                tanggal_permintaan: new Date().toISOString().split('T')[0],
+                nomor_batch: '',
+                items: [],
+            });
+            setSelectedZone('');
+            setSelectedBarangId('');
+            load();
+        } catch (e: any) {
+            notifications.show({
+                title: 'Error',
+                message: unwrap(e.response)?.message || 'Gagal menyimpan planning outbound',
+                color: 'red'
+            });
         }
     };
 
-    const sortIcon = (key: string) => {
-        if (sortKey !== key) return " ↕";
-        return sortDir === 'asc' ? " ▲" : " ▼";
+    const cancelEdit = () => {
+        setEditPlanId(null);
+        setForm({
+            stock_id: '', qty: 1, tujuan: '', no_ref: '', shift_id: '',
+            tanggal_permintaan: new Date().toISOString().split('T')[0],
+            nomor_batch: '',
+            items: [],
+        });
+        setSelectedZone('');
+        setSelectedBarangId('');
     };
 
-    // Sort logs array before grouping
-    const sortedLogs = [...logs].sort((a, b) => {
+    const editTrans = (plan: any) => {
+        const mappedItems = plan.items.map((r: any) => {
+            const bObj = barangs.find((b: any) => b.id === r.barangId);
+            const gObj = allGudangs.find((g: any) => g.id === r.gudangId);
+            return {
+                barangId: r.barangId,
+                gudangId: r.gudangId,
+                qty: r.qty,
+                batch_no: r.batch_no || '',
+                satuan: r.satuan || bObj?.satuan || '',
+                _brg: bObj ? bObj.nama : '-',
+                _gdg: gObj ? gObj.name : '-',
+                _zone: gObj ? gObj.zone : '-',
+            };
+        });
+        setForm({
+            stock_id: '',
+            qty: 1,
+            tujuan: plan.customer?.nama || plan.tujuan || '',
+            no_ref: plan.no_ref || '',
+            shift_id: plan.shift?.id ? String(plan.shift.id) : '',
+            tanggal_permintaan: plan.tanggal_planning,
+            nomor_batch: '',
+            items: mappedItems,
+        });
+        setEditPlanId(plan.id);
+    };
+
+    const deleteTrans = async (planId: number) => {
+        if (!confirm('Yakin ingin menghapus Planning Outbound ini?')) return;
+        try {
+            await api().delete('/planning-outbound/' + planId);
+            notifications.show({ title: 'Sukses', message: 'Planning Outbound berhasil dihapus', color: 'green' });
+            load();
+        } catch (e: any) {
+            notifications.show({ title: 'Error', message: unwrap(e.response)?.message || 'Gagal menghapus planning', color: 'red' });
+        }
+    };
+
+    const activePlans = plans.filter((p: any) => p.status !== 'DONE');
+    const donePlans = plans.filter((p: any) => p.status === 'DONE');
+
+    const sortFn = (a: any, b: any) => {
         if (!sortKey) return 0;
         let aVal = a[sortKey];
         let bVal = b[sortKey];
-
-        if (sortKey === 'barang.nama') {
-            aVal = a.barang?.nama || '';
-            bVal = b.barang?.nama || '';
-        } else if (sortKey === 'gudang.name') {
-            aVal = a.gudang?.name || '';
-            bVal = b.gudang?.name || '';
-        }
 
         if (aVal == null) aVal = "";
         if (bVal == null) bVal = "";
@@ -196,127 +304,10 @@ export default function PickingPage() {
         }
         const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
         return sortDir === 'asc' ? cmp : -cmp;
-    });
-
-    // Group logs by no_ref
-    const groupedLogs: Record<string, any[]> = {};
-    sortedLogs.forEach((r: any) => {
-        const key = r.no_ref || `LOG-${r.id}`;
-        if (!groupedLogs[key]) groupedLogs[key] = [];
-        groupedLogs[key].push(r);
-    });
-
-    const printPDF = (transId: string, items: any[]) => {
-        const win = window.open('', '_blank');
-        if (!win) return;
-        win.document.write(`
-            <html>
-            <head>
-                <title>Planning Outbound - ${transId}</title>
-                <style>
-                    body { font-family: Arial; padding: 20px; font-size: 10px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-                    th, td { border: 1px solid #333; padding: 5px; text-align: left; }
-                    th { background: #1f2937; color: #fff; font-size: 10px; }
-                    .title { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
-                    .meta { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 8px; color: #333; }
-                    .badge { display: inline-block; background: #1f2937; color:#fff; border-radius: 4px; padding: 1px 6px; font-size: 9px; font-weight: bold; }
-                </style>
-            </head>
-            <body>
-                <div class="title">PLANNING OUTBOUND DOCUMENT</div>
-                <div class="meta">
-                    <div>
-                        <b>ID Transaksi:</b> ${transId}<br/>
-                        <b>Tujuan:</b> ${items[0]?.tujuan || '-'}<br/>
-                        <b>Shift:</b> ${items[0]?.shift?.name || '-'}
-                    </div>
-                    <div style="text-align: right">
-                        <b>Dicetak:</b> ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}<br/>
-                        <b>Tgl Transaksi:</b> ${items[0]?.created_at ? fmt(items[0].created_at) : '-'}<br/>
-                        <b>Total Item:</b> ${items.length} baris
-                    </div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <th>Item / Produk</th>
-                            <th>Batch No</th>
-                            <th>Tgl Expired</th>
-                            <th>Zone / Rak Asal</th>
-                            <th>Qty</th>
-                            <th>Satuan</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${items.map((r: any, i: number) => `
-                            <tr>
-                                <td>${i + 1}</td>
-                                <td><b>${r.barang?.nama || '-'}</b></td>
-                                <td>${r.batch_no || '-'}</td>
-                                <td>${r.expiry_date ? new Date(r.expiry_date).toLocaleDateString('id-ID') : '-'}</td>
-                                <td>${r.gudang?.name || '-'} <span class="badge">${r.gudang?.zone || '-'}</span></td>
-                                <td>${r.qty}</td>
-                                <td>${r.satuan || ''}</td>
-                                <td>${statusLabel(r.expiry_date)}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 10px;">
-                    <div>Checker / Pengambil:<br/><br/>______________________________</div>
-                    <div>Supervisor / Approved:<br/><br/>______________________________</div>
-                </div>
-                <script>window.onload=()=>{window.print();window.close()}</script>
-            </body>
-            </html>
-        `);
-        win.document.close();
     };
 
-    const deleteTrans = async (transId: string) => {
-        if (!confirm('Yakin ingin membatalkan Planning Outbound ini? Stok reserved akan dibebaskan kembali.')) return;
-        try {
-            await api().delete('/inventory/picking/' + encodeURIComponent(transId));
-            notifications.show({ title: 'Sukses', message: 'Planning Outbound dibatalkan & stok reserved dilepas', color: 'green' });
-            load();
-        } catch (e: any) {
-            notifications.show({ title: 'Error', message: unwrap(e.response)?.message || 'Gagal membatalkan', color: 'red' });
-        }
-    };
-
-    const editTrans = async (transId: string, items: any[]) => {
-        if (!confirm('Edit planning outbound akan membatalkan reservasi rak lalu menaruh data ke tabel draft kiri. Lanjutkan?')) return;
-        try {
-            await api().delete('/inventory/picking/' + encodeURIComponent(transId));
-            const newDrafts = items.map((r: any) => ({
-                id: Date.now() + Math.random(),
-                stock_id: '',
-                barang_id: r.barang?.id,
-                gudang_id: r.gudang?.id,
-                qty: r.qty,
-                tujuan: r.tujuan,
-                no_ref: r.no_ref,
-                shift_id: r.shift?.id ? String(r.shift.id) : '',
-                tanggal_permintaan: new Date().toISOString().split('T')[0],
-                nomor_batch: r.batch_no || '',
-                _brg: r.barang?.nama,
-                _gdg: r.gudang?.name,
-                _zone: r.gudang?.zone,
-                _exp: r.expiry_date,
-                satuan: r.satuan,
-            }));
-
-            setDrafts(newDrafts);
-            setForm(p => ({ ...p, no_ref: transId }));
-            notifications.show({ title: 'Edit Mode', message: 'Draft berhasil dimuat ulang ke tabel planning outbound', color: 'yellow' });
-            load();
-        } catch (e: any) {
-            notifications.show({ title: 'Error', message: 'Gagal memuat ulang data ke edit', color: 'red' });
-        }
-    };
+    const sortedActivePlans = [...activePlans].sort(sortFn);
+    const sortedDonePlans = [...donePlans].sort(sortFn);
 
     return (
         <Box>
@@ -326,10 +317,6 @@ export default function PickingPage() {
                         <IconBuildingWarehouse size={20} style={{ color: '#e6921e' }} />
                         PLANNING OUTBOUND
                     </Title>
-                    <Group gap="xs">
-                        <Button size="xs" color={type === 'wet' ? 'yellow' : 'gray'} variant={type === 'wet' ? 'filled' : 'outline'} onClick={() => { setType('wet'); setSelectedZone(''); }} style={{ fontWeight: 700 }}>ITEM WET</Button>
-                        <Button size="xs" color={type === 'dry' ? 'blue' : 'gray'} variant={type === 'dry' ? 'filled' : 'outline'} onClick={() => { setType('dry'); setSelectedZone(''); }} style={{ fontWeight: 700 }}>ITEM DRY</Button>
-                    </Group>
                 </Group>
             </Box>
 
@@ -374,7 +361,6 @@ export default function PickingPage() {
                                         <Text size="xs" c="orange" fw={600}>Stok Tersedia: <b>{selStock.qty - (selStock.reserved_qty || 0)} {selStock.satuan}</b></Text>
                                     </Box>
                                 )}
-
                                 <NumberInput
                                     label="Qty"
                                     size="xs"
@@ -385,149 +371,228 @@ export default function PickingPage() {
                                     disabled={!form.stock_id}
                                 />
                                 <Autocomplete label="Nomor Batch" size="xs" data={batchOpts} value={form.nomor_batch} onChange={v => setForm(p => ({ ...p, nomor_batch: v }))} placeholder="Pilih/Ketik Nomor Batch" />
+
+                                <Button size="xs" color="orange" variant="outline" onClick={addItemToForm} leftSection={<IconPlus size={14} />}>+ Tambah Item</Button>
+
+                                {form.items.length > 0 && (
+                                    <Box style={{ overflowX: "auto", marginTop: 8 }}>
+                                        <table style={{ width: "100%", fontSize: 10, borderCollapse: "collapse" }}>
+                                            <thead>
+                                                <tr style={{ background: "#f8f9fa", borderBottom: "1px solid #e2e8f0" }}>
+                                                    <th style={{ textAlign: "left", padding: 4 }}>Barang</th>
+                                                    <th style={{ textAlign: "right", padding: 4 }}>Qty</th>
+                                                    <th style={{ textAlign: "center", padding: 4 }}>Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {form.items.map((it: any, idx: number) => (
+                                                    <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                                                        <td style={{ padding: 4 }}>{it._brg} ({it._gdg})</td>
+                                                        <td style={{ padding: 4, textAlign: "right", fontWeight: 700 }}>{it.qty} {it.satuan}</td>
+                                                        <td style={{ padding: 4, textAlign: "center" }}>
+                                                            <ActionIcon size="xs" color="red" variant="subtle" onClick={() => removeItemFromForm(idx)}>
+                                                                <IconTrash size={12} />
+                                                            </ActionIcon>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </Box>
+                                )}
+
+                                <Divider my={4} />
+
                                 <Autocomplete label="Tujuan (Master Customer)" size="xs" data={customerOpts} value={form.tujuan} onChange={v => setForm(p => ({ ...p, tujuan: v }))} placeholder="Produksi AP / Customer..." />
                                 <TextInput label="Tanggal Permintaan" size="xs" type="date" value={form.tanggal_permintaan} onChange={e => setForm(p => ({ ...p, tanggal_permintaan: e.target.value }))} />
                                 <Autocomplete label="Shift" size="xs" data={shifts.map((s: any) => s.name)} value={shifts.find((s: any) => String(s.id) === form.shift_id)?.name || form.shift_id} onChange={v => { const match = shifts.find((s: any) => s.name.toLowerCase() === v.toLowerCase()); setForm(p => ({ ...p, shift_id: match ? String(match.id) : v })); }} placeholder="Pilih shift" />
-                                <Button fullWidth size="xs" color="orange" onClick={addDraft} style={{ fontWeight: 700 }} leftSection={<IconPlus size={14} />}>+ Tambahkan Draft</Button>
+
+                                <Group gap="xs" mt="xs">
+                                    <Button fullWidth size="xs" color="orange" onClick={submitPlanning} style={{ fontWeight: 700, flex: 1 }} leftSection={<IconPlus size={14} />}>
+                                        {editPlanId !== null ? "Update Planning Outbound" : "Simpan Planning Outbound"}
+                                    </Button>
+                                    {editPlanId !== null && (
+                                        <Button size="xs" color="gray" variant="outline" onClick={cancelEdit}>Batal</Button>
+                                    )}
+                                </Group>
                             </Stack>
                         </Paper>
                     </Grid.Col>
 
                     {/* Right Tables Panel */}
                     <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
-                        {drafts.length > 0 && (
-                            <Paper withBorder p="md" radius="md" mb="md" style={{ background: '#fff' }}>
-                                <Box mb="xs">
-                                    <Text fw={800} size="sm" c="orange">DRAFT ANTRIAN PLANNING OUTBOUND {type.toUpperCase()}</Text>
-                                    <Text size="xs" c="dimmed">ID Transaksi: <b>{form.no_ref || '(akan digenerate otomatis)'}</b></Text>
-                                </Box>
+                        <Stack gap="md">
+                            {/* Table for active plans */}
+                            <Paper withBorder p="md" radius="md" style={{ background: '#fff' }}>
+                                <Group justify="space-between" mb="sm">
+                                    <Text fw={850} size="sm" c="orange">
+                                        PLANNING OUTBOUND AKTIF ({activePlans.length} Transaksi)
+                                    </Text>
+                                </Group>
+
                                 <Box style={{ overflowX: 'auto' }}>
                                     <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
-                                        <Table.Thead style={{ background: '#333' }}>
+                                        <Table.Thead style={{ background: '#1a1a1a' }}>
                                             <Table.Tr>
-                                                {['Tujuan', 'Batch', 'Item', 'Tgl Permintaan', 'Location', 'Tgl.Expired', 'Qty', 'Status', 'Shift', 'Aksi'].map((h: any) => (
-                                                    <Table.Th key={h} style={{ color: '#fff', fontSize: 11 }}>{h}</Table.Th>
-                                                ))}
+                                                <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('no_ref')}>
+                                                    ID Transaksi / Ref{sortIcon('no_ref')}
+                                                </Table.Th>
+                                                <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('tujuan')}>
+                                                    Tujuan{sortIcon('tujuan')}
+                                                </Table.Th>
+                                                <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('tanggal_planning')}>
+                                                    Tanggal Planning{sortIcon('tanggal_planning')}
+                                                </Table.Th>
+                                                <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('shift.name')}>
+                                                    Shift{sortIcon('shift.name')}
+                                                </Table.Th>
+                                                <Table.Th style={{ color: '#fff' }}>
+                                                    Items
+                                                </Table.Th>
+                                                <Table.Th style={{ color: '#fff' }}>Status</Table.Th>
+                                                <Table.Th style={{ color: '#fff' }}>Aksi</Table.Th>
                                             </Table.Tr>
                                         </Table.Thead>
                                         <Table.Tbody>
-                                            {drafts.map((d: any, i: any) => (
-                                                <Table.Tr key={d.id || i}>
-                                                    <Table.Td fw={600}>{d.tujuan}</Table.Td>
-                                                    <Table.Td>{d.nomor_batch || '-'}</Table.Td>
-                                                    <Table.Td>{d._brg}</Table.Td>
-                                                    <Table.Td>{d.tanggal_permintaan}</Table.Td>
-                                                    <Table.Td><Badge size="xs" color="blue">{d._gdg}</Badge></Table.Td>
-                                                    <Table.Td>{d._exp ? fmt(d._exp) : '-'}</Table.Td>
-                                                    <Table.Td ta="right" fw={700}>{d.qty} {d.satuan}</Table.Td>
-                                                    <Table.Td><Badge size="xs" color={statusColor(d._exp)}>{statusLabel(d._exp)}</Badge></Table.Td>
-                                                    <Table.Td>{shifts.find((s: any) => s.id === d.shift_id)?.name || '-'}</Table.Td>
-                                                    <Table.Td>
-                                                        <Group gap={4} wrap="nowrap">
-                                                            <ActionIcon size="sm" color="green" variant="light" onClick={() => editDraft(i)}>
-                                                                <IconEdit size={13} />
-                                                            </ActionIcon>
-                                                            <ActionIcon size="sm" color="red" variant="light" onClick={() => setDrafts(p => p.filter((_, j) => j !== i))}>
-                                                                <IconTrash size={13} />
-                                                            </ActionIcon>
-                                                        </Group>
+                                            {sortedActivePlans.map((plan: any) => {
+                                                const statusColor = (status: string) => {
+                                                    if (status === 'PROGRESS') return 'blue';
+                                                    if (status === 'CANCEL') return 'red';
+                                                    return 'yellow';
+                                                };
+                                                return (
+                                                    <Table.Tr key={plan.id}>
+                                                        <Table.Td fw={700} style={{ color: '#1565c0' }}>{plan.no_ref || `#${plan.id}`}</Table.Td>
+                                                        <Table.Td>{plan.customer?.nama || plan.tujuan || '-'}</Table.Td>
+                                                        <Table.Td>{fmt(plan.tanggal_planning)}</Table.Td>
+                                                        <Table.Td>{plan.shift?.name || '-'}</Table.Td>
+                                                        <Table.Td>
+                                                            {plan.items?.map((item: any, idx: number) => {
+                                                                const bName = barangs.find((b: any) => b.id === item.barangId)?.nama || '-';
+                                                                return (
+                                                                    <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '2px 0' }}>
+                                                                        {bName} <b>x{item.qty}</b>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </Table.Td>
+                                                        <Table.Td>
+                                                            <Badge size="xs" color={statusColor(plan.status)} variant="filled">{plan.status}</Badge>
+                                                        </Table.Td>
+                                                        <Table.Td>
+                                                            <Group gap={6} wrap="nowrap">
+                                                                {plan.status === 'WAIT' && (
+                                                                    <>
+                                                                        <Tooltip label="Edit">
+                                                                            <ActionIcon size="sm" color="green" variant="light" onClick={() => editTrans(plan)}>
+                                                                                <IconEdit size={13} />
+                                                                            </ActionIcon>
+                                                                        </Tooltip>
+                                                                        <Tooltip label="Hapus Transaksi">
+                                                                            <ActionIcon size="sm" color="red" variant="light" onClick={() => deleteTrans(plan.id)}>
+                                                                                <IconTrash size={13} />
+                                                                            </ActionIcon>
+                                                                        </Tooltip>
+                                                                    </>
+                                                                )}
+                                                                <Tooltip label="Print PDF">
+                                                                    <ActionIcon size="sm" color="red" variant="light" onClick={() => printPDF(plan)}>
+                                                                        <IconFileTypePdf size={13} />
+                                                                    </ActionIcon>
+                                                                </Tooltip>
+                                                            </Group>
+                                                        </Table.Td>
+                                                    </Table.Tr>
+                                                );
+                                            })}
+                                            {sortedActivePlans.length === 0 && (
+                                                <Table.Tr>
+                                                    <Table.Td colSpan={7} ta="center" c="dimmed">
+                                                        Tidak ada data planning outbound aktif.
                                                     </Table.Td>
                                                 </Table.Tr>
-                                            ))}
+                                            )}
                                         </Table.Tbody>
                                     </Table>
                                 </Box>
                             </Paper>
-                        )}
 
-                        <Paper withBorder p="md" radius="md" style={{ background: '#fff' }}>
-                            <Group justify="space-between" mb="sm">
-                                <Text fw={850} size="sm">
-                                    RIWAYAT PLANNING OUTBOUND ({Object.keys(groupedLogs).length} Transaksi)
-                                </Text>
-                            </Group>
+                            {/* Table for completed plans */}
+                            <Paper withBorder p="md" radius="md" style={{ background: '#fff' }}>
+                                <Group justify="space-between" mb="sm">
+                                    <Text fw={850} size="sm" c="dimmed">
+                                        RIWAYAT PLANNING OUTBOUND SELESAI ({donePlans.length} Transaksi)
+                                    </Text>
+                                </Group>
 
-                            <Box style={{ overflowX: 'auto' }}>
-                                <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
-                                    <Table.Thead style={{ background: '#1a1a1a' }}>
-                                        <Table.Tr>
-                                            <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('no_ref')}>
-                                                ID Transaksi{sortIcon('no_ref')}
-                                            </Table.Th>
-                                            <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('tujuan')}>
-                                                Tujuan{sortIcon('tujuan')}
-                                            </Table.Th>
-                                            <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('barang.nama')}>
-                                                Item{sortIcon('barang.nama')}
-                                            </Table.Th>
-                                            <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('created_at')}>
-                                                Tanggal{sortIcon('created_at')}
-                                            </Table.Th>
-                                            <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('shift.name')}>
-                                                Shift{sortIcon('shift.name')}
-                                            </Table.Th>
-                                            <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('qty')}>
-                                                Qty{sortIcon('qty')}
-                                            </Table.Th>
-                                            <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('gudang.name')}>
-                                                Gudang{sortIcon('gudang.name')}
-                                            </Table.Th>
-                                            <Table.Th style={{ color: '#fff' }}>Status</Table.Th>
-                                            <Table.Th style={{ color: '#fff' }}>Aksi</Table.Th>
-                                        </Table.Tr>
-                                    </Table.Thead>
-                                    <Table.Tbody>
-                                        {Object.entries(groupedLogs).slice(0, 50).map(([transId, items]) => (
-                                            items.map((r: any, idx: any) => (
-                                                <Table.Tr key={r.id}>
-                                                    {idx === 0 && (
-                                                        <Table.Td fw={700} style={{ color: '#1565c0' }} rowSpan={items.length}>{transId}</Table.Td>
-                                                    )}
-                                                    <Table.Td>{r.tujuan || '-'}</Table.Td>
-                                                    <Table.Td fw={600}>{r.barang?.nama}</Table.Td>
-                                                    <Table.Td>{fmt(r.created_at)}</Table.Td>
-                                                    <Table.Td>{r.shift?.name || '-'}</Table.Td>
-                                                    <Table.Td ta="right" fw={700}>{r.qty} {r.satuan}</Table.Td>
-                                                    <Table.Td><Badge size="xs" color="blue">{r.gudang?.name}</Badge></Table.Td>
-                                                    <Table.Td>
-                                                        <Group gap={4} wrap="nowrap">
-                                                            <Badge size="xs" color={statusColor(r.expiry_date)}>{statusLabel(r.expiry_date)}</Badge>
-                                                            <Badge size="xs" color={r.status === 'RESERVED' ? 'yellow' : 'green'}>{r.status || 'CONFIRMED'}</Badge>
-                                                        </Group>
-                                                    </Table.Td>
-                                                    {idx === 0 && (
-                                                        <Table.Td rowSpan={items.length}>
+                                <Box style={{ overflowX: 'auto' }}>
+                                    <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
+                                        <Table.Thead style={{ background: '#1a1a1a' }}>
+                                            <Table.Tr>
+                                                <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('no_ref')}>
+                                                    ID Transaksi / Ref{sortIcon('no_ref')}
+                                                </Table.Th>
+                                                <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('tujuan')}>
+                                                    Tujuan{sortIcon('tujuan')}
+                                                </Table.Th>
+                                                <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('tanggal_planning')}>
+                                                    Tanggal Planning{sortIcon('tanggal_planning')}
+                                                </Table.Th>
+                                                <Table.Th style={{ color: '#fff', cursor: 'pointer' }} onClick={() => handleSort('shift.name')}>
+                                                    Shift{sortIcon('shift.name')}
+                                                </Table.Th>
+                                                <Table.Th style={{ color: '#fff' }}>
+                                                    Items
+                                                </Table.Th>
+                                                <Table.Th style={{ color: '#fff' }}>Status</Table.Th>
+                                                <Table.Th style={{ color: '#fff' }}>Aksi</Table.Th>
+                                            </Table.Tr>
+                                        </Table.Thead>
+                                        <Table.Tbody>
+                                            {sortedDonePlans.map((plan: any) => {
+                                                return (
+                                                    <Table.Tr key={plan.id}>
+                                                        <Table.Td fw={700} style={{ color: '#1565c0' }}>{plan.no_ref || `#${plan.id}`}</Table.Td>
+                                                        <Table.Td>{plan.customer?.nama || plan.tujuan || '-'}</Table.Td>
+                                                        <Table.Td>{fmt(plan.tanggal_planning)}</Table.Td>
+                                                        <Table.Td>{plan.shift?.name || '-'}</Table.Td>
+                                                        <Table.Td>
+                                                            {plan.items?.map((item: any, idx: number) => {
+                                                                const bName = barangs.find((b: any) => b.id === item.barangId)?.nama || '-';
+                                                                return (
+                                                                    <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '2px 0' }}>
+                                                                        {bName} <b>x{item.qty}</b>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </Table.Td>
+                                                        <Table.Td>
+                                                            <Badge size="xs" color="green" variant="filled">{plan.status}</Badge>
+                                                        </Table.Td>
+                                                        <Table.Td>
                                                             <Group gap={6} wrap="nowrap">
-                                                                <Tooltip label="Edit">
-                                                                    <ActionIcon size="md" color="green" variant="light" onClick={() => editTrans(transId, items)}>
-                                                                        <IconEdit size={16} />
+                                                                <Tooltip label="Print PDF">
+                                                                    <ActionIcon size="sm" color="red" variant="light" onClick={() => printPDF(plan)}>
+                                                                        <IconFileTypePdf size={13} />
                                                                     </ActionIcon>
                                                                 </Tooltip>
-                                                                <Tooltip label="Hapus Transaksi">
-                                                                    <ActionIcon size="md" color="red" variant="light" onClick={() => deleteTrans(transId)}>
-                                                                        <IconTrash size={16} />
-                                                                    </ActionIcon>
-                                                                </Tooltip>
-                                                                <Button size="xs" color="red" leftSection={<IconFileTypePdf size={16} />} onClick={() => printPDF(transId, items)}>
-                                                                    Print PDF
-                                                                </Button>
                                                             </Group>
                                                         </Table.Td>
-                                                    )}
+                                                    </Table.Tr>
+                                                );
+                                            })}
+                                            {sortedDonePlans.length === 0 && (
+                                                <Table.Tr>
+                                                    <Table.Td colSpan={7} ta="center" c="dimmed">
+                                                        Tidak ada data planning outbound selesai.
+                                                    </Table.Td>
                                                 </Table.Tr>
-                                            ))
-                                        ))}
-                                        {Object.keys(groupedLogs).length === 0 && (
-                                            <Table.Tr>
-                                                <Table.Td colSpan={9} ta="center" c="dimmed">
-                                                    Tidak ada data riwayat planning outbound.
-                                                </Table.Td>
-                                            </Table.Tr>
-                                        )}
-                                    </Table.Tbody>
-                                </Table>
-                            </Box>
-                        </Paper>
+                                            )}
+                                        </Table.Tbody>
+                                    </Table>
+                                </Box>
+                            </Paper>
+                        </Stack>
                     </Grid.Col>
                 </Grid>
             </Box>

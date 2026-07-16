@@ -1220,6 +1220,7 @@ export class SeedService implements OnApplicationBootstrap {
       console.log('⏭️  InboundPlanning already seeded');
       return;
     }
+    const barangs = await this.barangRepo.find();
     const drivers = [
       'Budi Santoso',
       'Agus Widodo',
@@ -1284,14 +1285,17 @@ export class SeedService implements OnApplicationBootstrap {
         ? Math.round(plannedQty * (0.85 + Math.random() * 0.15))
         : 0;
       const dest = 'Store ' + ((i % 8) + 1);
+      const randomBarang1 = this.pickRandom(barangs);
+      const itemsList = [
+        { barangId: randomBarang1?.id || 1, qty: plannedQty, satuan: randomBarang1?.satuan || 'Pcs' }
+      ];
       data.push({
         no_po: `PO-IN-${String(i + 1).padStart(4, '0')}`,
-        driver_name: this.pickRandom(drivers),
-        plat_nomor: this.randomNopol(),
         supplier: this.pickRandom(suppliers),
         qty: plannedQty,
         qty_diterima: realisasi ? receivedQty : undefined,
         alokasi: [{ tujuan: dest, qty: plannedQty }],
+        items: itemsList,
         estimasi_datang: eta,
         status: statuses[i % statuses.length],
         tanggal_realisasi: realisasi,

@@ -15,13 +15,10 @@ export class InboundPlanning {
   no_po: string; // PO number (which corresponds to Surat Jalan 'No.PO/SJ')
 
   @Column({ nullable: true })
-  driver_name: string;
-
-  @Column({ nullable: true })
-  plat_nomor: string;
-
-  @Column({ nullable: true })
   supplier: string;
+
+  @Column({ type: 'simple-json', nullable: true })
+  items: { barangId: number; qty: number; satuan?: string }[];
 
   @Column({ type: 'float', nullable: true })
   qty: number; // planned qty

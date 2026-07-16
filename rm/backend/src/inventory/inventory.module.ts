@@ -10,6 +10,7 @@ import { PlanningAyam } from '../planning-ayam/planning-ayam.entity';
 import { OutboundAyam } from '../outbound-ayam/outbound-ayam.entity';
 import { InventoryService } from './inventory.service';
 import { InventoryController } from './inventory.controller';
+import { RelocationModule } from './relocation.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { InventoryController } from './inventory.controller';
       PlanningAyam,
       OutboundAyam,
     ]),
+    RelocationModule,
   ],
   controllers: [InventoryController],
   providers: [InventoryService],
