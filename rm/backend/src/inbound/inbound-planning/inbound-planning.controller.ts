@@ -1,0 +1,89 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ParseIntPipe,
+  Request,
+} from '@nestjs/common';
+import { InboundPlanningService } from './inbound-planning.service';
+import {
+  CreateInboundPlanningDto,
+  UpdateInboundPlanningDto,
+  ProcessInboundDto,
+} from './inbound-planning.dto';
+import { JwtAuthGuard } from '../../admin/auth/jwt-auth.guard';
+import { RolesGuard } from '../../admin/auth/roles.guard';
+import { Roles } from '../../admin/auth/roles.decorator';
+import { UserRole } from '../../admin/users/user.entity';
+
+@Controller('inbound-planning')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class InboundPlanningController {
+  constructor(private readonly svc: InboundPlanningService) {}
+
+  @Get()
+  @Roles(
+    UserRole.SUPERVISOR,
+    UserRole.KOORDINATOR,
+    UserRole.CHECKER,
+    UserRole.ADMIN,
+  )
+  findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+    const p = page ? Number(page) : 1;
+    const l = limit ? Number(limit) : 50;
+    return this.svc.findAll(p, l);
+  }
+
+  @Get(':id')
+  @Roles(
+    UserRole.SUPERVISOR,
+    UserRole.KOORDINATOR,
+    UserRole.CHECKER,
+    UserRole.ADMIN,
+  )
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.svc.findOne(id);
+  }
+
+  @Post()
+  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.ADMIN)
+  create(@Body() dto: CreateInboundPlanningDto) {
+    return this.svc.create(dto);
+  }
+
+  @Put(':id')
+  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.ADMIN)
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateInboundPlanningDto,
+  ) {
+    return this.svc.update(id, dto);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.SUPERVISOR, UserRole.ADMIN)
+  remove(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.svc.remove(id, req.user?.id);
+  }
+
+  @Post(':id/process')
+  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.ADMIN)
+  processInbound(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ProcessInboundDto,
+    @Request() req,
+  ) {
+    return this.svc.processInbound(
+      id,
+      dto,
+      req.user?.role || 'USER',
+      req.user?.id,
+    );
+  }
+}

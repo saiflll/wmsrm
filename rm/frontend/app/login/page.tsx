@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 'use client';
 
 import {
@@ -42,6 +42,7 @@ export default function LoginPage() {
             if (!access_token) throw new Error('No access token received');
 
             localStorage.setItem('token', access_token);
+            document.cookie = `token=${access_token}; path=/; max-age=86400; SameSite=Lax`;
             if (user) localStorage.setItem('user', JSON.stringify(user));
 
             notifications.show({
@@ -50,7 +51,7 @@ export default function LoginPage() {
                 color: 'green',
             });
 
-            router.push('/wms/dashboard');
+            router.push('/dashboard');
         } catch (error: any) {
             notifications.show({
                 title: 'Login Gagal',

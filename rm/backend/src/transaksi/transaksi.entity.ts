@@ -5,11 +5,11 @@ import {
   ManyToOne,
   CreateDateColumn,
 } from 'typeorm';
-import { Barang } from '../barang/barang.entity';
-import { Suplayer } from '../suplayers/suplayer.entity';
-import { Gudang } from '../gudang/gudang.entity';
-import { Shift } from '../shifts/shift.entity';
-import { User } from '../users/user.entity';
+import { Barang } from '../master/barang/barang.entity';
+import { Suplayer } from '../master/suplayers/suplayer.entity';
+import { Gudang } from '../master/gudang/gudang.entity';
+import { Shift } from '../master/shifts/shift.entity';
+import { User } from '../admin/users/user.entity';
 
 export enum TransaksiModel {
   IN = 1,

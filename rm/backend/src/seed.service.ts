@@ -1,18 +1,18 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole } from './users/user.entity';
-import { Customer } from './customers/customer.entity';
-import { Gudang, GudangType } from './gudang/gudang.entity';
-import { Barang, KategoriBarang } from './barang/barang.entity';
-import { Suplayer } from './suplayers/suplayer.entity';
-import { Shift } from './shifts/shift.entity';
+import { User, UserRole } from './admin/users/user.entity';
+import { Customer } from './master/customers/customer.entity';
+import { Gudang, GudangType } from './master/gudang/gudang.entity';
+import { Barang, KategoriBarang } from './master/barang/barang.entity';
+import { Suplayer } from './master/suplayers/suplayer.entity';
+import { Shift } from './master/shifts/shift.entity';
 import { Transaksi, TransaksiModel } from './transaksi/transaksi.entity';
-import { Stock } from './inventory/stock.entity';
-import { StockLog, LogType } from './inventory/stock-log.entity';
-import { PlanningAyam } from './planning-ayam/planning-ayam.entity';
-import { OutboundAyam } from './outbound-ayam/outbound-ayam.entity';
-import { InboundPlanning } from './inbound-planning/inbound-planning.entity';
+import { Stock } from './management/inventory/stock.entity';
+import { StockLog, LogType } from './management/inventory/stock-log.entity';
+import { PlanningAyam } from './ayam/planning-ayam/planning-ayam.entity';
+import { OutboundAyam } from './ayam/outbound-ayam/outbound-ayam.entity';
+import { InboundPlanning } from './inbound/inbound-planning/inbound-planning.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -37,7 +37,6 @@ export class SeedService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     await this.seedUsers();
-    /*
     const shifts = await this.seedShifts();
     const barangs = await this.seedBarang();
     const gudangs = await this.seedGudang(barangs);
@@ -53,7 +52,6 @@ export class SeedService implements OnApplicationBootstrap {
     });
     await this.seedOutboundAyam(plannings, shifts);
     await this.seedInboundPlanning();
-    */
     console.log('🌱 All seed data inserted successfully!');
   }
 
@@ -1289,7 +1287,11 @@ export class SeedService implements OnApplicationBootstrap {
       const dest = 'Store ' + ((i % 8) + 1);
       const randomBarang1 = this.pickRandom(barangs);
       const itemsList = [
-        { barangId: randomBarang1?.id || 1, qty: plannedQty, satuan: randomBarang1?.satuan || 'Pcs' }
+        {
+          barangId: randomBarang1?.id || 1,
+          qty: plannedQty,
+          satuan: randomBarang1?.satuan || 'Pcs',
+        },
       ];
       data.push({
         no_po: `PO-IN-${String(i + 1).padStart(4, '0')}`,

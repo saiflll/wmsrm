@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ItemsService } from './items.service';
 import { Item } from './item.entity';
-// import { JwtAuthGuard } from '../auth/jwt-auth.guard'; // Will add later
+// import { JwtAuthGuard } from '../admin/auth/jwt-auth.guard'; // Will add later
 
 @Controller('items')
 // @UseGuards(JwtAuthGuard)

@@ -37,6 +37,6 @@ RUN chmod +x /entrypoint.sh
 EXPOSE 3011 3012 3015
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3011/ || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3011/api/ || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]

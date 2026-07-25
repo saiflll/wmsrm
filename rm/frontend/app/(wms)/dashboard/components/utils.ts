@@ -1,0 +1,2 @@
+export const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+export const percentage = (part: number, total: number) => total > 0 ? clamp(Math.round((part / total) * 100), 0, 100) : 0;

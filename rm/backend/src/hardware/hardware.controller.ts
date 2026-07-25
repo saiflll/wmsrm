@@ -1,8 +1,8 @@
 import { Controller, Post, Body, HttpCode } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Barang } from '../barang/barang.entity';
-import { Gudang } from '../gudang/gudang.entity';
+import { Barang } from '../master/barang/barang.entity';
+import { Gudang } from '../master/gudang/gudang.entity';
 
 // Raw payload from ESP32 / PLC sensors
 interface HwPayload {

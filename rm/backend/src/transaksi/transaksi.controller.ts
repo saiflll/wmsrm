@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { TransaksiService } from './transaksi.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../admin/auth/jwt-auth.guard';
 
 @Controller('transaksi')
 @UseGuards(JwtAuthGuard)

@@ -13,3 +13,41 @@ th:hover .cr-handle {
 th {
   white-space: nowrap;
 }
+
+/* Thin Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Tab-specific scrollbar accent classes */
+.custom-scroll-blue::-webkit-scrollbar-thumb { background: #60a5fa; }
+.custom-scroll-blue::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+
+.custom-scroll-green::-webkit-scrollbar-thumb { background: #4ade80; }
+.custom-scroll-green::-webkit-scrollbar-thumb:hover { background: #16a34a; }
+
+.custom-scroll-purple::-webkit-scrollbar-thumb { background: #c084fc; }
+.custom-scroll-purple::-webkit-scrollbar-thumb:hover { background: #9333ea; }
+
+.custom-scroll-orange::-webkit-scrollbar-thumb { background: #fb923c; }
+.custom-scroll-orange::-webkit-scrollbar-thumb:hover { background: #ea580c; }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 transparent;
+}
