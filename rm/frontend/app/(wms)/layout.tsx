@@ -210,8 +210,8 @@ export default function WMSLayout({ children }: { children: React.ReactNode }) {
                         <Burger opened={desktopOpened} onClick={toggleDesktop} visibleFrom="sm" size="xs" color="#334155" />
 
                         <Group gap={0} align="center" wrap="nowrap">
-                            <img src="/dw_logo.png" alt="DW Logo" style={{ height: 50, margin: 0, padding: '0 6px', objectFit: 'contain', display: 'block' }} />
-                            <Box style={{ width: 1, height: 32, background: '#cbd5e1', margin: '0 10px' }} />
+                            <img src="/dw_logo.png" alt="DW Logo" style={{ height: 45, margin: 0, padding: '0 6px', objectFit: 'contain', display: 'block' }} />
+                            <Box style={{ width: 1, height: 28, background: '#cbd5e1', margin: '0 10px' }} />
                             <Text fw={900} size="lg" style={{ color: '#0ea5e9', letterSpacing: '0.05em' }}>
                                 RM
                             </Text>

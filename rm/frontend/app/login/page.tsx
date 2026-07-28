@@ -78,9 +78,9 @@ export default function LoginPage() {
             <Container size={420} my={40}>
                 <Stack align="center" gap={8} mb="lg">
                     <Group gap={0} align="center" justify="center" wrap="nowrap">
-                        <img src="/dw_logo.png" alt="DW Logo" style={{ height: 50, margin: 0, padding: '0 8px', objectFit: 'contain', display: 'block' }} />
-                        <Box style={{ width: 2, height: 34, background: '#38bdf8', margin: '0 10px' }} />
-                        <Text fw={900} style={{ color: '#0ea5e9', fontSize: '1.9rem', letterSpacing: '0.05em' }}>
+                        <img src="/dw_logo.png" alt="DW Logo" style={{ height: 45, margin: 0, padding: '0 6px', objectFit: 'contain', display: 'block' }} />
+                        <Box style={{ width: 2, height: 30, background: '#38bdf8', margin: '0 10px' }} />
+                        <Text fw={900} style={{ color: '#0ea5e9', fontSize: '1.8rem', letterSpacing: '0.05em' }}>
                             RM
                         </Text>
                     </Group>

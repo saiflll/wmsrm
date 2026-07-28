@@ -71,14 +71,14 @@ export default function AboutPage() {
           <div className="head-left">
             <span className="eyebrow">PROFIL SISTEM</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginTop: 8 }}>
-              <img src="/dw_logo.png" alt="DW Logo" style={{ height: 50, margin: 0, padding: '0 6px', objectFit: 'contain', display: 'block' }} />
-              <div style={{ width: 2, height: 32, background: '#0ea5e9', margin: '0 10px' }} />
-              <span style={{ fontSize: 26, fontWeight: 900, color: '#0ea5e9', letterSpacing: '0.05em' }}>
+              <img src="/dw_logo.png" alt="DW Logo" style={{ height: 45, margin: 0, padding: '0 6px', objectFit: 'contain', display: 'block' }} />
+              <div style={{ width: 2, height: 28, background: '#0ea5e9', margin: '0 10px' }} />
+              <span style={{ fontSize: 24, fontWeight: 900, color: '#0ea5e9', letterSpacing: '0.05em' }}>
                 RM
               </span>
             </div>
             <span className="sub" style={{ marginTop: 8 }}>
-              Raw Material — Platform Digitalisasi & Manajemen Operasional Pergudangan
+              Raw Material — Digitalisation Warehouse
             </span>
           </div>
           <div className="stamp" aria-hidden="true">
