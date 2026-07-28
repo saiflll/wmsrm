@@ -9,6 +9,7 @@ import {
   UseGuards,
   Query,
   ConflictException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, IsNull } from 'typeorm';
@@ -98,12 +99,14 @@ export class BarangController {
   async remove(@Param('id') id: string, @Query('cascade') cascade?: string) {
     const numId = +id;
     if (cascade === 'true') {
+      try { await this.repo.manager.query(`DELETE FROM outbound_ayam WHERE planning_ayam_id IN (SELECT id FROM planning_ayam WHERE barang_id = $1 OR "barangId" = $1)`, [numId]); } catch (e) {}
+      try { await this.repo.manager.query(`DELETE FROM planning_ayam WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
+      try { await this.repo.manager.query(`DELETE FROM relocation WHERE source_stock_id IN (SELECT id FROM stock WHERE barang_id = $1 OR "barangId" = $1) OR "sourceStockId" IN (SELECT id FROM stock WHERE barang_id = $1 OR "barangId" = $1)`, [numId]); } catch (e) {}
       try { await this.repo.manager.query(`UPDATE gudang SET "barangId" = NULL WHERE "barangId" = $1`, [numId]); } catch (e) {}
       try { await this.repo.manager.query(`UPDATE gudang SET barang_id = NULL WHERE barang_id = $1`, [numId]); } catch (e) {}
       try { await this.repo.manager.query(`DELETE FROM stock_log WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
       try { await this.repo.manager.query(`DELETE FROM stock WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
       try { await this.repo.manager.query(`DELETE FROM transaksi WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
-      try { await this.repo.manager.query(`DELETE FROM planning_ayam WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
       await this.repo.delete(numId);
       return { deleted: true, cascade: true };
     }
