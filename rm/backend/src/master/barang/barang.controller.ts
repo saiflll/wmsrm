@@ -95,15 +95,16 @@ export class BarangController {
 
   @Delete(':id')
   @Roles(UserRole.SUPERVISOR, UserRole.SUPER_ADMIN)
-  async remove(@Param('id') id: number, @Query('cascade') cascade?: string) {
+  async remove(@Param('id') id: string, @Query('cascade') cascade?: string) {
+    const numId = +id;
     if (cascade === 'true') {
-      try { await this.repo.manager.query(`DELETE FROM stock_log WHERE barang_id = $1 OR "barangId" = $1`, [id]); } catch (e) {}
-      try { await this.repo.manager.query(`DELETE FROM stock WHERE barang_id = $1 OR "barangId" = $1`, [id]); } catch (e) {}
-      try { await this.repo.manager.query(`DELETE FROM transaksi WHERE barang_id = $1 OR "barangId" = $1`, [id]); } catch (e) {}
-      await this.repo.delete(id);
+      try { await this.repo.manager.query(`DELETE FROM stock_log WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
+      try { await this.repo.manager.query(`DELETE FROM stock WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
+      try { await this.repo.manager.query(`DELETE FROM transaksi WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
+      await this.repo.delete(numId);
       return { deleted: true, cascade: true };
     }
-    await this.repo.update(id, { deleted_at: new Date() });
+    await this.repo.update(numId, { deleted_at: new Date() });
     return { deleted: true };
   }
 }

@@ -206,16 +206,55 @@ export default function WMSLayout({ children }: { children: React.ReactNode }) {
                 >
                     {/* Left Section: Sleek Toggle & Logo */}
                     <Group gap="xs" wrap="nowrap" align="center">
-                        <Burger opened={mobileOpened} onClick={toggleMobile} hiddenFrom="sm" size="xs" color="#334155" />
-                        <Burger opened={desktopOpened} onClick={toggleDesktop} visibleFrom="sm" size="xs" color="#334155" />
-
-                        <Group gap={0} align="center" wrap="nowrap">
-                            <img src="/dw_logo.png" alt="DW Logo" style={{ height: 45, margin: 0, padding: '0 6px', objectFit: 'contain', display: 'block' }} />
-                            <Box style={{ width: 1, height: 28, background: '#cbd5e1', margin: '0 10px' }} />
-                            <Text fw={900} size="lg" style={{ color: '#0ea5e9', letterSpacing: '0.05em' }}>
-                                RM
-                            </Text>
-                        </Group>
+                        <UnstyledButton
+                            onClick={() => {
+                                if (window.innerWidth < 768) toggleMobile();
+                                else toggleDesktop();
+                            }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                background: 'transparent',
+                                border: 'none',
+                                padding: 0,
+                                cursor: 'pointer',
+                            }}
+                            title="Buka / Tutup Sidebar"
+                        >
+                            <Box style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 34,
+                                height: 34,
+                                borderRadius: 8,
+                                background: '#f1f5f9',
+                                border: '1px solid #e2e8f0',
+                                transition: 'all 150ms ease'
+                            }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M3 21v-13l9 -4l9 4v13" />
+                                    <path d="M13 13h4v8h-10v-6h6" />
+                                    <path d="M13 21v-9a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v3" />
+                                </svg>
+                            </Box>
+                            <Group gap={12} align="center" wrap="nowrap">
+                                <Text fw={900} style={{ color: '#111827', fontSize: '1.75rem', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                                    DW
+                                </Text>
+                                <Box style={{ width: 1, height: 26, background: '#9ca3af' }} />
+                                <Box style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2, textAlign: 'left' }}>
+                                    <Text fw={800} style={{ color: '#111827', fontSize: '1.05rem', letterSpacing: '0.04em', lineHeight: 1 }}>
+                                        RM
+                                    </Text>
+                                    <Text size="9px" fw={600} style={{ color: '#6b7280', letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1, whiteSpace: 'nowrap' }}>
+                                        Digitalitation Wherehouse
+                                    </Text>
+                                </Box>
+                            </Group>
+                        </UnstyledButton>
                     </Group>
 
                     {/* Right Section: Compact Profile Dropdown Popover */}

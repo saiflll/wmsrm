@@ -10,6 +10,7 @@ import {
   IconBarcode,
   IconClipboardList,
   IconBoxSeam,
+  IconBuildingStore,
 } from "@tabler/icons-react";
 
 const FLOATERS = [
@@ -70,16 +71,26 @@ export default function AboutPage() {
         <div className="manifest-head">
           <div className="head-left">
             <span className="eyebrow">PROFIL SISTEM</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginTop: 8 }}>
-              <img src="/dw_logo.png" alt="DW Logo" style={{ height: 45, margin: 0, padding: '0 6px', objectFit: 'contain', display: 'block' }} />
-              <div style={{ width: 2, height: 28, background: '#0ea5e9', margin: '0 10px' }} />
-              <span style={{ fontSize: 24, fontWeight: 900, color: '#0ea5e9', letterSpacing: '0.05em' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+              <span style={{ fontSize: 32, fontWeight: 900, color: '#111827', letterSpacing: '-0.03em' }}>
+                DW
+              </span>
+              <div style={{ width: 1.5, height: 26, background: '#9ca3af' }} />
+              <span style={{ fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '0.04em' }}>
                 RM
               </span>
             </div>
-            <span className="sub" style={{ marginTop: 8 }}>
-              Raw Material — Digitalisation Warehouse
+            <span className="sub" style={{ marginTop: 8, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, fontSize: 11, color: '#6b7280' }}>
+              Digitalitation Wherehouse — Raw Material
             </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyCenter: 'center', padding: '0 12px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+              <path d="M3 21v-13l9 -4l9 4v13" />
+              <path d="M13 13h4v8h-10v-6h6" />
+              <path d="M13 21v-9a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v3" />
+            </svg>
           </div>
           <div className="stamp" aria-hidden="true">
             <span>SISTEM</span>
