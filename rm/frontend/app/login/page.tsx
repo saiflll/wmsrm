@@ -234,7 +234,7 @@ export default function LoginPage() {
                 </div>
 
                 <div style={{ marginTop: 20, textAlign: 'center', fontSize: 11, color: '#94a3b8' }}>
-                    © 2026 Digitalisation Warehouse System
+                    © 2026 Digitalitation Wherehouse System
                 </div>
             </div>
         </div>

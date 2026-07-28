@@ -98,9 +98,12 @@ export class BarangController {
   async remove(@Param('id') id: string, @Query('cascade') cascade?: string) {
     const numId = +id;
     if (cascade === 'true') {
+      try { await this.repo.manager.query(`UPDATE gudang SET "barangId" = NULL WHERE "barangId" = $1`, [numId]); } catch (e) {}
+      try { await this.repo.manager.query(`UPDATE gudang SET barang_id = NULL WHERE barang_id = $1`, [numId]); } catch (e) {}
       try { await this.repo.manager.query(`DELETE FROM stock_log WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
       try { await this.repo.manager.query(`DELETE FROM stock WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
       try { await this.repo.manager.query(`DELETE FROM transaksi WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
+      try { await this.repo.manager.query(`DELETE FROM planning_ayam WHERE barang_id = $1 OR "barangId" = $1`, [numId]); } catch (e) {}
       await this.repo.delete(numId);
       return { deleted: true, cascade: true };
     }
