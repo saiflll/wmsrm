@@ -1572,7 +1572,7 @@ export class InventoryService {
   // Stock opname export data (for Excel/PDF) - accuracy is UNIVERSAL per barang across all racks
   async getOpnameExportData(zone?: string, from?: string, to?: string) {
     const whereGudang: any = {};
-    if (zone) whereGudang.zone = zone;
+    if (zone && zone !== 'ALL') whereGudang.zone = zone;
 
     const gudangs = await this.gudangRepo.find({ where: whereGudang });
     const today = new Date();

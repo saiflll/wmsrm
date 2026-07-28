@@ -1,8 +1,8 @@
 'use client';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Box, Group, Button, Title, Text, Table, Badge, Paper, Stack, TextInput, Select, Grid, Loader, ActionIcon, Tooltip } from '@mantine/core';
-import { IconPackage, IconPlus, IconEdit, IconTrash, IconX, IconRefresh } from '@tabler/icons-react';
+import { Box, Group, Button, Title, Text, Table, Badge, Paper, Stack, TextInput, Select, Grid, Loader, ActionIcon, Tooltip, Checkbox, Modal, Radio } from '@mantine/core';
+import { IconPackage, IconPlus, IconEdit, IconTrash, IconX, IconRefresh, IconAlertTriangle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { api, unwrap } from '../lib/api';
 
@@ -13,14 +13,30 @@ export default function MasterProdukPage() {
     const [loading, setLoading] = useState(true);
     const [editId, setEditId] = useState<number | null>(null);
     const [form, setForm] = useState({ sku: '', nama: '', satuan: 'Pcs', kategori: 'Dry', min_stok: 0 });
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [deleting, setDeleting] = useState(false);
+    const [userRole, setUserRole] = useState<number | null>(null);
 
-    useEffect(() => { load(); }, []);
+    // Modern Modal Delete State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<'single' | 'mass'>('single');
+    const [targetSingleId, setTargetSingleId] = useState<number | null>(null);
+    const [deleteMode, setDeleteMode] = useState<'soft' | 'cascade'>('soft');
+
+    useEffect(() => {
+        try {
+            const u = JSON.parse(localStorage.getItem('user') || '{}');
+            if (u && u.role) setUserRole(u.role);
+        } catch (e) { }
+        load();
+    }, []);
 
     const load = async () => {
         setLoading(true);
         try {
             const res = await api().get('/barang');
             setItems(unwrap(res));
+            setSelectedIds([]);
         } catch (e) { console.error(e); }
         setLoading(false);
     };
@@ -60,14 +76,64 @@ export default function MasterProdukPage() {
         setLoading(false);
     };
 
-    const del = async (id: number) => {
-        if (!confirm('Hapus produk ini?')) return;
-        try {
-            await api().delete(`/barang/${id}`);
-            notifications.show({ title: 'Sukses', message: 'Produk berhasil dihapus', color: 'orange' });
-            if (editId === id) resetForm();
+    const openDeleteSingle = (id: number) => {
+        setTargetSingleId(id);
+        setDeleteTarget('single');
+        setDeleteMode('soft');
+        setConfirmOpen(true);
+    };
+
+    const openDeleteMass = () => {
+        if (selectedIds.length === 0) return;
+        setDeleteTarget('mass');
+        setDeleteMode('soft');
+        setConfirmOpen(true);
+    };
+
+    const executeDelete = async () => {
+        setDeleting(true);
+        const isCascade = userRole === 5 && deleteMode === 'cascade';
+
+        if (deleteTarget === 'single' && targetSingleId) {
+            try {
+                await api().delete(`/barang/${targetSingleId}${isCascade ? '?cascade=true' : ''}`);
+                notifications.show({ title: 'Sukses', message: isCascade ? 'Produk beserta riwayat berhasil dihapus total' : 'Produk berhasil dihapus', color: 'orange' });
+                if (editId === targetSingleId) resetForm();
+                load();
+            } catch (e) { console.error(e); }
+        } else if (deleteTarget === 'mass') {
+            let successCount = 0;
+            let failCount = 0;
+            for (const id of selectedIds) {
+                try {
+                    await api().delete(`/barang/${id}${isCascade ? '?cascade=true' : ''}`);
+                    successCount++;
+                } catch (e: any) {
+                    failCount++;
+                    console.error(`Gagal menghapus produk ID ${id}:`, e);
+                }
+            }
+
+            if (successCount > 0) {
+                notifications.show({
+                    title: 'Informasi Hapus',
+                    message: `${successCount} produk berhasil dihapus${failCount > 0 ? `, ${failCount} produk gagal.` : '.'}`,
+                    color: failCount > 0 ? 'yellow' : 'green',
+                });
+            } else if (failCount > 0) {
+                notifications.show({
+                    title: 'Gagal Hapus',
+                    message: 'Produk terpilih gagal dihapus.',
+                    color: 'red',
+                });
+            }
+
+            if (editId && selectedIds.includes(editId)) resetForm();
+            setSelectedIds([]);
             load();
-        } catch (e) { console.error(e); }
+        }
+        setDeleting(false);
+        setConfirmOpen(false);
     };
 
     const openEdit = (item: any) => {
@@ -78,6 +144,25 @@ export default function MasterProdukPage() {
 
     const f = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
     const filtered = search ? items.filter((i: any) => i.nama?.toLowerCase().includes(search.toLowerCase()) || i.sku?.toLowerCase().includes(search.toLowerCase())) : items;
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedIds(filtered.map((i: any) => i.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectRow = (id: number, checked: boolean) => {
+        if (checked) {
+            setSelectedIds(prev => [...prev, id]);
+        } else {
+            setSelectedIds(prev => prev.filter(i => i !== id));
+        }
+    };
+
+    const allChecked = filtered.length > 0 && filtered.every((i: any) => selectedIds.includes(i.id));
+    const isIndeterminate = selectedIds.length > 0 && !allChecked;
 
     // Count by kategori
     const katGroups: Record<string, number> = {};
@@ -169,36 +254,72 @@ export default function MasterProdukPage() {
                                         <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
                                             <Table.Thead style={{ background: "#fff4e6", borderBottom: "2px solid #ffd8a8" }}>
                                                 <Table.Tr>
-                                                    {['SKU', 'Nama', 'Kategori', 'Satuan', 'Stok', 'Min Stok', 'Aksi'].map((h: any) => (
+                                                    {['SKU', 'Nama', 'Kategori', 'Satuan', 'Stok', 'Min Stok'].map((h: any) => (
                                                         <Table.Th key={h} style={{ color: '#d9480f', fontSize: 11 }}>{h}</Table.Th>
                                                     ))}
+                                                    <Table.Th style={{ color: '#d9480f', fontSize: 11, textAlign: 'center' }}>
+                                                        <Group gap={6} justify="center" wrap="nowrap">
+                                                            <span>Aksi</span>
+                                                            <Tooltip label={selectedIds.length > 0 ? `Hapus ${selectedIds.length} Terpilih` : 'Hapus Terpilih'}>
+                                                                <ActionIcon
+                                                                    size="xs"
+                                                                    color="red"
+                                                                    variant={selectedIds.length > 0 ? "filled" : "light"}
+                                                                    disabled={selectedIds.length === 0}
+                                                                    onClick={openDeleteMass}
+                                                                    loading={deleting}
+                                                                    radius="xl"
+                                                                >
+                                                                    <IconTrash size={12} />
+                                                                </ActionIcon>
+                                                            </Tooltip>
+                                                            <Checkbox
+                                                                size="xs"
+                                                                color="orange"
+                                                                radius="xl"
+                                                                checked={allChecked}
+                                                                indeterminate={isIndeterminate}
+                                                                onChange={e => handleSelectAll(e.currentTarget.checked)}
+                                                            />
+                                                        </Group>
+                                                    </Table.Th>
                                                 </Table.Tr>
                                             </Table.Thead>
                                             <Table.Tbody>
-                                                {filtered.map((item: any) => (
-                                                    <Table.Tr key={item.id}>
-                                                        <Table.Td>{item.sku || '-'}</Table.Td>
-                                                        <Table.Td fw={600}>{item.nama}</Table.Td>
-                                                        <Table.Td><Badge size="xs" color={item.kategori === 'Dry' ? 'blue' : item.kategori === 'Wet' ? 'yellow' : 'red'}>{item.kategori}</Badge></Table.Td>
-                                                        <Table.Td>{item.satuan}</Table.Td>
-                                                        <Table.Td ta="right" fw={700} style={{ color: item.stok <= (item.min_stok || 0) ? '#e03131' : '#111827' }}>{item.stok}</Table.Td>
-                                                        <Table.Td ta="right">{item.min_stok || 0}</Table.Td>
-                                                        <Table.Td>
-                                                            <Group gap={4} wrap="nowrap">
-                                                                <Tooltip label="Edit">
-                                                                    <ActionIcon size="sm" color="blue" variant="light" onClick={() => openEdit(item)}>
-                                                                        <IconEdit size={13} />
-                                                                    </ActionIcon>
-                                                                </Tooltip>
-                                                                <Tooltip label="Hapus">
-                                                                    <ActionIcon size="sm" color="red" variant="light" onClick={() => del(item.id)}>
-                                                                        <IconTrash size={13} />
-                                                                    </ActionIcon>
-                                                                </Tooltip>
-                                                            </Group>
-                                                        </Table.Td>
-                                                    </Table.Tr>
-                                                ))}
+                                                {filtered.map((item: any) => {
+                                                    const isSelected = selectedIds.includes(item.id);
+                                                    return (
+                                                        <Table.Tr key={item.id} style={{ background: isSelected ? '#fff8f0' : undefined }}>
+                                                            <Table.Td>{item.sku || '-'}</Table.Td>
+                                                            <Table.Td fw={600}>{item.nama}</Table.Td>
+                                                            <Table.Td><Badge size="xs" color={item.kategori === 'Dry' ? 'blue' : item.kategori === 'Wet' ? 'yellow' : 'red'}>{item.kategori}</Badge></Table.Td>
+                                                            <Table.Td>{item.satuan}</Table.Td>
+                                                            <Table.Td ta="right" fw={700} style={{ color: item.stok <= (item.min_stok || 0) ? '#e03131' : '#111827' }}>{item.stok}</Table.Td>
+                                                            <Table.Td ta="right">{item.min_stok || 0}</Table.Td>
+                                                            <Table.Td ta="center">
+                                                                <Group gap={6} justify="center" wrap="nowrap">
+                                                                    <Tooltip label="Edit">
+                                                                        <ActionIcon size="sm" color="blue" variant="light" onClick={() => openEdit(item)}>
+                                                                            <IconEdit size={13} />
+                                                                        </ActionIcon>
+                                                                    </Tooltip>
+                                                                    <Tooltip label="Hapus">
+                                                                        <ActionIcon size="sm" color="red" variant="light" onClick={() => openDeleteSingle(item.id)}>
+                                                                            <IconTrash size={13} />
+                                                                        </ActionIcon>
+                                                                    </Tooltip>
+                                                                    <Checkbox
+                                                                        size="xs"
+                                                                        color="orange"
+                                                                        radius="xl"
+                                                                        checked={isSelected}
+                                                                        onChange={e => handleSelectRow(item.id, e.currentTarget.checked)}
+                                                                    />
+                                                                </Group>
+                                                            </Table.Td>
+                                                        </Table.Tr>
+                                                    );
+                                                })}
                                                 {filtered.length === 0 && (
                                                     <Table.Tr>
                                                         <Table.Td colSpan={7} ta="center" c="dimmed">Tidak ada data produk ditemukan.</Table.Td>
@@ -213,6 +334,47 @@ export default function MasterProdukPage() {
                     </Grid.Col>
                 </Grid>
             </Box>
+
+            <Modal
+                opened={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                title={
+                    <Group gap={8}>
+                        <IconAlertTriangle size={20} color="#e03131" />
+                        <Text fw={800} size="sm" c="red">Konfirmasi Penghapusan</Text>
+                    </Group>
+                }
+                centered
+                radius="md"
+                size="md"
+            >
+                <Stack gap="sm">
+                    <Text size="xs" c="gray.7">
+                        {deleteTarget === 'single'
+                            ? 'Apakah Anda yakin ingin menghapus data produk ini?'
+                            : `Apakah Anda yakin ingin menghapus ${selectedIds.length} produk terpilih?`}
+                    </Text>
+
+                    {userRole === 5 && (
+                        <Paper withBorder p="xs" radius="sm" style={{ background: '#fff5f5', borderColor: '#ffc9c9' }}>
+                            <Text size="xs" fw={700} c="red" mb={6}>Opsi Hak Akses Super Admin:</Text>
+                            <Radio.Group value={deleteMode} onChange={(v: any) => setDeleteMode(v)}>
+                                <Stack gap={6}>
+                                    <Radio value="soft" size="xs" label="Simpan Riwayat (Hapus dari list master saja, riwayat & stok lama tetap aman)" />
+                                    <Radio value="cascade" size="xs" color="red" label="Hapus Total (Hapus produk SEKALIGUS seluruh riwayat transaksi & stok)" />
+                                </Stack>
+                            </Radio.Group>
+                        </Paper>
+                    )}
+
+                    <Group justify="flex-end" gap="xs" mt="xs">
+                        <Button size="xs" variant="default" onClick={() => setConfirmOpen(false)}>Batal</Button>
+                        <Button size="xs" color="red" onClick={executeDelete} loading={deleting} leftSection={<IconTrash size={14} />}>
+                            {deleteMode === 'cascade' && userRole === 5 ? 'Hapus Total Data' : 'Hapus Data'}
+                        </Button>
+                    </Group>
+                </Stack>
+            </Modal>
         </Box>
     );
 }

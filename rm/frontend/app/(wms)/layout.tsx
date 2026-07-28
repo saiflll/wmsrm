@@ -52,20 +52,20 @@ const roleLabel: Record<number, string> = {
 };
 
 const menuPermissions: Record<string, number[]> = {
-    '/dashboard': [1, 2, 3, 4, 5, 6],
-    '/planning-inbound': [1, 2, 3, 4, 5],
-    '/inbound': [3, 4, 5],
-    '/planning-outbound': [1, 2, 3, 4, 5],
-    '/outbound': [3, 4, 5],
-    '/planning-ayam': [1, 2, 3, 4, 5],
-    '/outbound-ayam': [3, 4, 5],
-    '/relocation': [3, 4, 5],
-    '/stock-opname': [3, 4, 5],
-    '/inventory': [3, 4, 5],
-    '/report-inbound': [3, 4, 5],
-    '/report-outbound': [3, 4, 5],
-    '/report-ayam': [3, 4, 5],
-    '/report-opname': [3, 4, 5],
+    '/dashboard': [2, 4, 5, 6], // Checker(1) & Koordinator(3) tidak bisa dashboard
+    '/planning-inbound': [3, 4, 5], // Koordinator, Supervisor, Super Admin
+    '/inbound': [1, 3, 4, 5], // Checker (eksekutor), Koordinator, Supervisor, Super Admin
+    '/planning-outbound': [3, 4, 5],
+    '/outbound': [1, 3, 4, 5], // Checker (eksekutor), Koordinator, Supervisor, Super Admin
+    '/planning-ayam': [3, 4, 5],
+    '/outbound-ayam': [1, 3, 4, 5], // Checker (eksekutor), Koordinator, Supervisor, Super Admin
+    '/relocation': [1, 3, 4, 5], // Checker, Koordinator, Supervisor, Super Admin
+    '/stock-opname': [1, 2, 3, 4, 5], // Checker, Admin, Koordinator, Supervisor, Super Admin
+    '/inventory': [2, 3, 4, 5], // Admin, Koordinator, Supervisor, Super Admin
+    '/report-inbound': [2, 3, 4, 5], // Admin, Koordinator, Supervisor, Super Admin
+    '/report-outbound': [2, 3, 4, 5], // Admin, Koordinator, Supervisor, Super Admin
+    '/report-ayam': [2, 3, 4, 5], // Admin, Koordinator, Supervisor, Super Admin
+    '/report-opname': [2, 3, 4, 5], // Admin, Koordinator, Supervisor, Super Admin
     '/master-produk': [4, 5],
     '/master-lokasi': [4, 5],
     '/master-customer': [4, 5],
@@ -147,7 +147,9 @@ export default function WMSLayout({ children }: { children: React.ReactNode }) {
         const base = '/' + pathname.split('/').filter(Boolean)[0];
         const roles = menuPermissions[base];
         if (roles && !roles.includes(userRole)) {
-            router.push('/dashboard');
+            // Pick first allowed route for this role
+            const allowedRoute = Object.keys(menuPermissions).find(route => menuPermissions[route].includes(userRole)) || '/about';
+            router.push(allowedRoute);
         }
     }, [userRole, pathname, router]);
 
@@ -180,7 +182,7 @@ export default function WMSLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <AppShell
-            header={{ height: 48 }}
+            header={{ height: 56 }}
             navbar={{
                 width: 220,
                 breakpoint: 'sm',
@@ -207,12 +209,11 @@ export default function WMSLayout({ children }: { children: React.ReactNode }) {
                         <Burger opened={mobileOpened} onClick={toggleMobile} hiddenFrom="sm" size="xs" color="#334155" />
                         <Burger opened={desktopOpened} onClick={toggleDesktop} visibleFrom="sm" size="xs" color="#334155" />
 
-                        <Group gap={6} align="center" wrap="nowrap">
-                            <Title order={4} style={{ color: '#e6921e', fontWeight: 900, letterSpacing: '-0.03em', fontSize: '1.1rem', whiteSpace: 'nowrap' }}>
-                                WMS PRO
-                            </Title>
-                            <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>
-                                | {roleLabel[userRole] || 'User'}
+                        <Group gap={0} align="center" wrap="nowrap">
+                            <img src="/dw_logo.png" alt="DW Logo" style={{ height: 50, margin: 0, padding: '0 6px', objectFit: 'contain', display: 'block' }} />
+                            <Box style={{ width: 1, height: 32, background: '#cbd5e1', margin: '0 10px' }} />
+                            <Text fw={900} size="lg" style={{ color: '#0ea5e9', letterSpacing: '0.05em' }}>
+                                RM
                             </Text>
                         </Group>
                     </Group>

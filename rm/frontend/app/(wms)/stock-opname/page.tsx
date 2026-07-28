@@ -51,6 +51,7 @@ function downloadExcel(data: any[], zone: string) {
     [],
     [
       "No",
+      "Zone / Area",
       "No. Rak",
       "Item Code",
       "Item Name",
@@ -77,6 +78,7 @@ function downloadExcel(data: any[], zone: string) {
 
   const rows = data.map((r: any, i: number) => [
     i + 1,
+    r.location || r.gudang_zone || zone || "-",
     r.nomor_rak,
     r.item_code || "",
     r.item_name || "",
@@ -290,57 +292,51 @@ export default function StockOpnamePage() {
     }
   };
 
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      const res = await api().get(`/inventory/opname/export?zone=${zone}`);
-      const data = unwrap(res);
-      if (!data || !data.length) {
-        notifications.show({
-          title: "Info",
-          message: "Tidak ada data untuk diexport",
-          color: "blue",
-        });
-        setExporting(false);
-        return;
-      }
-      downloadExcel(data, zone);
-      notifications.show({
-        title: "Export Berhasil",
-        message: `${data.length} baris data diexport ke Excel`,
-        color: "green",
-      });
-    } catch (e) {
-      notifications.show({
-        title: "Error",
-        message: "Gagal export data",
-        color: "red",
-      });
-    }
-    setExporting(false);
+  // Export & Print Scope Selection Modal State
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportActionType, setExportActionType] = useState<'excel' | 'print'>('excel');
+  const [exportScope, setExportScope] = useState<'current' | 'all'>('current');
+
+  const openExportModal = (action: 'excel' | 'print') => {
+    setExportActionType(action);
+    setExportScope('current');
+    setExportModalOpen(true);
   };
 
-  const handlePrint = async () => {
+  const executeExportOrPrint = async () => {
+    setExportModalOpen(false);
     setExporting(true);
+    const targetZoneParam = exportScope === 'all' ? 'ALL' : zone;
+
     try {
-      const res = await api().get(`/inventory/opname/export?zone=${zone}`);
+      const res = await api().get(`/inventory/opname/export?zone=${targetZoneParam}`);
       const data = unwrap(res);
       if (!data || !data.length) {
         notifications.show({
           title: "Info",
-          message: "Tidak ada data untuk diprint",
+          message: "Tidak ada data untuk diexport / diprint",
           color: "blue",
         });
         setExporting(false);
         return;
       }
 
-      const win = window.open("", "_blank");
-      if (!win) return;
-      win.document.write(`
+      const zoneTitle = exportScope === 'all' ? 'SEMUA ZONA' : zone;
+
+      if (exportActionType === 'excel') {
+        downloadExcel(data, zoneTitle);
+        notifications.show({
+          title: "Export Berhasil",
+          message: `${data.length} baris data (${zoneTitle}) diexport ke Excel`,
+          color: "green",
+        });
+      } else {
+        const win = window.open("", "_blank");
+        if (!win) return;
+        win.document.write(`
         <html>
         <head>
-            <title>Stock Opname - ${zone}</title>
+            <title>Stock Opname - ${zoneTitle}</title>
             <style>
                 body { font-family: Arial; padding: 20px; font-size: 11px; }
                 table { width: 100%; border-collapse: collapse; margin-top: 15px; }
@@ -351,10 +347,10 @@ export default function StockOpnamePage() {
             </style>
         </head>
         <body>
-            <div class="header">STOCK OPNAME REPORT - ZONA ${zone}</div>
+            <div class="header">STOCK OPNAME REPORT - ${zoneTitle}</div>
             <div class="info">
                 <div>
-                    <b>Zone / Area:</b> ${zone}<br/>
+                    <b>Zone / Area:</b> ${zoneTitle}<br/>
                     <b>Total Rak:</b> ${data.length}
                 </div>
                 <div style="text-align: right">
@@ -365,7 +361,8 @@ export default function StockOpnamePage() {
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Rak</th>
+                        <th>Zone / Area</th>
+                        <th>No. Rak</th>
                         <th>Item</th>
                         <th>Batch</th>
                         <th>Exp</th>
@@ -379,10 +376,11 @@ export default function StockOpnamePage() {
                 </thead>
                 <tbody>
                     ${data
-          .map(
-            (r: any, i: number) => `
+            .map(
+              (r: any, i: number) => `
                         <tr>
                             <td>${i + 1}</td>
+                            <td><b>${r.location || r.gudang_zone || zone || "-"}</b></td>
                             <td>${r.nomor_rak}</td>
                             <td>${r.item_name || ""}</td>
                             <td>${r.batch_lot || "-"}</td>
@@ -395,19 +393,20 @@ export default function StockOpnamePage() {
                             <td style="color: ${r.note_color || "#000"}; font-weight: 600;">${r.notes || ""}</td>
                         </tr>
                     `,
-          )
-          .join("")}
+            )
+            .join("")}
                 </tbody>
             </table>
             <script>window.onload=()=>{window.print();window.close()}</script>
         </body>
         </html>
-      `);
-      win.document.close();
+        `);
+        win.document.close();
+      }
     } catch (e) {
       notifications.show({
         title: "Error",
-        message: "Gagal fetch laporan",
+        message: "Gagal memproses export / print data",
         color: "red",
       });
     }
@@ -605,7 +604,7 @@ export default function StockOpnamePage() {
                 size="md"
                 radius="md"
                 loading={exporting}
-                onClick={handleExport}
+                onClick={() => openExportModal('excel')}
               >
                 <IconFileSpreadsheet size={16} />
               </ActionIcon>
@@ -618,7 +617,7 @@ export default function StockOpnamePage() {
                 size="md"
                 radius="md"
                 loading={exporting}
-                onClick={handlePrint}
+                onClick={() => openExportModal('print')}
               >
                 <IconFileTypePdf size={16} />
               </ActionIcon>
@@ -1321,6 +1320,95 @@ export default function StockOpnamePage() {
             </Button>
           </Stack>
         )}
+      </Modal>
+
+      {/* Modal Pilihan Scope Export / Print */}
+      <Modal
+        opened={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        title={
+          <Group gap={8}>
+            {exportActionType === 'excel' ? (
+              <IconFileSpreadsheet size={20} color="#12b886" />
+            ) : (
+              <IconFileTypePdf size={20} color="#e03131" />
+            )}
+            <Text fw={800} size="sm">
+              {exportActionType === 'excel' ? 'Export Laporan Excel' : 'Cetak / Print Laporan PDF'}
+            </Text>
+          </Group>
+        }
+        centered
+        radius="md"
+        size="sm"
+      >
+        <Stack gap="sm">
+          <Text size="xs" c="gray.7">
+            Silakan pilih cakupan zona data yang ingin {exportActionType === 'excel' ? 'diexport' : 'dicetak'}:
+          </Text>
+
+          <Paper withBorder p="sm" radius="md" style={{ background: '#f8f9fa' }}>
+            <Group gap="md">
+              <Box
+                style={{
+                  flex: 1,
+                  padding: 10,
+                  borderRadius: 6,
+                  border: exportScope === 'current' ? '2px solid #228be6' : '1px solid #dee2e6',
+                  background: exportScope === 'current' ? '#e7f5ff' : '#fff',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setExportScope('current')}
+              >
+                <Text fw={700} size="xs" c={exportScope === 'current' ? 'blue' : 'dark'}>
+                  Zona Saat Ini ({zone})
+                </Text>
+                <Text size="10px" c="dimmed">
+                  Hanya data rak dari zona {zone}
+                </Text>
+              </Box>
+
+              <Box
+                style={{
+                  flex: 1,
+                  padding: 10,
+                  borderRadius: 6,
+                  border: exportScope === 'all' ? '2px solid #228be6' : '1px solid #dee2e6',
+                  background: exportScope === 'all' ? '#e7f5ff' : '#fff',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setExportScope('all')}
+              >
+                <Text fw={700} size="xs" c={exportScope === 'all' ? 'blue' : 'dark'}>
+                  Seluruh Zona (ALL)
+                </Text>
+                <Text size="10px" c="dimmed">
+                  Gabungan data rak dari semua zona
+                </Text>
+              </Box>
+            </Group>
+          </Paper>
+
+          <Group justify="flex-end" gap="xs" mt="xs">
+            <Button size="xs" variant="default" onClick={() => setExportModalOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              size="xs"
+              color={exportActionType === 'excel' ? 'teal' : 'red'}
+              onClick={executeExportOrPrint}
+              leftSection={
+                exportActionType === 'excel' ? (
+                  <IconFileSpreadsheet size={14} />
+                ) : (
+                  <IconFileTypePdf size={14} />
+                )
+              }
+            >
+              {exportActionType === 'excel' ? 'Export Excel' : 'Cetak PDF'}
+            </Button>
+          </Group>
+        </Stack>
       </Modal>
     </Box>
   );

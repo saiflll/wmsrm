@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 'use client';
 
 import {
@@ -11,7 +11,10 @@ import {
     Text,
     Container,
     Group,
-    Button
+    Button,
+    Stack,
+    Badge,
+    Box
 } from '@mantine/core';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
@@ -65,22 +68,34 @@ export default function LoginPage() {
 
     return (
         <div style={{
-            backgroundColor: '#f1f3f5',
+            backgroundColor: '#0f172a',
+            backgroundImage: 'radial-gradient(at 0% 0%, hsla(217,100%,39%,0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, hsla(24,100%,50%,0.15) 0px, transparent 50%)',
             minHeight: '100vh',
             display: 'flex',
-            alignItems: 'center'
+            alignItems: 'center',
+            justifyContent: 'center'
         }}>
             <Container size={420} my={40}>
-                <Title ta="center" fw={900}>
-                    WMS Login
-                </Title>
+                <Stack align="center" gap={8} mb="lg">
+                    <Group gap={0} align="center" justify="center" wrap="nowrap">
+                        <img src="/dw_logo.png" alt="DW Logo" style={{ height: 50, margin: 0, padding: '0 8px', objectFit: 'contain', display: 'block' }} />
+                        <Box style={{ width: 2, height: 34, background: '#38bdf8', margin: '0 10px' }} />
+                        <Text fw={900} style={{ color: '#0ea5e9', fontSize: '1.9rem', letterSpacing: '0.05em' }}>
+                            RM
+                        </Text>
+                    </Group>
+                    <Text size="xs" c="gray.4" ta="center">
+                        Raw Material — Digitalisation Warehouse System
+                    </Text>
+                </Stack>
 
-                <Paper withBorder shadow="md" p={30} mt={30} radius="md">
+                <Paper withBorder shadow="xl" p={30} radius="lg" style={{ background: '#ffffff', borderColor: '#334155' }}>
                     <form onSubmit={handleLogin}>
                         <TextInput
                             label="Username"
                             placeholder="Masukkan username"
                             required
+                            size="xs"
                             value={username}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                         />
@@ -88,12 +103,13 @@ export default function LoginPage() {
                             label="Password"
                             placeholder="Masukkan password"
                             required
+                            size="xs"
                             mt="md"
                             value={password}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                         />
-                        <Button fullWidth mt="xl" type="submit" loading={loading}>
-                            Masuk
+                        <Button fullWidth mt="xl" size="sm" type="submit" loading={loading} color="blue" style={{ fontWeight: 800 }}>
+                            MASUK KE SISTEM DW
                         </Button>
                     </form>
                 </Paper>

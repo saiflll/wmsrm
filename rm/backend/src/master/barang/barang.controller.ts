@@ -11,7 +11,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, IsNull } from 'typeorm';
 import { Barang } from './barang.entity';
 import { JwtAuthGuard } from '../../admin/auth/jwt-auth.guard';
 import { CreateBarangDto, UpdateBarangDto } from './barang.dto';
@@ -33,25 +33,7 @@ export class BarangController {
     @Query('search') search?: string,
     @Query('kategori') kategori?: string,
   ) {
-    // Self-heal records on request to fix any historic casing mismatches
-    try {
-      const all = await this.repo.find();
-      for (const b of all) {
-        const kat = b.kategori ? b.kategori.trim().toLowerCase() : '';
-        const expectedSide = !(kat === 'wet' || kat === 'waste');
-        const expectedKatName =
-          kat === 'wet' ? 'Wet' : kat === 'waste' ? 'Waste' : 'Dry';
-        if (b.side !== expectedSide || b.kategori !== expectedKatName) {
-          b.side = expectedSide;
-          b.kategori = expectedKatName as any;
-          await this.repo.save(b);
-        }
-      }
-    } catch (e) {
-      console.error('Self-heal failed:', e);
-    }
-
-    const where: any = {};
+    const where: any = { deleted_at: IsNull() };
     if (side === 'true') where.side = true;
     if (side === 'false') where.side = false;
     if (kategori) where.kategori = kategori;
@@ -61,7 +43,7 @@ export class BarangController {
 
   @Get(':id')
   findOne(@Param('id') id: number) {
-    return this.repo.findOneBy({ id });
+    return this.repo.findOne({ where: { id, deleted_at: IsNull() } });
   }
 
   @Post()
@@ -69,7 +51,7 @@ export class BarangController {
   async create(@Body() dto: CreateBarangDto) {
     // Check duplicate nama
     if (dto.nama) {
-      const existing = await this.repo.findOne({ where: { nama: dto.nama } });
+      const existing = await this.repo.findOne({ where: { nama: dto.nama, deleted_at: IsNull() } });
       if (existing)
         throw new ConflictException(`Produk "${dto.nama}" sudah ada`);
     }
@@ -92,7 +74,7 @@ export class BarangController {
   async update(@Param('id') id: number, @Body() dto: UpdateBarangDto) {
     // Check duplicate nama
     if (dto.nama) {
-      const existing = await this.repo.findOne({ where: { nama: dto.nama } });
+      const existing = await this.repo.findOne({ where: { nama: dto.nama, deleted_at: IsNull() } });
       if (existing && existing.id !== id)
         throw new ConflictException(`Produk "${dto.nama}" sudah ada`);
     }
@@ -108,13 +90,20 @@ export class BarangController {
       }
     }
     await this.repo.update(id, data);
-    return this.repo.findOneBy({ id });
+    return this.repo.findOne({ where: { id, deleted_at: IsNull() } });
   }
 
   @Delete(':id')
   @Roles(UserRole.SUPERVISOR, UserRole.SUPER_ADMIN)
-  async remove(@Param('id') id: number) {
-    await this.repo.delete(id);
+  async remove(@Param('id') id: number, @Query('cascade') cascade?: string) {
+    if (cascade === 'true') {
+      try { await this.repo.manager.query(`DELETE FROM stock_log WHERE barang_id = $1 OR "barangId" = $1`, [id]); } catch (e) {}
+      try { await this.repo.manager.query(`DELETE FROM stock WHERE barang_id = $1 OR "barangId" = $1`, [id]); } catch (e) {}
+      try { await this.repo.manager.query(`DELETE FROM transaksi WHERE barang_id = $1 OR "barangId" = $1`, [id]); } catch (e) {}
+      await this.repo.delete(id);
+      return { deleted: true, cascade: true };
+    }
+    await this.repo.update(id, { deleted_at: new Date() });
     return { deleted: true };
   }
 }

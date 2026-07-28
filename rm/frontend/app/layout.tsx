@@ -6,8 +6,8 @@ import { ColorSchemeScript, MantineProvider, createTheme } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 
 export const metadata = {
-    title: 'WMS Pro',
-    description: 'Warehouse Management System',
+    title: 'DW - Digitalisation Warehouse',
+    description: 'Digitalisation Warehouse Management System',
 };
 const theme = createTheme({
     primaryColor: 'blue',

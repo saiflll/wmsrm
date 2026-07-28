@@ -25,7 +25,7 @@ export default function AboutPage() {
   const version = process.env.NEXT_PUBLIC_APP_VERSION || "1.1.9";
   const supportEmail = "lezztb@gmail.com";
   const mailtoHref = `mailto:${supportEmail}?subject=${encodeURIComponent(
-    "WMS PRO – Masukan & Dukungan"
+    "DW (Digitalisation Warehouse) – Masukan & Dukungan"
   )}`;
 
   return (
@@ -70,14 +70,20 @@ export default function AboutPage() {
         <div className="manifest-head">
           <div className="head-left">
             <span className="eyebrow">PROFIL SISTEM</span>
-            <h1 className="title">WMS PRO</h1>
-            <span className="sub">
-              Satu platform untuk seluruh alur keluar-masuk gudang
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginTop: 8 }}>
+              <img src="/dw_logo.png" alt="DW Logo" style={{ height: 50, margin: 0, padding: '0 6px', objectFit: 'contain', display: 'block' }} />
+              <div style={{ width: 2, height: 32, background: '#0ea5e9', margin: '0 10px' }} />
+              <span style={{ fontSize: 26, fontWeight: 900, color: '#0ea5e9', letterSpacing: '0.05em' }}>
+                RM
+              </span>
+            </div>
+            <span className="sub" style={{ marginTop: 8 }}>
+              Raw Material — Platform Digitalisasi & Manajemen Operasional Pergudangan
             </span>
           </div>
           <div className="stamp" aria-hidden="true">
-            <span>AKTIF</span>
-            <span className="stamp-sub">& TERPANTAU</span>
+            <span>SISTEM</span>
+            <span className="stamp-sub">DAPAT DIANDALKAN</span>
           </div>
         </div>
 
@@ -85,13 +91,9 @@ export default function AboutPage() {
 
         {/* Description */}
         <div className="field">
-          <span className="field-label">RINGKASAN</span>
+          <span className="field-label">RINGKASAN SISTEM</span>
           <p className="field-value">
-            <b>WMS PRO</b> merapikan seluruh alur gudang jadi satu layar —
-            stok yang selalu update, reservasi outbound yang jelas siapa
-            ambil apa, rekomendasi barang yang harus keluar lebih dulu
-            (FEFO), dan laporan yang siap dibaca kapan saja tanpa perlu
-            hitung manual.
+            <b>DW (Digitalisation Warehouse)</b> adalah sistem manajemen gudang modern yang dirancang untuk mengintegrasikan seluruh siklus operasional pergudangan secara real-time. Sistem ini mencakup perencanaan & penerimaan barang masuk (Inbound), reservasi serta pemrosesan pengeluaran barang (Outbound & Picking Plan), relokasi stok antar-rak berbasis Batch & Expiry Date (FEFO), hingga audit Stock Opname visual 3D dan laporan analitik berakurasi tinggi.
           </p>
         </div>
 
@@ -99,7 +101,7 @@ export default function AboutPage() {
 
         {/* Team */}
         <div className="field">
-          <span className="field-label">SUSUNAN TIM</span>
+          <span className="field-label">SUSUNAN TIM & PENGEMBANG</span>
 
           <div className="entry">
             <span className="entry-no">01</span>
@@ -118,14 +120,14 @@ export default function AboutPage() {
           >
             <span className="entry-no">02</span>
             <div className="entry-body">
-              <span className="entry-role">Developer</span>
+              <span className="entry-role">Lead Developer</span>
               <span className="entry-name">
                 RENAGGE39
                 <IconArrowUpRight size={14} className="entry-arrow" />
               </span>
               <span className="entry-meta">
                 <IconMail size={11} style={{ marginRight: 4 }} />
-                lezztb@gmail.com (Klik untuk kirim email)
+                lezztb@gmail.com (Klik untuk kirim masukan / dukungan)
               </span>
             </div>
           </a>
@@ -135,7 +137,7 @@ export default function AboutPage() {
         <div className="manifest-foot">
           <span>BUILD {version}</span>
           <span className="dot">•</span>
-          <span>DIPERBARUI SECARA BERKALA</span>
+          <span>DIGITALISATION WAREHOUSE SYSTEM</span>
         </div>
       </div>
 

@@ -121,11 +121,14 @@ export default function RelocationPage() {
             Number(stock.qty) > 0 &&
             (!sourceZone || stock.gudang?.zone === sourceZone),
         )
-        .map((stock: any) => ({
-          value: String(stock.id),
-          label: `${stock.barang?.nama || "Item"} • ${stock.gudang?.name || "Rak -"
-            } • ${stock.qty} ${stock.satuan || ""}`,
-        }))),
+        .map((stock: any) => {
+          const expStr = stock.expiry_date ? ` • Exp: ${new Date(stock.expiry_date).toISOString().split('T')[0]}` : '';
+          const batchStr = stock.batch_no ? ` • Batch: ${stock.batch_no}` : '';
+          return {
+            value: String(stock.id),
+            label: `${stock.barang?.nama || "Item"} • Rak: ${stock.gudang?.name || "-"}${batchStr}${expStr} • Stok: ${stock.qty} ${stock.satuan || ""}`,
+          };
+        })),
     [stocks, sourceZone],
   );
 
@@ -495,11 +498,20 @@ export default function RelocationPage() {
                   {selectedStock.barang?.nama}
                 </Text>
                 <Text size="xs" c="dimmed">
-                  Rak asal: {selectedStock.gudang?.name || "-"}
+                  Rak Asal: <b>{selectedStock.gudang?.name || "-"}</b> ({selectedStock.gudang?.zone || "-"})
                 </Text>
+                {selectedStock.batch_no && (
+                  <Text size="xs" c="dimmed">
+                    Batch No: <b>{selectedStock.batch_no}</b>
+                  </Text>
+                )}
+                {selectedStock.expiry_date && (
+                  <Text size="xs" c="dimmed">
+                    Expiry Date: <b>{new Date(selectedStock.expiry_date).toISOString().split('T')[0]}</b>
+                  </Text>
+                )}
                 <Text size="xs" c="dimmed">
-                  Stok tersedia: {selectedStock.qty}{" "}
-                  {selectedStock.satuan || ""}
+                  Stok Tersedia di Batch Ini: <b>{selectedStock.qty} {selectedStock.satuan || ""}</b>
                 </Text>
               </Box>
             )}
@@ -604,7 +616,7 @@ export default function RelocationPage() {
               >
                 <Table.Thead style={{ background: "#fff4e6", borderBottom: "2px solid #ffd8a8" }}>
                   <Table.Tr>
-                    {["Item", "Rak Asal", "Rak Tujuan", "Qty", "Note", "Aksi"].map(
+                    {["Item / Batch", "Rak Asal", "Rak Tujuan", "Qty", "Note", "Aksi"].map(
                       (header) => (
                         <Table.Th
                           key={header}
@@ -626,10 +638,17 @@ export default function RelocationPage() {
                   ) : (
                     drafts.map((draft: any, index: number) => {
                       const item = getItem(draft);
+                      const sourceStk = draft.source_stock || draft.stock || {};
+                      const batchStr = sourceStk.batch_no || draft.batch_no;
+                      const expStr = sourceStk.expiry_date ? new Date(sourceStk.expiry_date).toISOString().split('T')[0] : null;
 
                       return (
                         <Table.Tr key={draft.id} style={rowStyle(index)}>
-                          <Table.Td fw={700}>{item.nama || "-"}</Table.Td>
+                          <Table.Td fw={700}>
+                            <Text size="xs" fw={700}>{item.nama || "-"}</Text>
+                            {batchStr && <Text size="10px" c="dimmed">Batch: <b>{batchStr}</b></Text>}
+                            {expStr && <Text size="10px" c="dimmed">Exp: <b>{expStr}</b></Text>}
+                          </Table.Td>
                           <Table.Td>
                             <Badge size="sm" color="blue" variant="light">
                               {getSourceRack(draft)}
@@ -746,7 +765,7 @@ export default function RelocationPage() {
               >
                 <Table.Thead style={{ background: "#fff4e6", borderBottom: "2px solid #ffd8a8" }}>
                   <Table.Tr>
-                    {["Tanggal", "Item", "Rak Asal", "Rak Tujuan", "Qty", "Status"].map(
+                    {["Tanggal", "Item / Batch", "Rak Asal", "Rak Tujuan", "Qty", "Status"].map(
                       (header) => (
                         <Table.Th
                           key={header}
@@ -768,11 +787,15 @@ export default function RelocationPage() {
                   ) : (
                     executedHistory.map((row: any, index: number) => {
                       const item = getItem(row);
+                      const batchStr = row.batch_no || row.stock?.batch_no;
 
                       return (
                         <Table.Tr key={row.id} style={rowStyle(index)}>
                           <Table.Td>{fmt(row.created_at)}</Table.Td>
-                          <Table.Td fw={700}>{item.nama || "-"}</Table.Td>
+                          <Table.Td fw={700}>
+                            <Text size="xs" fw={700}>{item.nama || "-"}</Text>
+                            {batchStr && <Text size="10px" c="dimmed">Batch: <b>{batchStr}</b></Text>}
+                          </Table.Td>
                           <Table.Td>{getSourceRack(row)}</Table.Td>
                           <Table.Td>{getTargetRack(row)}</Table.Td>
                           <Table.Td ta="right">

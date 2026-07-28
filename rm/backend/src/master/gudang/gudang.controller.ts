@@ -65,7 +65,7 @@ export class GudangController {
 
   @Delete(':id')
   @Roles(UserRole.SUPERVISOR, UserRole.SUPER_ADMIN)
-  remove(@Param('id') id: string) {
-    return this.svc.remove(+id);
+  remove(@Param('id') id: string, @Query('cascade') cascade?: string) {
+    return this.svc.remove(+id, cascade === 'true');
   }
 }
