@@ -192,11 +192,11 @@ export default function PlanningAyamPage() {
                         {rows.map((p: any, i: number) => (
                             <Table.Tr key={p.id} style={{ background: i % 2 ? '#f8f9fa' : '#fff' }}>
                                 <Table.Td fw={700}>{p.barang?.nama || '-'}</Table.Td>
-                                <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>
+                                <Table.Td ta="right">
                                     <Text size="xs" fw={700}>{p.qty} {p.satuan}</Text>
                                 </Table.Td>
-                                <Table.Td style={{ whiteSpace: "nowrap" }}>{fmt(p.tanggal_planning)}</Table.Td>
-                                <Table.Td style={{ whiteSpace: "nowrap" }}>{p.shift?.name || '-'}</Table.Td>
+                                <Table.Td>{fmt(p.tanggal_planning)}</Table.Td>
+                                <Table.Td>{p.shift?.name || '-'}</Table.Td>
                                 <Table.Td>{p.tujuan || '-'}</Table.Td>
                                 <Table.Td>{p.rak_asal || '-'}</Table.Td>
                                 <Table.Td>

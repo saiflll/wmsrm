@@ -83,8 +83,8 @@ function Table({ children, ...props }: TableProps & { children?: ReactNode }) {
 Table.Thead = MTable.Thead;
 Table.Tbody = MTable.Tbody;
 Table.Tr = MTable.Tr;
-Table.Th = MTable.Th;
-Table.Td = MTable.Td;
+Table.Th = (props: TableThProps) => <MTable.Th {...props} style={{ whiteSpace: "normal", wordBreak: "break-word", ...props.style }} />;
+Table.Td = (props: TableTdProps) => <MTable.Td {...props} style={{ whiteSpace: "normal", wordBreak: "break-word", ...props.style }} />;
 
 export { Table };
 export type {

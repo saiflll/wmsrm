@@ -618,8 +618,8 @@ export default function PlanningInboundPage() {
                           }
                           return (
                             <Table.Tr key={`draft-${i}`}>
-                              <Table.Td fw={700} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.no_po}</Table.Td>
-                              <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.supplier || "-"}</Table.Td>
+                              <Table.Td fw={700}>{d.no_po}</Table.Td>
+                              <Table.Td>{d.supplier || "-"}</Table.Td>
                               <Table.Td style={{ padding: '4px 6px' }}>
                                 <div style={{ maxHeight: 80, overflowY: 'auto' }}>
                                   {d.items?.map((item: any, idx: number) => {
@@ -761,8 +761,8 @@ export default function PlanningInboundPage() {
 
                         return (
                           <Table.Tr key={p.id}>
-                            <Table.Td fw={700} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.no_po}</Table.Td>
-                            <Table.Td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.supplier || "-"}</Table.Td>
+                            <Table.Td fw={700}>{p.no_po}</Table.Td>
+                            <Table.Td>{p.supplier || "-"}</Table.Td>
                             <Table.Td style={{ padding: '4px 6px' }}>
                               <div style={{ maxHeight: 80, overflowY: 'auto' }}>
                                 {p.items?.map((item: any, idx: number) => {
@@ -791,7 +791,7 @@ export default function PlanningInboundPage() {
                                 {p.status}
                               </Badge>
                             </Table.Td>
-                            <Table.Td style={{ whiteSpace: "nowrap" }}>{p.note || "-"}</Table.Td>
+                            <Table.Td>{p.note || "-"}</Table.Td>
                             <Table.Td>
                               {p.status === "WAIT" && (
                                 <Group gap={2} wrap="nowrap">
