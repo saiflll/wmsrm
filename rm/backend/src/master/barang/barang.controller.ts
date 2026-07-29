@@ -99,14 +99,14 @@ export class BarangController {
   async remove(@Param('id') id: string, @Query('cascade') cascade?: string) {
     const numId = +id;
     if (cascade === 'true') {
-      // Hapus outbound_ayam — coba kedua varian nama kolom FK (snake_case & camelCase TypeORM)
+      // Hapus outbound_ayam dulu — nama kolom FK yg benar: "planningAyamId" (fully camelCase TypeORM)
+      try { await this.repo.manager.query(`DELETE FROM outbound_ayam WHERE "planningAyamId" IN (SELECT id FROM planning_ayam WHERE "barangId" = $1)`, [numId]); } catch (e) {}
       try { await this.repo.manager.query(`DELETE FROM outbound_ayam WHERE planning_ayam_id IN (SELECT id FROM planning_ayam WHERE "barangId" = $1)`, [numId]); } catch (e) {}
-      try { await this.repo.manager.query(`DELETE FROM outbound_ayam WHERE "planning_ayamId" IN (SELECT id FROM planning_ayam WHERE "barangId" = $1)`, [numId]); } catch (e) {}
       // Hapus planning_ayam
       try { await this.repo.manager.query(`DELETE FROM planning_ayam WHERE "barangId" = $1`, [numId]); } catch (e) {}
       // Hapus relocation (FK ke stock)
-      try { await this.repo.manager.query(`DELETE FROM relocation WHERE source_stock_id IN (SELECT id FROM stock WHERE "barangId" = $1)`, [numId]); } catch (e) {}
       try { await this.repo.manager.query(`DELETE FROM relocation WHERE "sourceStockId" IN (SELECT id FROM stock WHERE "barangId" = $1)`, [numId]); } catch (e) {}
+      try { await this.repo.manager.query(`DELETE FROM relocation WHERE source_stock_id IN (SELECT id FROM stock WHERE "barangId" = $1)`, [numId]); } catch (e) {}
       // Null-kan FK di gudang
       try { await this.repo.manager.query(`UPDATE gudang SET "barangId" = NULL WHERE "barangId" = $1`, [numId]); } catch (e) {}
       try { await this.repo.manager.query(`UPDATE gudang SET barang_id = NULL WHERE barang_id = $1`, [numId]); } catch (e) {}
