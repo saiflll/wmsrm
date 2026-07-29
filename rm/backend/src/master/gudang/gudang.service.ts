@@ -62,11 +62,28 @@ export class GudangService {
 
   async remove(id: number, cascade: boolean = false) {
     if (cascade) {
-      try { await this.repo.manager.query(`DELETE FROM relocation WHERE target_gudang_id = $1 OR "targetGudangId" = $1`, [id]); } catch (e) {}
-      try { await this.repo.manager.query(`DELETE FROM stock_log WHERE gudang_id = $1 OR gudang_tujuan_id = $1 OR "gudangId" = $1 OR "gudangTujuanId" = $1`, [id]); } catch (e) {}
-      try { await this.repo.manager.query(`DELETE FROM stock WHERE gudang_id = $1 OR "gudangId" = $1`, [id]); } catch (e) {}
-      try { await this.repo.manager.query(`DELETE FROM transaksi WHERE gudang_id = $1 OR "gudangId" = $1`, [id]); } catch (e) {}
-      await this.repo.delete(id);
+      // 1. Hapus relocation yang mengacu ke stock yang ada di gudang ini (source_stock)
+      try { await this.repo.manager.query(`DELETE FROM relocation WHERE "sourceStockId" IN (SELECT id FROM stock WHERE "gudangId" = $1 OR gudang_id = $1)`, [id]); } catch (e) {}
+      try { await this.repo.manager.query(`DELETE FROM relocation WHERE source_stock_id IN (SELECT id FROM stock WHERE "gudangId" = $1 OR gudang_id = $1)`, [id]); } catch (e) {}
+
+      // 2. Hapus relocation yang target gudangnya adalah gudang ini
+      try { await this.repo.manager.query(`DELETE FROM relocation WHERE "targetGudangId" = $1 OR target_gudang_id = $1 OR "target_gudangId" = $1`, [id]); } catch (e) {}
+
+      // 3. Hapus stock_log yang terikat gudang ini (baik sebagai gudang maupun gudang_tujuan)
+      try { await this.repo.manager.query(`DELETE FROM stock_log WHERE "gudangId" = $1 OR gudang_id = $1`, [id]); } catch (e) {}
+      try { await this.repo.manager.query(`DELETE FROM stock_log WHERE "gudangTujuanId" = $1 OR gudang_tujuan_id = $1 OR "gudang_tujuanId" = $1`, [id]); } catch (e) {}
+
+      // 4. Hapus stock yang ada di gudang ini
+      try { await this.repo.manager.query(`DELETE FROM stock WHERE "gudangId" = $1 OR gudang_id = $1`, [id]); } catch (e) {}
+
+      // 5. Hapus transaksi yang mengacu gudang ini
+      try { await this.repo.manager.query(`DELETE FROM transaksi WHERE "gudangId" = $1 OR gudang_id = $1`, [id]); } catch (e) {}
+
+      try {
+        await this.repo.delete(id);
+      } catch (err: any) {
+        throw new ConflictException(`Gagal hapus lokasi/gudang (ada relasi tersisa): ${err?.message || err}`);
+      }
       return { deleted: true, cascade: true };
     }
     await this.repo.update(id, { deleted_at: new Date() });

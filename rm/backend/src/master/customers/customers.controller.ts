@@ -64,8 +64,14 @@ export class CustomersController {
   async remove(@Param('id') id: string, @Query('cascade') cascade?: string) {
     const numId = +id;
     if (cascade === 'true') {
-      try { await this.repo.manager.query(`DELETE FROM transaksi WHERE suplayer_id = $1 OR "suplayer_id" = $1 OR "customerId" = $1`, [numId]); } catch (e) {}
-      await this.repo.delete(numId);
+      try { await this.repo.manager.query(`DELETE FROM transaksi WHERE suplayer_id = $1 OR "suplayer_id" = $1 OR "customerId" = $1 OR customer_id = $1`, [numId]); } catch (e) {}
+      try { await this.repo.manager.query(`UPDATE planning_outbound SET "customerId" = NULL WHERE "customerId" = $1`, [numId]); } catch (e) {}
+      try { await this.repo.manager.query(`UPDATE planning_outbound SET customer_id = NULL WHERE customer_id = $1`, [numId]); } catch (e) {}
+      try {
+        await this.repo.delete(numId);
+      } catch (err: any) {
+        throw new ConflictException(`Gagal hapus customer (ada relasi tersisa): ${err?.message || err}`);
+      }
       return { deleted: true, cascade: true };
     }
     await this.repo.update(numId, { deleted_at: new Date() });
