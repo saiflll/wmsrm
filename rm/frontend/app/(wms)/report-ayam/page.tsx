@@ -45,7 +45,7 @@ function exportExcel(data: any[], from: string, to: string) {
     [],
     [
       "No",
-      "Tanggal",
+      "Tanggal / Waktu Eksekusi",
       "Item / Produk Ayam",
       "Planning (kg)",
       "Outbound (kg)",
@@ -66,7 +66,7 @@ function exportExcel(data: any[], from: string, to: string) {
           : 0;
     return [
       idx + 1,
-      r.date ? fmt(r.date).split(" ")[0] : "-",
+      r.date ? fmt(r.date) : "-",
       r.barang || "-",
       planning,
       outbound,

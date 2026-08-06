@@ -1591,8 +1591,10 @@ export class InventoryService {
     });
 
     // Get opname logs per gudang (latest per gudang)
-    const opnameLogsPerGudang: Record<number, { qty: number; shift?: string }> =
-      {};
+    const opnameLogsPerGudang: Record<
+      number,
+      { qty: number; shift?: string; created_at?: Date }
+    > = {};
     for (const g of gudangs) {
       const logWhere: any = { gudang: { id: g.id }, type: LogType.OPNAME };
       if (from && to) {
@@ -1611,6 +1613,7 @@ export class InventoryService {
         opnameLogsPerGudang[g.id] = {
           qty: opnameLogs[0].qty,
           shift: opnameLogs[0].shift?.name,
+          created_at: opnameLogs[0].created_at,
         };
       }
     }
@@ -1742,6 +1745,7 @@ export class InventoryService {
           notes: notes,
           note_color: noteColor,
           shift: opnameLog?.shift || null,
+          created_at: opnameLog?.created_at || stock.created_at || null,
         });
       }
     }

@@ -49,6 +49,7 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
       "ID Opname",
       "Item / Produk",
       "Tanggal Opname",
+      "Jam Eksekusi",
       "Shift",
       "Lokasi (Rak)",
       "Zone",
@@ -61,7 +62,8 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
   const rows = data.map((r: any) => [
     `LOG-${r.id}`,
     r.barang?.nama || "",
-    fmt(r.created_at),
+    r.created_at ? fmt(r.created_at).split(" ")[0] : "-",
+    r.created_at ? fmt(r.created_at).split(" ")[1] : "-",
     r.shift?.name || "-",
     r.gudang?.name || "-",
     r.gudang?.zone || "-",
@@ -71,7 +73,7 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
-  const lastCol = 8;
+  const lastCol = 9;
   ws["!merges"] = [
     { s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } },
     { s: { r: 1, c: 0 }, e: { r: 1, c: lastCol } },
@@ -81,6 +83,7 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
   ws["!cols"] = [
     { wch: 12 },
     { wch: 28 },
+    { wch: 14 },
     { wch: 14 },
     { wch: 12 },
     { wch: 14 },

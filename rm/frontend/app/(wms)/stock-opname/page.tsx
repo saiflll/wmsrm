@@ -60,6 +60,7 @@ function downloadExcel(data: any[], zone: string) {
       "Batch/Lot",
       "Expiry Date",
       "Shift",
+      "Tgl & Jam Eksekusi",
       "Stock Akhir (Sistem)",
       "Stock Reserved",
       "Stock Available",
@@ -87,6 +88,7 @@ function downloadExcel(data: any[], zone: string) {
     r.batch_lot || "",
     r.expiry_date || "",
     r.shift || "",
+    r.created_at ? fmt(r.created_at) : "-",
     r.stock_akhir,
     r.reserved_qty || 0,
     r.available_qty || 0,
@@ -105,9 +107,9 @@ function downloadExcel(data: any[], zone: string) {
   const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
 
   ws["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 21 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 21 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 21 } },
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 23 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 23 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 23 } },
   ];
 
   ws["!cols"] = [
@@ -121,6 +123,7 @@ function downloadExcel(data: any[], zone: string) {
     { wch: 14 },
     { wch: 10 },
     { wch: 16 },
+    { wch: 18 },
     { wch: 16 },
     { wch: 16 },
     { wch: 16 },
@@ -367,6 +370,7 @@ export default function StockOpnamePage() {
                         <th>Batch</th>
                         <th>Exp</th>
                         <th>Shift</th>
+                        <th>Tgl & Jam Eksekusi</th>
                         <th>Sistem</th>
                         <th>Fisik</th>
                         <th>Selisih</th>
@@ -386,6 +390,7 @@ export default function StockOpnamePage() {
                             <td>${r.batch_lot || "-"}</td>
                             <td>${r.expiry_date ?? "-"}</td>
                             <td>${r.shift || "-"}</td>
+                            <td>${r.created_at ? fmt(r.created_at) : "-"}</td>
                             <td>${r.stock_akhir}</td>
                             <td>${r.stock_opname !== null ? r.stock_opname : ""}</td>
                             <td>${r.variance_phys_book !== null ? r.variance_phys_book : ""}</td>

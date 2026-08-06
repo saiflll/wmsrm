@@ -49,6 +49,7 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
       "No.Outbound/Ref",
       "Item / Produk",
       "Tanggal Outbound",
+      "Jam Process / Eksekusi",
       "Shift",
       "Tanggal Expired",
       "Qty",
@@ -64,7 +65,8 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
   const rows = data.map((r: any) => [
     r.no_po || `OUT-${r.id}`,
     r.barang?.nama || "",
-    fmt(r.created_at),
+    r.created_at ? fmt(r.created_at).split(" ")[0] : "-",
+    r.created_at ? fmt(r.created_at).split(" ")[1] : "-",
     r.shift?.name || "-",
     r.expiry_date ? fmt(r.expiry_date) : "-",
     r.qty,
@@ -78,14 +80,15 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
   ]);
   const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
   ws["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 12 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 12 } },
-    ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 12 } }] : []),
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 13 } },
+    ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 13 } }] : []),
   ];
   ws["!cols"] = [
     { wch: 16 },
     { wch: 28 },
+    { wch: 14 },
     { wch: 14 },
     { wch: 12 },
     { wch: 14 },
