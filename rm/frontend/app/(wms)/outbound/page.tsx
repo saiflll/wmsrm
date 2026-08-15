@@ -253,18 +253,21 @@ export default function OutboundPage() {
       shift_id: planning.shift?.id ? String(planning.shift.id) : "",
     });
 
-    const initialItems = (planning.items || []).map((item: any, idx: number) => ({
+    const initialItems = (planning.items || []).map((item: any, idx: number) => {
+      const barangId = item.barang_id ?? item.barangId;
+      const gudangId = item.gudang_id ?? item.gudangId;
+      return {
       id: Date.now() + idx + Math.random(),
-      barang_id: String(item.barangId),
-      gudang_id: item.gudangId ? String(item.gudangId) : "",
-      zone: item.gudangId ? (racks.find((r) => r.id === item.gudangId)?.zone || "") : "",
+      barang_id: String(barangId),
+      gudang_id: gudangId ? String(gudangId) : "",
+      zone: gudangId ? (racks.find((r) => r.id === gudangId)?.zone || "") : "",
       qty: item.qty,
       plan_qty: item.qty,
       batch_no: item.batch_no || "",
       satuan: item.satuan || "",
       tujuan: "NORMAL",
       note: "",
-    }));
+    }});
     setProcessItems(initialItems);
   };
 
@@ -333,8 +336,8 @@ export default function OutboundPage() {
     try {
       const payload = {
         items: processItems.map((item) => ({
-          barangId: Number(item.barang_id),
-          gudangId: Number(item.gudang_id),
+          barang_id: Number(item.barang_id),
+          gudang_id: Number(item.gudang_id),
           qty: Number(item.qty),
           tujuan: item.tujuan,
           batch_no: item.batch_no || undefined,

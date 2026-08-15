@@ -292,8 +292,8 @@ export default function PlanningOutboundPage() {
             tanggal_planning: form.tanggal_permintaan,
             tujuan: custName || undefined,
             items: form.items.map((item: any) => ({
-                barangId: Number(item.barangId),
-                gudangId: Number(item.gudangId),
+                barang_id: Number(item.barangId),
+                gudang_id: Number(item.gudangId),
                 qty: Number(item.qty),
                 batch_no: item.batch_no || undefined,
                 satuan: item.satuan || undefined,
@@ -341,11 +341,13 @@ export default function PlanningOutboundPage() {
 
     const editTrans = (plan: any) => {
         const mappedItems = plan.items.map((r: any) => {
-            const bObj = barangs.find((b: any) => b.id === r.barangId);
-            const gObj = allGudangs.find((g: any) => g.id === r.gudangId);
+            const barangId = r.barang_id ?? r.barangId;
+            const gudangId = r.gudang_id ?? r.gudangId;
+            const bObj = barangs.find((b: any) => b.id === barangId);
+            const gObj = allGudangs.find((g: any) => g.id === gudangId);
             return {
-                barangId: r.barangId,
-                gudangId: r.gudangId,
+                barangId,
+                gudangId,
                 qty: r.qty,
                 batch_no: r.batch_no || '',
                 satuan: r.satuan || bObj?.satuan || '',

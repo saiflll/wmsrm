@@ -624,11 +624,11 @@ function InboundContent() {
 
       const tanggal_aktual = new Date().toISOString().split('T')[0];
       const payload = {
-        shiftId: processTop.shift_id ? Number(processTop.shift_id) : undefined,
+        shift_id: processTop.shift_id ? Number(processTop.shift_id) : undefined,
         note: mergedNotes || undefined,
         items: processItems.map((item) => ({
-          barangId: Number(item.barang_id),
-          gudangId: Number(item.gudang_id),
+          barang_id: Number(item.barang_id),
+          gudang_id: Number(item.gudang_id),
           qty: Number(item.qty),
           batch_no: item.batch_no || undefined,
           expiry_date: item.expiry_date,
