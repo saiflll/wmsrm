@@ -4,7 +4,7 @@ services:
     container_name: wms-test-db
     restart: unless-stopped
     mem_limit: 512m
-    cpus: 0.5
+    cpus: 0.50
     ports:
       - "3013:5432"
     environment:
@@ -25,7 +25,7 @@ services:
     container_name: wms-test
     restart: unless-stopped
     mem_limit: 1200m
-    cpus: 1.5
+    cpus: 1.00
     ports:
       - "3014:3011"
       - "3015:3000"
