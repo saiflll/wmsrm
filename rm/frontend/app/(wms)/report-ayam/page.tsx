@@ -51,6 +51,8 @@ function exportExcel(data: any[], from: string, to: string) {
       "Outbound (kg)",
       "Serapan (%)",
       "Status Planning",
+      "Dibuat Oleh",
+      "Dieksekusi Oleh",
     ],
   ];
   const rows = data.map((r: any, idx: number) => {
@@ -72,13 +74,15 @@ function exportExcel(data: any[], from: string, to: string) {
       outbound,
       `${serapan}%`,
       r.status || "-",
+      r.created_by_username || "sistem",
+      r.executed_by_username || "-",
     ];
   });
   const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
   ws["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } },
   ];
   ws["!cols"] = [
     { wch: 6 },
@@ -88,6 +92,8 @@ function exportExcel(data: any[], from: string, to: string) {
     { wch: 14 },
     { wch: 12 },
     { wch: 16 },
+    { wch: 18 },
+    { wch: 18 },
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "ReportAyam");

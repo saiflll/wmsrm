@@ -3,9 +3,11 @@ import {
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity()
+@Index('IDX_customer_nama_deleted', ['nama', 'deleted_at'])
 export class Customer {
   @PrimaryGeneratedColumn()
   id: number;

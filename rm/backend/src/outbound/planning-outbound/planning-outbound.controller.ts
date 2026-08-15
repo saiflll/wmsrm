@@ -90,7 +90,7 @@ export class PlanningOutboundController {
   }
 
   @Post(':id/process')
-  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.CHECKER, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   process_outbound(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ProcessPlanningOutboundDto,
@@ -99,7 +99,7 @@ export class PlanningOutboundController {
   }
 
   @Post(':id/publish')
-  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.CHECKER, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   publish_outbound(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: PublishPlanningOutboundDto,

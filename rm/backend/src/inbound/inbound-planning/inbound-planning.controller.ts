@@ -52,7 +52,12 @@ export class InboundPlanningController {
   }
 
   @Post()
-  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.ADMIN)
+  @Roles(
+    UserRole.SUPERVISOR,
+    UserRole.KOORDINATOR,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
   create(@Body() dto: CreateInboundPlanningDto, @Request() req: any) {
     return this.svc.create(dto, req.user?.username);
   }
@@ -73,7 +78,13 @@ export class InboundPlanningController {
   }
 
   @Post(':id/process')
-  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.ADMIN)
+  @Roles(
+    UserRole.SUPERVISOR,
+    UserRole.KOORDINATOR,
+    UserRole.CHECKER,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
   process_inbound(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ProcessInboundDto,

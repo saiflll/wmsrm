@@ -441,7 +441,7 @@ export default function OutboundPage() {
     label: b.sku ? `[${b.kategori}] ${b.sku} - ${b.nama}` : `[${b.kategori}] ${b.nama}`,
   })));
 
-  const customerOpts = customers.map((c: any) => c.nama || c.name).filter(Boolean);
+  const customerOpts = Array.from(new Set(customers.map((c: any) => c.nama || c.name).filter(Boolean)));
   const shiftOpts = dedup(shifts.map((s: any) => ({
     value: String(s.id),
     label: s.name,

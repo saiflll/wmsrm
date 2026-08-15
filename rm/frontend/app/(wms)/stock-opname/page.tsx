@@ -74,6 +74,7 @@ function downloadExcel(data: any[], zone: string) {
       "Status Tolerance",
       "Sudah Dihitung?",
       "Keterangan",
+      "Dieksekusi Oleh",
     ],
   ];
 
@@ -102,6 +103,7 @@ function downloadExcel(data: any[], zone: string) {
     r.tolerance_ok ? "OK" : "TIDAK OK",
     r.stock_opname !== null ? "Y" : "N",
     r.notes || "",
+    r.executed_by_username || "sistem",
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);

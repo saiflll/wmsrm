@@ -24,7 +24,6 @@ import {
     IconClipboardList,
     IconArrowBadgeUp,
     IconCalendarStats,
-    IconTruck,
     IconArrowsMaximize,
     IconClipboardCheck,
     IconGridDots,
@@ -58,7 +57,6 @@ const menuPermissions: Record<string, number[]> = {
     '/planning-outbound': [3, 4, 5],
     '/outbound': [1, 3, 4, 5], // Checker (eksekutor), Koordinator, Supervisor, Super Admin
     '/planning-ayam': [3, 4, 5],
-    '/outbound-ayam': [1, 3, 4, 5], // Checker (eksekutor), Koordinator, Supervisor, Super Admin
     '/relocation': [1, 3, 4, 5], // Checker, Koordinator, Supervisor, Super Admin
     '/stock-opname': [1, 2, 3, 4, 5], // Checker, Admin, Koordinator, Supervisor, Super Admin
     '/inventory': [2, 3, 4, 5], // Admin, Koordinator, Supervisor, Super Admin
@@ -87,7 +85,6 @@ const menuGroups: { label: string; links: MenuLink[] }[] = [
             { label: 'Planning Outbound', href: '/planning-outbound', c: 'red', icon: IconClipboardList },
             { label: 'Outbound', href: '/outbound', c: 'red', icon: IconArrowBadgeUp },
             { label: 'Planning Ayam', href: '/planning-ayam', c: 'pink', icon: IconCalendarStats },
-            { label: 'Outbound Ayam', href: '/outbound-ayam', c: 'orange', icon: IconTruck },
             { label: 'Relocation', href: '/relocation', c: 'orange', icon: IconArrowsMaximize },
             { label: 'Stock Opname', href: '/stock-opname', c: 'grape', icon: IconClipboardCheck },
             { label: 'Inventory', href: '/inventory', c: 'teal', icon: IconGridDots },

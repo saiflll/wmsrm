@@ -79,11 +79,15 @@ build_log.txt
 
 # Database and network dumps
 *.sql
+*.dump
+backups/
 db_inspect.json
 db_inspect_utf8.json
 wms_network.json
 
 # Tooling and caching
+__pycache__/
+*.pyc
 .nyx/
 r/
 send.md

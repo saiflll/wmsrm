@@ -228,7 +228,7 @@ export default function PlanningOutboundPage() {
 
     const barangOpts = dedup(availableBarangs.map((b: any) => ({ value: String(b.id), label: b.sku ? `${b.sku} - ${b.nama}` : b.nama })));
     const zoneOpts = dedup(availableZones.map((z: any) => ({ value: z, label: z })));
-    const customerOpts = customers.map((c: any) => c.nama || c.name).filter(Boolean);
+    const customerOpts = Array.from(new Set(customers.map((c: any) => c.nama || c.name).filter(Boolean)));
     const shiftOpts = dedup(shifts.map((s: any) => ({ value: String(s.id), label: s.name })));
     const batchOpts = Array.from(new Set(availableStocks.map((s: any) => s.batch_no).filter(Boolean)));
     const refOpts = Array.from(new Set(logs.map((l: any) => l.no_ref).filter(Boolean)));

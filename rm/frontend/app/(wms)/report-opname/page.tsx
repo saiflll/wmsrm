@@ -56,6 +56,7 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
       "Qty Opname (Fisik)",
       "Satuan",
       "Keterangan / Note",
+      "Dieksekusi Oleh",
     ],
   ].filter((r) => r.length > 0);
 
@@ -70,10 +71,11 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     r.qty,
     r.satuan || "",
     r.note || "",
+    r.user?.username || "sistem",
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
-  const lastCol = 9;
+  const lastCol = 10;
   ws["!merges"] = [
     { s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } },
     { s: { r: 1, c: 0 }, e: { r: 1, c: lastCol } },
@@ -91,6 +93,7 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     { wch: 16 },
     { wch: 10 },
     { wch: 36 },
+    { wch: 18 },
   ];
 
   const wb = XLSX.utils.book_new();

@@ -60,6 +60,7 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
       "Tujuan / Peminta",
       "Batch No",
       "Keterangan",
+      "Dieksekusi Oleh",
     ],
   ].filter((r) => r.length > 0);
   const rows = data.map((r: any) => [
@@ -77,13 +78,14 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     r.tujuan || r.customer || "-",
     r.batch_no || "-",
     r.keterangan || r.note || "-",
+    r.user?.username || "sistem",
   ]);
   const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
   ws["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 13 } },
-    ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 13 } }] : []),
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 14 } },
+    ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 14 } }] : []),
   ];
   ws["!cols"] = [
     { wch: 16 },
@@ -98,6 +100,7 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     { wch: 12 },
     { wch: 14 },
     { wch: 20 },
+    { wch: 18 },
     { wch: 16 },
     { wch: 20 },
   ];

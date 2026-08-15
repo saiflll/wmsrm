@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum KategoriBarang {
@@ -13,6 +14,8 @@ export enum KategoriBarang {
 }
 
 @Entity()
+@Index('IDX_barang_side_deleted', ['side', 'deleted_at'])
+@Index('IDX_barang_nama', ['nama'])
 export class Barang {
   @PrimaryGeneratedColumn()
   id: number;

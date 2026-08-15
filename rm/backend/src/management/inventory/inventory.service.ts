@@ -1593,7 +1593,7 @@ export class InventoryService {
     // Get opname logs per gudang (latest per gudang)
     const opname_logs_per_gudang: Record<
       number,
-      { qty: number; shift?: string; created_at?: Date }
+      { qty: number; shift?: string; created_at?: Date; username?: string }
     > = {};
     for (const g of gudangs) {
       const log_where: any = { gudang: { id: g.id }, type: LogType.OPNAME };
@@ -1605,7 +1605,7 @@ export class InventoryService {
       }
       const opname_logs = await this.log_repo.find({
         where: log_where,
-        relations: ['shift'],
+        relations: ['shift', 'user'],
         order: { created_at: 'DESC' },
         take: 1,
       });
@@ -1614,6 +1614,7 @@ export class InventoryService {
           qty: opname_logs[0].qty,
           shift: opname_logs[0].shift?.name,
           created_at: opname_logs[0].created_at,
+          username: opname_logs[0].user?.username,
         };
       }
     }
@@ -1746,6 +1747,7 @@ export class InventoryService {
           note_color: note_color,
           shift: opname_log?.shift || null,
           created_at: opname_log?.created_at || stock.created_at || null,
+          executed_by_username: opname_log?.username || null,
         });
       }
     }

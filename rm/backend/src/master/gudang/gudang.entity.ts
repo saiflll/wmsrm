@@ -5,6 +5,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { Barang } from '../barang/barang.entity';
 
@@ -22,6 +23,8 @@ export enum GudangZone {
 }
 
 @Entity()
+@Index('IDX_gudang_zone_deleted', ['zone', 'deleted_at'])
+@Index('IDX_gudang_name', ['name'])
 export class Gudang {
   @PrimaryGeneratedColumn()
   id: number;

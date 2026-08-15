@@ -109,7 +109,7 @@ export default function PlanningAyamPage() {
     const donePlans = plans.filter((p: any) => ['DONE', 'CANCEL'].includes(p.status) && matches(p));
     const barangOpts = dedup(barangs.map((b: any) => ({ value: String(b.id), label: b.sku ? `${b.sku} - ${b.nama}` : b.nama })));
     const shiftOpts = dedup(shifts.map((s: any) => ({ value: String(s.id), label: s.name })));
-    const customerOpts = customers.map((c: any) => c.nama || c.name).filter(Boolean);
+    const customerOpts = Array.from(new Set(customers.map((c: any) => c.nama || c.name).filter(Boolean)));
 
     // Filter stocks for chicken products with available quantity > 0
     const ayamStocks = stocks.filter((s: any) => {

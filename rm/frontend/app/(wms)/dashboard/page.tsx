@@ -1017,7 +1017,7 @@ export default function DashboardPage() {
       exportLogs = exportLogs.filter((l) => new Date(l.created_at) <= d);
     }
     const csv = [
-      "Tipe,No PO/Ref,Item,Qty,Satuan,Batch,Expired,Rak,Tanggal,Supplier/Tujuan,Keterangan",
+      "Tipe,No PO/Ref,Item,Qty,Satuan,Batch,Expired,Rak,Tanggal,Supplier/Tujuan,Keterangan,Dieksekusi Oleh",
     ]
       .concat(
         exportLogs.map((log) =>
@@ -1035,6 +1035,7 @@ export default function DashboardPage() {
             log.tanggal_income || fmt(log.created_at),
             log.supplier || log.tujuan || "-",
             log.note || "-",
+            log.user?.username || "sistem",
           ].map(csvCell).join(","),
         ),
       )
@@ -1564,7 +1565,6 @@ export default function DashboardPage() {
     </Box>
   );
 }
-
 
 
 

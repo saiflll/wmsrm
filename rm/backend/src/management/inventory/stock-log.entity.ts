@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { Barang } from '../../master/barang/barang.entity';
 import { Gudang } from '../../master/gudang/gudang.entity';
@@ -20,6 +21,9 @@ export enum LogType {
 }
 
 @Entity()
+@Index('IDX_stock_log_type_created', ['type', 'created_at'])
+@Index('IDX_stock_log_no_po', ['no_po'])
+@Index('IDX_stock_log_no_ref', ['no_ref'])
 export class StockLog {
   @PrimaryGeneratedColumn()
   id: number;

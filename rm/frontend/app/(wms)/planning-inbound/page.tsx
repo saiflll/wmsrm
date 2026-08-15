@@ -364,7 +364,7 @@ export default function PlanningInboundPage() {
 
   // Option lists
   const poOpts = Array.from(new Set(logs.map((l: any) => l.no_po).filter(Boolean)));
-  const supplierOpts = customers.map((c: any) => c.nama || c.name).filter(Boolean);
+  const supplierOpts = Array.from(new Set(customers.map((c: any) => c.nama || c.name).filter(Boolean)));
   const barangOpts = dedup(barangs.map((b: any) => ({
     value: String(b.id),
     label: b.sku ? `[${b.kategori}] ${b.sku} - ${b.nama}` : `[${b.kategori}] ${b.nama}`,

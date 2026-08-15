@@ -399,7 +399,7 @@ function InboundContent() {
     value: String(s.id),
     label: s.sku ? `[${s.kategori}] ${s.sku} - ${s.nama}` : `[${s.kategori}] ${s.nama}`,
   })));
-  const customerOpts = customers.map((c: any) => c.nama || c.name).filter(Boolean);
+  const customerOpts = Array.from(new Set(customers.map((c: any) => c.nama || c.name).filter(Boolean)));
   const shiftOpts = dedup(shifts.map((s: any) => ({
     value: String(s.id),
     label: s.name,
