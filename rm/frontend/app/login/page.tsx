@@ -49,7 +49,15 @@ export default function LoginPage() {
                 color: 'green',
             });
 
-            router.push('/dashboard');
+            const landingByRole: Record<number, string> = {
+                1: '/inbound',
+                2: '/dashboard',
+                3: '/planning-inbound',
+                4: '/dashboard',
+                5: '/dashboard',
+                6: '/dashboard',
+            };
+            router.push(landingByRole[Number(user?.role)] || '/about');
         } catch (error: any) {
             notifications.show({
                 title: 'Login Gagal',
