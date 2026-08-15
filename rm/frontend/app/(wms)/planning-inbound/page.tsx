@@ -140,14 +140,20 @@ export default function PlanningInboundPage() {
       const p = plans.find((x) => x.id === editPlanId);
       if (p) {
         const mappedItems = p.items.map((it: any) => {
-          const bObj = barangs.find((b: any) => b.id === it.barangId);
+          const barangId = it.barang_id ?? it.barangId;
+          const allocations = it.rack_allocations ?? it.rackAllocations ?? [];
+          const bObj = barangs.find((b: any) => b.id === barangId);
           return {
-            barangId: it.barangId,
+            barangId,
             qty: it.qty,
             _name: bObj ? bObj.nama : '-',
             satuan: it.satuan || bObj?.satuan || '',
             zone: it.zone || '',
-            rackAllocations: it.rackAllocations || [],
+            rackAllocations: allocations.map((a: any) => ({
+              gudangId: a.gudang_id ?? a.gudangId,
+              gudangName: a.gudangName,
+              qty: a.qty,
+            })),
           };
         });
         setForm({
@@ -256,11 +262,11 @@ export default function PlanningInboundPage() {
       estimasi_datang: form.estimasi_datang || undefined,
       note: form.note,
       items: form.items.map((it: any) => ({
-        barangId: Number(it.barangId),
+        barang_id: Number(it.barangId),
         qty: Number(it.qty),
         satuan: it.satuan || undefined,
         zone: it.zone || undefined,
-        rackAllocations: it.rackAllocations?.map((a: any) => ({ gudangId: Number(a.gudangId), qty: Number(a.qty) })),
+        rack_allocations: it.rackAllocations?.map((a: any) => ({ gudang_id: Number(a.gudangId), qty: Number(a.qty) })),
       })),
     };
 
@@ -334,11 +340,11 @@ export default function PlanningInboundPage() {
           estimasi_datang: draft.estimasi_datang || undefined,
           note: draft.note,
           items: draft.items.map((it: any) => ({
-            barangId: Number(it.barangId),
+            barang_id: Number(it.barangId),
             qty: Number(it.qty),
             satuan: it.satuan || undefined,
             zone: it.zone || undefined,
-            rackAllocations: it.rackAllocations?.map((a: any) => ({ gudangId: Number(a.gudangId), qty: Number(a.qty) })),
+            rack_allocations: it.rackAllocations?.map((a: any) => ({ gudang_id: Number(a.gudangId), qty: Number(a.qty) })),
           })),
         });
       }
@@ -766,13 +772,15 @@ export default function PlanningInboundPage() {
                             <Table.Td style={{ padding: '4px 6px' }}>
                               <div style={{ maxHeight: 80, overflowY: 'auto' }}>
                                 {p.items?.map((item: any, idx: number) => {
-                                  const bName = barangs.find((b: any) => b.id === item.barangId)?.nama || '-';
+                                  const itemBarangId = item.barang_id ?? item.barangId;
+                                  const itemAllocations = item.rack_allocations ?? item.rackAllocations ?? [];
+                                  const bName = barangs.find((b: any) => b.id === itemBarangId)?.nama || '-';
                                   return (
                                     <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '1px 0', lineHeight: '1.3' }}>
                                       <span style={{ fontWeight: 600 }}>{bName}</span> x{item.qty} {item.satuan || ''}
-                                      {item.rackAllocations?.map((a: any) => (
-                                        <span key={a.gudangId} style={{ color: "#64748b", fontSize: 9, display: 'block', paddingLeft: 8 }}>
-                                          {a.gudangName || `Rak #${a.gudangId}`}: {a.qty}
+                                    {itemAllocations.map((a: any) => (
+                                      <span key={a.gudang_id ?? a.gudangId} style={{ color: "#64748b", fontSize: 9, display: 'block', paddingLeft: 8 }}>
+                                        {a.gudangName || `Rak #${a.gudang_id ?? a.gudangId}`}: {a.qty}
                                         </span>
                                       ))}
                                     </div>

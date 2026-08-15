@@ -519,14 +519,17 @@ function InboundContent() {
     });
     const initialItems: any[] = [];
     (planning.items || []).forEach((item: any, idx: number) => {
-      const bObj = barangs.find((b: any) => String(b.id) === String(item.barangId));
-      if (item.rackAllocations && item.rackAllocations.length > 0) {
-        item.rackAllocations.forEach((alloc: any, aIdx: number) => {
-          const gdg = allGudangs.find((g: any) => String(g.id) === String(alloc.gudangId));
+      const barangId = item.barang_id ?? item.barangId;
+      const rackAllocations = item.rack_allocations ?? item.rackAllocations ?? [];
+      const bObj = barangs.find((b: any) => String(b.id) === String(barangId));
+      if (rackAllocations.length > 0) {
+        rackAllocations.forEach((alloc: any, aIdx: number) => {
+          const gudangId = alloc.gudang_id ?? alloc.gudangId;
+          const gdg = allGudangs.find((g: any) => String(g.id) === String(gudangId));
           initialItems.push({
             id: Date.now() + idx + aIdx + Math.random(),
-            barang_id: String(item.barangId),
-            gudang_id: String(alloc.gudangId),
+            barang_id: String(barangId),
+            gudang_id: String(gudangId),
             zone: gdg ? gdg.zone : (item.zone || ""),
             qty: alloc.qty,
             plan_qty: alloc.qty,
@@ -539,7 +542,7 @@ function InboundContent() {
       } else {
         initialItems.push({
           id: Date.now() + idx + Math.random(),
-          barang_id: String(item.barangId),
+          barang_id: String(barangId),
           gudang_id: "",
           zone: item.zone || "",
           qty: item.qty,
