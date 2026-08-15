@@ -18,7 +18,7 @@ services:
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
 
   wms-test:
-    image: ghcr.io/${GHCR_OWNER:-ppa-project}/wms-test:latest
+    image: ghcr.io/${GHCR_OWNER:-saiflll}/wms-test:latest
     build:
       context: .
       dockerfile: wms-test/Dockerfile
