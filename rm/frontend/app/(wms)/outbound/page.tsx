@@ -836,10 +836,11 @@ export default function OutboundPage() {
                             <Table.Td>{d.customer?.nama || d.tujuan || "-"}</Table.Td>
                             <Table.Td>
                               {d.items?.map((item: any, idx: number) => {
-                                const bObj = barangs.find((b) => b.id === item.barangId);
+                                const barangId = item.barang_id ?? item.barangId;
+                                const bObj = barangs.find((b) => b.id === barangId);
                                 return (
                                   <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '2px 0' }}>
-                                    {bObj ? bObj.nama : `Barang #${item.barangId}`} <b>x{item.qty} {item.satuan || ""}</b>
+                                    {bObj ? bObj.nama : `Barang #${barangId}`} <b>x{item.qty} {item.satuan || ""}</b>
                                   </div>
                                 );
                               })}

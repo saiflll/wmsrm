@@ -241,6 +241,20 @@ export class PlanningOutboundService {
           }
         }
 
+        for (const barang_id of new Set(
+          planning.process_data.items.map((item) => item.barang_id),
+        )) {
+          const result = await manager
+            .getRepository(Stock)
+            .createQueryBuilder('stock')
+            .select('COALESCE(SUM(stock.qty), 0)', 'total')
+            .where('stock.barangId = :barangId', { barangId: barang_id })
+            .getRawOne();
+          await manager.update(Barang, barang_id, {
+            stok: Number(result?.total || 0),
+          });
+        }
+
         planning.status = 'DONE';
         planning.published_at = new Date();
         return manager.save(PlanningOutbound, planning);
