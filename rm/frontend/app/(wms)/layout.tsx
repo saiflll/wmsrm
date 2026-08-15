@@ -70,7 +70,7 @@ const menuPermissions: Record<string, number[]> = {
     '/import': [5],
     '/users': [5],
     '/login-logs': [5],
-    '/about': [1, 2, 3, 4, 5],
+    '/about': [1, 2, 3, 4, 5, 6],
 };
 
 type MenuLink = { label: string; href: string; c: string; icon: React.ComponentType<any> };
@@ -300,15 +300,13 @@ export default function WMSLayout({ children }: { children: React.ReactNode }) {
                                     </Group>
                                 </Box>
 
-                                {userRole !== 6 && (
-                                    <Menu.Item
-                                        leftSection={<IconInfoCircle size={16} color="#e6921e" />}
-                                        onClick={() => router.push('/about')}
-                                        style={{ fontSize: 12, fontWeight: 600, borderRadius: 4 }}
-                                    >
-                                        About System
-                                    </Menu.Item>
-                                )}
+                                <Menu.Item
+                                    leftSection={<IconInfoCircle size={16} color="#e6921e" />}
+                                    onClick={() => router.push('/about')}
+                                    style={{ fontSize: 12, fontWeight: 600, borderRadius: 4 }}
+                                >
+                                    About System
+                                </Menu.Item>
 
                                 <Menu.Divider my={4} />
 
