@@ -13,7 +13,7 @@ export class LoginLog {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'integer', nullable: true })
   user_id: number | null;
 
   @ManyToOne(() => User)

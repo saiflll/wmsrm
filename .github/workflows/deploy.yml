@@ -1,4 +1,4 @@
-name: Build, Push GHCR & Deploy
+name: Test, Build & Push GHCR
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-push:
-    name: Build & Push ke GHCR
+    name: Test, Build & Push ke GHCR
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -50,37 +50,58 @@ jobs:
           context: .
           file: wms-test/Dockerfile
           platforms: linux/amd64
-          push: true
+          load: true
+          push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy:
-    name: Deploy ke VPS
-    needs: build-push
-    runs-on: self-hosted
-    if: github.event_name == 'push'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          clean: false
-
-      - name: Login ke GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull & Start
+      - name: Smoke test image dengan PostgreSQL
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          docker compose pull wms-test
-          docker compose up -d
+          set -euo pipefail
+          IMAGE="$(printf '%s\n' "$IMAGE_TAGS" | head -n 1)"
+          docker network create wms-ci
+          docker run -d --name wms-test-db --network wms-ci \
+            -e POSTGRES_USER=wms_user \
+            -e POSTGRES_PASSWORD=wms_password \
+            -e POSTGRES_DB=wms_db \
+            postgres:15-alpine
+          docker run -d --name wms-test --network wms-ci \
+            -p 3014:3011 -p 3015:3000 \
+            -e DATABASE_URL=postgresql://wms_user:wms_password@wms-test-db:5432/wms_db \
+            -e JWT_SECRET=ci_smoke_test_secret \
+            "$IMAGE"
 
-      - name: Cek status
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:3014/api/ >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 60 ]; then
+              docker logs wms-test
+              exit 1
+            fi
+            sleep 2
+          done
+
+          curl --fail --silent http://127.0.0.1:3015/ >/dev/null
+          curl --fail --silent \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"checker","password":"checker123"}' \
+            http://127.0.0.1:3014/api/auth/login >/dev/null
+
+      - name: Tampilkan log jika smoke test gagal
+        if: failure()
         run: |
-          docker ps --filter "name=wms-"
-          docker logs wms-test --tail 50
+          docker logs wms-test-db 2>/dev/null || true
+          docker logs wms-test 2>/dev/null || true
+
+      - name: Push image yang lolos smoke test
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          printf '%s\n' "$IMAGE_TAGS" | while IFS= read -r image; do
+            [ -n "$image" ] && docker push "$image"
+          done
