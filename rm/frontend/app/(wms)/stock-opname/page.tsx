@@ -244,7 +244,12 @@ export default function StockOpnamePage() {
     setLoading(true);
     try {
       const res = await api().get(`/inventory/opname/summary?zone=${zone}`);
-      setSummary(unwrap(res));
+      const rows = unwrap(res) || [];
+      setSummary(rows.map((row: any) => ({
+        ...row,
+        totalQty: Number(row.totalQty ?? row.total_qty ?? 0),
+        totalReservedQty: Number(row.totalReservedQty ?? row.total_reserved_qty ?? 0),
+      })));
     } catch (e) {
       console.error(e);
     }

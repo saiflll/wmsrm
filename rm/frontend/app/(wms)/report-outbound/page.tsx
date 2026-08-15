@@ -63,7 +63,7 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     ],
   ].filter((r) => r.length > 0);
   const rows = data.map((r: any) => [
-    r.no_po || `OUT-${r.id}`,
+    r.no_ref || r.no_po || `OUT-${r.id}`,
     r.barang?.nama || "",
     r.created_at ? fmt(r.created_at).split(" ")[0] : "-",
     r.created_at ? fmt(r.created_at).split(" ")[1] : "-",
@@ -156,6 +156,7 @@ export default function ReportOutboundPage() {
       (r: any) =>
         !search ||
         r.barang?.nama?.toLowerCase().includes(search.toLowerCase()) ||
+        r.no_ref?.includes(search) ||
         r.no_po?.includes(search) ||
         r.tujuan?.toLowerCase().includes(search.toLowerCase()) ||
         String(r.id) === search,
@@ -172,7 +173,7 @@ export default function ReportOutboundPage() {
 
   const groupedLogs: Record<string, any[]> = {};
   filtered.forEach((r: any) => {
-    const key = r.no_po || `OUT-${r.id}`;
+    const key = r.no_ref || r.no_po || `OUT-${r.id}`;
     if (!groupedLogs[key]) groupedLogs[key] = [];
     groupedLogs[key].push(r);
   });
