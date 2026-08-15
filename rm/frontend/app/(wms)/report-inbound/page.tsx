@@ -15,7 +15,7 @@ import {
   ActionIcon,
   Tooltip,
 } from "@mantine/core";
-import { api, unwrap, fmt, statusLabel, statusColor, saveXlsx } from "../lib/api";
+import { api, unwrap, fmt, fmtDateTime, statusLabel, statusColor, saveXlsx } from "../lib/api";
 import {
   IconFileTypePdf,
   IconFileSpreadsheet,
@@ -64,15 +64,18 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
       "Jam Bongkar",
       "Jam Selesai",
       "Keterangan",
-      "Dieksekusi Oleh",
+      "Dibuat Oleh",
+      "Waktu Dibuat",
+      "Di-ACC Oleh",
+      "Waktu ACC",
     ],
   ].filter((r) => r.length > 0);
   const rows = data.map((r: any) => [
     r.no_po || "-",
     r.barang?.nama || "",
-    r.tanggal_income ? r.tanggal_income : (r.created_at ? fmt(r.created_at).split(" ")[0] : "-"),
-    r.created_at ? fmt(r.created_at).split(" ")[0] : "-",
-    r.created_at ? fmt(r.created_at).split(" ")[1] : "-",
+    r.tanggal_income ? r.tanggal_income : (r.created_at ? fmt(r.created_at) : "-"),
+    r.created_at ? fmt(r.created_at) : "-",
+    r.created_at ? fmtDateTime(r.created_at).split(" ")[1] : "-",
     r.shift?.name || "-",
     r.expiry_date ? fmt(r.expiry_date) : "-",
     r.qty,
@@ -86,15 +89,18 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     r.jam_bongkar || "-",
     r.jam_selesai || "-",
     r.note || r.keterangan || "-",
-    r.user?.username || "sistem",
+    r.planned_by_username || "Manual / tanpa planning",
+    fmtDateTime(r.planned_at),
+    r.executed_by_username || r.user?.username || "sistem",
+    fmtDateTime(r.executed_at || r.created_at),
   ]);
   const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
   const mergeEndRow = filterBarangNama ? 4 : 3;
   ws["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 18 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 18 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 18 } },
-    ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 18 } }] : []),
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 21 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 21 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 21 } },
+    ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 21 } }] : []),
   ];
   ws["!cols"] = [
     { wch: 16 },
@@ -111,6 +117,9 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     { wch: 14 },
     { wch: 20 },
     { wch: 18 },
+    { wch: 20 },
+    { wch: 18 },
+    { wch: 20 },
     { wch: 16 },
     { wch: 12 },
     { wch: 12 },
@@ -236,6 +245,7 @@ export default function ReportInboundPage() {
                       <th>Jam Bongkar</th>
                       <th>Jam Selesai</th>
                       <th>Keterangan</th>
+                      <th>Audit Planning / ACC</th>
                   </tr>
               </thead>
               <tbody>
@@ -269,14 +279,14 @@ export default function ReportInboundPage() {
                                 idx === 0
                                   ? `<td rowspan="${items.length}">${
                                       r.tanggal_income ||
-                                      fmt(r.created_at).split(" ")[0]
+                                      fmt(r.created_at)
                                     }</td>`
                                   : ""
                               }
                               <td>${r.batch_no || "-"}</td>
                               <td>${
                                 r.expiry_date
-                                  ? fmt(r.expiry_date).split(" ")[0]
+                                  ? fmt(r.expiry_date)
                                   : "-"
                               }</td>
                               <td>${r.qty}</td>
@@ -307,6 +317,10 @@ export default function ReportInboundPage() {
                                   : ""
                               }
                               <td>${r.note || r.keterangan || "-"}</td>
+                              ${idx === 0 ? `<td rowspan="${items.length}">
+                                <b>Dibuat:</b> ${r.planned_by_username || "Manual / tanpa planning"}<br>${fmtDateTime(r.planned_at)}<br>
+                                <b>Di-ACC:</b> ${r.executed_by_username || r.user?.username || "sistem"}<br>${fmtDateTime(r.executed_at || r.created_at)}
+                              </td>` : ""}
                           </tr>
                       `,
                         )
@@ -517,7 +531,7 @@ export default function ReportInboundPage() {
               <Table.Th
                 style={{ color: "#0f766e", fontSize: 11, textAlign: "center" }}
               >
-                Tanggal Permintaan
+                Audit Planning / ACC
               </Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -581,7 +595,7 @@ export default function ReportInboundPage() {
 
                     <Table.Td ta="center">{r.batch_no || "-"}</Table.Td>
                     <Table.Td ta="center">
-                      {r.expiry_date ? fmt(r.expiry_date).split(" ")[0] : "-"}
+                      {r.expiry_date ? fmt(r.expiry_date) : "-"}
                     </Table.Td>
                     <Table.Td ta="center">
                       {r.qty} {r.satuan}
@@ -632,8 +646,10 @@ export default function ReportInboundPage() {
                           borderLeft: "1px solid #eee",
                         }}
                       >
-                        <div>{fmt(r.created_at)}</div>
-                        <div style={{ fontSize: 10, color: "#64748b" }}>oleh {r.user?.username || "sistem"}</div>
+                        <div><b>Dibuat:</b> {r.planned_by_username || "Manual / tanpa planning"}</div>
+                        <div style={{ fontSize: 10, color: "#64748b" }}>{fmtDateTime(r.planned_at)}</div>
+                        <div><b>Di-ACC:</b> {r.executed_by_username || r.user?.username || "sistem"}</div>
+                        <div style={{ fontSize: 10, color: "#64748b" }}>{fmtDateTime(r.executed_at || r.created_at)}</div>
                       </Table.Td>
                     )}
                   </Table.Tr>

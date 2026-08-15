@@ -35,7 +35,7 @@ import {
   IconFilter,
   IconX,
 } from "@tabler/icons-react";
-import { api, unwrap, fmt } from "../lib/api";
+import { api, unwrap, fmt, fmtDateTime } from "../lib/api";
 import OFTITab from "./components/OFTITab";
 import SerapanTab from "./components/SerapanTab";
 import OccupancyTab from "./components/OccupancyTab";
@@ -1017,7 +1017,7 @@ export default function DashboardPage() {
       exportLogs = exportLogs.filter((l) => new Date(l.created_at) <= d);
     }
     const csv = [
-      "Tipe,No PO/Ref,Item,Qty,Satuan,Batch,Expired,Rak,Tanggal,Supplier/Tujuan,Keterangan,Dieksekusi Oleh",
+      "Tipe,No PO/Ref,Item,Qty,Satuan,Batch,Expired,Rak,Tanggal,Supplier/Tujuan,Keterangan,Dibuat Oleh,Waktu Dibuat,Di-ACC Oleh,Waktu ACC",
     ]
       .concat(
         exportLogs.map((log) =>
@@ -1035,7 +1035,10 @@ export default function DashboardPage() {
             log.tanggal_income || fmt(log.created_at),
             log.supplier || log.tujuan || "-",
             log.note || "-",
-            log.user?.username || "sistem",
+            log.planned_by_username || "Manual / tanpa planning",
+            fmtDateTime(log.planned_at),
+            log.executed_by_username || log.user?.username || "sistem",
+            fmtDateTime(log.executed_at || log.created_at),
           ].map(csvCell).join(","),
         ),
       )
@@ -1565,7 +1568,6 @@ export default function DashboardPage() {
     </Box>
   );
 }
-
 
 
 

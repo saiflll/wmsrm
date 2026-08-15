@@ -22,6 +22,7 @@ import {
   api,
   unwrap,
   fmt,
+  fmtDateTime,
   statusLabel,
   statusColor,
   dedup,
@@ -1294,6 +1295,7 @@ function InboundContent() {
                         <Table.Th style={{ color: "#2b8a3e", cursor: "pointer" }} onClick={() => handleSort('expiry_date')}>Expired{sortIcon('expiry_date')}</Table.Th>
                         <Table.Th style={{ color: "#2b8a3e", cursor: "pointer" }} onClick={() => handleSort('supplier')}>Supplier{sortIcon('supplier')}</Table.Th>
                         <Table.Th style={{ color: "#2b8a3e", cursor: "pointer" }} onClick={() => handleSort('shift.name')}>Shift{sortIcon('shift.name')}</Table.Th>
+                        <Table.Th style={{ color: "#2b8a3e" }}>Audit Planning / ACC</Table.Th>
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -1326,11 +1328,17 @@ function InboundContent() {
                           </Table.Td>
                           <Table.Td>{r.supplier || "-"}</Table.Td>
                           <Table.Td>{r.shift?.name || "-"}</Table.Td>
+                          <Table.Td style={{ minWidth: 220 }}>
+                            <div><b>Dibuat:</b> {r.planned_by_username || "Manual / tanpa planning"}</div>
+                            <div style={{ color: "#64748b" }}>{fmtDateTime(r.planned_at)}</div>
+                            <div><b>Di-ACC:</b> {r.executed_by_username || r.user?.username || "sistem"}</div>
+                            <div style={{ color: "#64748b" }}>{fmtDateTime(r.executed_at || r.created_at)}</div>
+                          </Table.Td>
                         </Table.Tr>
                       ))}
                       {filtered.length === 0 && (
                         <Table.Tr>
-                          <Table.Td colSpan={9} style={{ padding: 0, border: 'none' }}>
+                          <Table.Td colSpan={10} style={{ padding: 0, border: 'none' }}>
                             <EmptyState icon={<IconBuildingWarehouse size={48} />} title="Tidak ada riwayat inbound" description="Data penerimaan barang masuk akan tampil di sini" />
                           </Table.Td>
                         </Table.Tr>

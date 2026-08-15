@@ -15,7 +15,7 @@ import {
   ActionIcon,
   Tooltip,
 } from "@mantine/core";
-import { api, unwrap, fmt, statusLabel, statusColor, saveXlsx } from "../lib/api";
+import { api, unwrap, fmt, fmtDateTime, statusLabel, statusColor, saveXlsx } from "../lib/api";
 import {
   IconFileTypePdf,
   IconFileSpreadsheet,
@@ -60,14 +60,17 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
       "Tujuan / Peminta",
       "Batch No",
       "Keterangan",
-      "Dieksekusi Oleh",
+      "Dibuat Oleh",
+      "Waktu Dibuat",
+      "Di-ACC Oleh",
+      "Waktu ACC",
     ],
   ].filter((r) => r.length > 0);
   const rows = data.map((r: any) => [
     r.no_ref || r.no_po || `OUT-${r.id}`,
     r.barang?.nama || "",
-    r.created_at ? fmt(r.created_at).split(" ")[0] : "-",
-    r.created_at ? fmt(r.created_at).split(" ")[1] : "-",
+    r.created_at ? fmt(r.created_at) : "-",
+    r.created_at ? fmtDateTime(r.created_at).split(" ")[1] : "-",
     r.shift?.name || "-",
     r.expiry_date ? fmt(r.expiry_date) : "-",
     r.qty,
@@ -78,14 +81,17 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     r.tujuan || r.customer || "-",
     r.batch_no || "-",
     r.keterangan || r.note || "-",
-    r.user?.username || "sistem",
+    r.planned_by_username || "Manual / tanpa planning",
+    fmtDateTime(r.planned_at),
+    r.executed_by_username || r.user?.username || "sistem",
+    fmtDateTime(r.executed_at || r.created_at),
   ]);
   const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
   ws["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 14 } },
-    ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 14 } }] : []),
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 17 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 17 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 17 } },
+    ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 17 } }] : []),
   ];
   ws["!cols"] = [
     { wch: 16 },
@@ -101,6 +107,9 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     { wch: 14 },
     { wch: 20 },
     { wch: 18 },
+    { wch: 20 },
+    { wch: 18 },
+    { wch: 20 },
     { wch: 16 },
     { wch: 20 },
   ];
@@ -226,6 +235,7 @@ export default function ReportOutboundPage() {
                       <th>Zone / Rak</th>
                       <th>Jam Process</th>
                       <th>Keterangan</th>
+                      <th>Audit Planning / ACC</th>
                   </tr>
               </thead>
               <tbody>
@@ -258,7 +268,7 @@ export default function ReportOutboundPage() {
                               <td>${r.batch_no || "-"}</td>
                               <td>${
                                 r.expiry_date
-                                  ? fmt(r.expiry_date).split(" ")[0]
+                                  ? fmt(r.expiry_date)
                                   : "-"
                               }</td>
                               <td>${r.qty}</td>
@@ -267,8 +277,12 @@ export default function ReportOutboundPage() {
                               <td>${r.gudang?.name || "-"} (${
                                 r.gudang?.zone || "-"
                               })</td>
-                              <td>${fmt(r.created_at).split(" ")[1] || "-"}</td>
+                              <td>${fmtDateTime(r.executed_at || r.created_at).split(" ")[1] || "-"}</td>
                               <td>${r.keterangan || r.note || "-"}</td>
+                              ${idx === 0 ? `<td rowspan="${items.length}">
+                                <b>Dibuat:</b> ${r.planned_by_username || "Manual / tanpa planning"}<br>${fmtDateTime(r.planned_at)}<br>
+                                <b>Di-ACC:</b> ${r.executed_by_username || r.user?.username || "sistem"}<br>${fmtDateTime(r.executed_at || r.created_at)}
+                              </td>` : ""}
                           </tr>
                       `,
                         )
@@ -415,7 +429,7 @@ export default function ReportOutboundPage() {
               <Table.Th
                 style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}
               >
-                Tanggal Permintaan
+                Audit Planning / ACC
               </Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -479,7 +493,7 @@ export default function ReportOutboundPage() {
 
                     <Table.Td ta="center">{r.batch_no || "-"}</Table.Td>
                     <Table.Td ta="center">
-                      {r.expiry_date ? fmt(r.expiry_date).split(" ")[0] : "-"}
+                      {r.expiry_date ? fmt(r.expiry_date) : "-"}
                     </Table.Td>
                     <Table.Td ta="center">
                       {r.qty} {r.satuan}
@@ -507,7 +521,7 @@ export default function ReportOutboundPage() {
                         }}
                       >
                         <div style={{ fontSize: "10px" }}>
-                          Jam Process: {fmt(r.created_at).split(" ")[1] || "-"}
+                          Jam Process: {fmtDateTime(r.executed_at || r.created_at).split(" ")[1] || "-"}
                         </div>
                       </Table.Td>
                     )}
@@ -524,8 +538,10 @@ export default function ReportOutboundPage() {
                           borderLeft: "1px solid #eee",
                         }}
                       >
-                        <div>{fmt(r.created_at)}</div>
-                        <div style={{ fontSize: 10, color: "#64748b" }}>oleh {r.user?.username || "sistem"}</div>
+                        <div><b>Dibuat:</b> {r.planned_by_username || "Manual / tanpa planning"}</div>
+                        <div style={{ fontSize: 10, color: "#64748b" }}>{fmtDateTime(r.planned_at)}</div>
+                        <div><b>Di-ACC:</b> {r.executed_by_username || r.user?.username || "sistem"}</div>
+                        <div style={{ fontSize: 10, color: "#64748b" }}>{fmtDateTime(r.executed_at || r.created_at)}</div>
                       </Table.Td>
                     )}
                   </Table.Tr>

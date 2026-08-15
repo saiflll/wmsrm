@@ -60,9 +60,10 @@ export class InventoryService {
   }
 
   // ========== INBOUND ==========
-  async post_inbound(items: InboundItemDto[], user_id?: number) {
+  async post_inbound(items: InboundItemDto[], user_id?: number, username?: string) {
     return this.data_source.transaction(async (manager) => {
       const logs: StockLog[] = [];
+      const executed_at = new Date();
 
       for (const item of items) {
         const barang = await manager.findOneBy(Barang, { id: item.barang_id });
@@ -131,6 +132,8 @@ export class InventoryService {
           note: item.note,
           keterangan: item.keterangan,
           user: user_id ? ({ id: user_id } as any) : undefined,
+          executed_by_username: username || 'system',
+          executed_at,
         } as any);
         await manager.save(StockLog, log);
         logs.push(log);
@@ -140,6 +143,10 @@ export class InventoryService {
           where: { no_po: item.no_po },
         });
         if (plan && plan.status !== 'DONE') {
+          log.source_planning_id = plan.id;
+          log.planned_by_username = plan.created_by_username || 'system';
+          log.planned_at = plan.created_at;
+          await manager.save(StockLog, log);
           let arrival_date = new Date();
           if (item.tanggal_income) {
             const base = item.tanggal_income;
@@ -160,6 +167,8 @@ export class InventoryService {
           plan.status = 'DONE';
           plan.tanggal_realisasi = arrival_date;
           plan.selisih_menit = selisih;
+          plan.published_at = executed_at;
+          plan.executed_by_username = username || 'system';
           await manager.save(InboundPlanning, plan);
         }
       }
@@ -168,9 +177,10 @@ export class InventoryService {
   }
 
   // ========== OUTBOUND (Picking) ==========
-  async post_outbound(items: OutboundItemDto[], user_id?: number) {
+  async post_outbound(items: OutboundItemDto[], user_id?: number, username?: string) {
     return this.data_source.transaction(async (manager) => {
       const logs: StockLog[] = [];
+      const executed_at = new Date();
 
       for (const item of items) {
         const barang = await manager.findOneBy(Barang, { id: item.barang_id });
@@ -240,6 +250,8 @@ export class InventoryService {
           jam_bongkar: item.jam_bongkar,
           jam_selesai: item.jam_selesai,
           user: user_id ? ({ id: user_id } as any) : undefined,
+          executed_by_username: username || 'system',
+          executed_at,
         } as any);
         await manager.save(StockLog, log);
         logs.push(log);

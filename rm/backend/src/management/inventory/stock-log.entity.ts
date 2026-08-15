@@ -24,6 +24,7 @@ export enum LogType {
 @Index('IDX_stock_log_type_created', ['type', 'created_at'])
 @Index('IDX_stock_log_no_po', ['no_po'])
 @Index('IDX_stock_log_no_ref', ['no_ref'])
+@Index('IDX_stock_log_source_planning', ['source_planning_id'])
 export class StockLog {
   @PrimaryGeneratedColumn()
   id: number;
@@ -102,6 +103,23 @@ export class StockLog {
 
   @Column({ type: 'text', nullable: true })
   note: string;
+
+  // Immutable audit snapshot. Do not derive these labels from the current user
+  // record because usernames/roles may change after a transaction is posted.
+  @Column({ type: 'int', nullable: true })
+  source_planning_id: number;
+
+  @Column({ nullable: true })
+  planned_by_username: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  planned_at: Date;
+
+  @Column({ nullable: true })
+  executed_by_username: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  executed_at: Date;
 
   @CreateDateColumn()
   created_at: Date;

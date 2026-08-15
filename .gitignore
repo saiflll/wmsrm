@@ -79,6 +79,7 @@ build_log.txt
 
 # Database and network dumps
 *.sql
+!scripts/migrate_stock_log_audit.sql
 *.dump
 backups/
 db_inspect.json

@@ -33,7 +33,7 @@ import {
   IconHistory,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
-import {   api, unwrap, fmt, dedup } from "../lib/api";
+import { api, unwrap, fmt, fmtDateTime, dedup } from "../lib/api";
 
 const CATEGORIES = [
   { value: "NORMAL", label: "Normal Delivery" },
@@ -906,6 +906,7 @@ export default function OutboundPage() {
                         <Table.Th style={{ color: "#b91c1c", cursor: "pointer" }} onClick={() => handleSort("qty")}>Qty{sortIcon("qty")}</Table.Th>
                         <Table.Th style={{ color: "#b91c1c", cursor: "pointer" }} onClick={() => handleSort("tujuan")}>Tujuan{sortIcon("tujuan")}</Table.Th>
                         <Table.Th style={{ color: "#b91c1c", cursor: "pointer" }} onClick={() => handleSort("shift.name")}>Shift{sortIcon("shift.name")}</Table.Th>
+                        <Table.Th style={{ color: "#b91c1c" }}>Audit Planning / ACC</Table.Th>
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -919,11 +920,17 @@ export default function OutboundPage() {
                           <Table.Td ta="right" fw={700}>{r.qty} {r.satuan}</Table.Td>
                           <Table.Td>{r.tujuan || "-"}</Table.Td>
                           <Table.Td>{r.shift?.name || "-"}</Table.Td>
+                          <Table.Td style={{ minWidth: 220 }}>
+                            <div><b>Dibuat:</b> {r.planned_by_username || "Manual / tanpa planning"}</div>
+                            <div style={{ color: "#64748b" }}>{fmtDateTime(r.planned_at)}</div>
+                            <div><b>Di-ACC:</b> {r.executed_by_username || r.user?.username || "sistem"}</div>
+                            <div style={{ color: "#64748b" }}>{fmtDateTime(r.executed_at || r.created_at)}</div>
+                          </Table.Td>
                         </Table.Tr>
                       ))}
                       {filteredLogs.length === 0 && (
                         <Table.Tr>
-                          <Table.Td colSpan={8} ta="center" c="dimmed">Tidak ada data logs outbound.</Table.Td>
+                        <Table.Td colSpan={9} ta="center" c="dimmed">Tidak ada data logs outbound.</Table.Td>
                         </Table.Tr>
                       )}
                     </Table.Tbody>

@@ -144,14 +144,14 @@ export class InventoryController {
   @Post('inbound')
   @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
   post_inbound(@Body() dto: InboundPostDto, @Request() req) {
-    return this.svc.post_inbound(dto.items, req.user?.id);
+    return this.svc.post_inbound(dto.items, req.user?.id, req.user?.username);
   }
 
   // ========== OUTBOUND ==========
   @Post('outbound')
   @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
   post_outbound(@Body() dto: OutboundPostDto, @Request() req) {
-    return this.svc.post_outbound(dto.items, req.user?.id);
+    return this.svc.post_outbound(dto.items, req.user?.id, req.user?.username);
   }
 
   @Delete('outbound/:id')

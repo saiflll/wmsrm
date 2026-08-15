@@ -112,6 +112,7 @@ export class InboundPlanningService {
       }
 
       let total_received = 0;
+      const executed_at = new Date();
 
       for (const item of dto.items) {
         // 3. Validate barang & gudang exist
@@ -173,6 +174,11 @@ export class InboundPlanningService {
           jam_datang: item.jam_datang,
           jam_bongkar: item.jam_bongkar,
           user: user_id ? ({ id: user_id } as any) : undefined,
+          source_planning_id: plan.id,
+          planned_by_username: plan.created_by_username || 'system',
+          planned_at: plan.created_at,
+          executed_by_username: username || 'system',
+          executed_at,
         });
         await manager.save(StockLog, log);
       }
@@ -227,7 +233,7 @@ export class InboundPlanningService {
       plan.status = 'DONE';
       plan.received_quantity = total_received;
       plan.qty_diterima = total_received;
-      plan.published_at = new Date();
+      plan.published_at = executed_at;
       plan.executed_by_username = username || 'system';
       if (dto.note) {
         plan.note = dto.note;

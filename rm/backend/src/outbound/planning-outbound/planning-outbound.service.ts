@@ -247,6 +247,7 @@ export class PlanningOutboundService {
             `Planning status harus PROGRESS untuk publish.`,
           );
         }
+        const executed_at = new Date();
 
         // The plan owns this reservation. Release it atomically before consuming
         // physical stock so available stock is never double-counted.
@@ -300,6 +301,11 @@ export class PlanningOutboundService {
                     dto.keterangan || `Outbound Split: ${item.tujuan}`,
                   shift: planning.shift,
                   user: user_id ? ({ id: user_id } as any) : undefined,
+                  source_planning_id: planning.id,
+                  planned_by_username: planning.created_by_username || 'system',
+                  planned_at: planning.created_at,
+                  executed_by_username: username || 'system',
+                  executed_at,
                 } as any);
                 await manager.save(StockLog, log);
               }
@@ -336,6 +342,11 @@ export class PlanningOutboundService {
                 keterangan: dto.keterangan || planning.keterangan,
                 shift: planning.shift,
                 user: user_id ? ({ id: user_id } as any) : undefined,
+                source_planning_id: planning.id,
+                planned_by_username: planning.created_by_username || 'system',
+                planned_at: planning.created_at,
+                executed_by_username: username || 'system',
+                executed_at,
               } as any);
               await manager.save(StockLog, log);
             }
@@ -357,7 +368,7 @@ export class PlanningOutboundService {
         }
 
         planning.status = 'DONE';
-        planning.published_at = new Date();
+        planning.published_at = executed_at;
         planning.executed_by_username = username || 'system';
         return manager.save(PlanningOutbound, planning);
       });
