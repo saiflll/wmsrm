@@ -336,11 +336,10 @@ export class InventoryController {
   // ========== DASHBOARD ==========
   @Get('dashboard')
   @Roles(
+    UserRole.ADMIN,
     UserRole.SUPERVISOR,
-    UserRole.CHECKER,
-    UserRole.CHECKER,
-    UserRole.KOORDINATOR,
     UserRole.MANAGER,
+    UserRole.SUPER_ADMIN,
   )
   get_dashboard() {
     return this.svc.get_dashboard_stats();
@@ -348,11 +347,10 @@ export class InventoryController {
 
   @Get('dashboard/inout-chart')
   @Roles(
+    UserRole.ADMIN,
     UserRole.SUPERVISOR,
-    UserRole.CHECKER,
-    UserRole.CHECKER,
-    UserRole.KOORDINATOR,
     UserRole.MANAGER,
+    UserRole.SUPER_ADMIN,
   )
   get_dashboard_in_out_chart() {
     return this.svc.get_in_out_chart_data();
@@ -360,11 +358,10 @@ export class InventoryController {
 
   @Get('dashboard/stock-chart')
   @Roles(
+    UserRole.ADMIN,
     UserRole.SUPERVISOR,
-    UserRole.CHECKER,
-    UserRole.CHECKER,
-    UserRole.KOORDINATOR,
     UserRole.MANAGER,
+    UserRole.SUPER_ADMIN,
   )
   get_stock_chart(@Query('barang_id') barang_id?: string) {
     return this.svc.get_stock_chart_data(barang_id ? +barang_id : undefined);
@@ -372,10 +369,10 @@ export class InventoryController {
 
   @Get('dashboard/occupancy')
   @Roles(
+    UserRole.ADMIN,
     UserRole.SUPERVISOR,
-    UserRole.CHECKER,
-    UserRole.KOORDINATOR,
     UserRole.MANAGER,
+    UserRole.SUPER_ADMIN,
   )
   get_dashboard_occupancy(
     @Query('zone') zone?: string,
@@ -387,11 +384,10 @@ export class InventoryController {
 
   @Get('dashboard/ofti')
   @Roles(
+    UserRole.ADMIN,
     UserRole.SUPERVISOR,
-    UserRole.CHECKER,
-    UserRole.CHECKER,
-    UserRole.KOORDINATOR,
     UserRole.MANAGER,
+    UserRole.SUPER_ADMIN,
   )
   get_dashboard_ofti(@Query('from') from?: string, @Query('to') to?: string) {
     return this.svc.get_ofti_data(from, to);
@@ -401,8 +397,6 @@ export class InventoryController {
   @Roles(
     UserRole.ADMIN,
     UserRole.SUPERVISOR,
-    UserRole.CHECKER,
-    UserRole.KOORDINATOR,
     UserRole.MANAGER,
     UserRole.SUPER_ADMIN,
   )
