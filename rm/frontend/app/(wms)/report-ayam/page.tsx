@@ -117,7 +117,7 @@ export default function ReportAyamPage() {
       const params = new URLSearchParams();
       if (from) params.set("from", from);
       if (to) params.set("to", to);
-      const res = await api().get(`/inventory/dashboard/serapan-ayam?${params}`);
+      const res = await api().get(`/planning-ayam/report?${params}`);
       const raw = unwrap(res);
       const list = Array.isArray(raw)
         ? raw
