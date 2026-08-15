@@ -54,17 +54,30 @@ export default function InventoryPage() {
   const loadAlerts = async () => {
     try {
       const res = await api().get("/inventory/expired-alerts");
-      setAlerts(unwrap(res));
-    } catch (e) { }
+      const raw = unwrap(res) || {};
+      setAlerts({
+        expired: Array.isArray(raw.expired) ? raw.expired : [],
+        nearExpired: Array.isArray(raw.nearExpired)
+          ? raw.nearExpired
+          : Array.isArray(raw.near_expired)
+            ? raw.near_expired
+            : [],
+      });
+    } catch (e) {
+      console.error(e);
+      setAlerts({ expired: [], nearExpired: [] });
+    }
   };
 
   const load = async () => {
     setLoading(true);
     try {
       const res = await api().get(`/inventory/matrix?side=${side}`);
-      setData(unwrap(res));
+      const raw = unwrap(res);
+      setData(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : []);
     } catch (e) {
       console.error(e);
+      setData([]);
     }
     setLoading(false);
   };

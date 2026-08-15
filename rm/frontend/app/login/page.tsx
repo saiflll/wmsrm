@@ -161,6 +161,8 @@ export default function LoginPage() {
                             </label>
                             <input
                                 type="text"
+                                name="username"
+                                autoComplete="username"
                                 placeholder="Masukkan username"
                                 required
                                 value={username}
@@ -187,6 +189,8 @@ export default function LoginPage() {
                             </label>
                             <input
                                 type="password"
+                                name="password"
+                                autoComplete="current-password"
                                 placeholder="Masukkan password"
                                 required
                                 value={password}
