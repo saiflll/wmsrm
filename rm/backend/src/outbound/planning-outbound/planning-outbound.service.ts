@@ -358,7 +358,7 @@ export class PlanningOutboundService {
 
         planning.status = 'DONE';
         planning.published_at = new Date();
-        planning.executed_by_username = username;
+        planning.executed_by_username = username || 'system';
         return manager.save(PlanningOutbound, planning);
       });
     } catch (error) {

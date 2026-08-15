@@ -228,7 +228,7 @@ export class InboundPlanningService {
       plan.received_quantity = total_received;
       plan.qty_diterima = total_received;
       plan.published_at = new Date();
-      plan.executed_by_username = username;
+      plan.executed_by_username = username || 'system';
       if (dto.note) {
         plan.note = dto.note;
       }

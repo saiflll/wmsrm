@@ -178,7 +178,7 @@ export class RelocationService {
 
       relocation.status = RelocationStatus.EXECUTED;
       relocation.executed_at = new Date();
-      relocation.executed_by_username = username;
+      relocation.executed_by_username = username || 'system';
       await manager.save(Relocation, relocation);
 
       const total_stok_result = await manager

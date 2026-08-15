@@ -217,7 +217,7 @@ export class PlanningAyamService {
       // Update status
       locked.status = new_status;
       if (new_status === 'DONE') {
-        locked.executed_by_username = username;
+        locked.executed_by_username = username || 'system';
         locked.executed_at = new Date();
       }
       await txn_mgr.save(locked);

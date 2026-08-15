@@ -199,7 +199,7 @@ export class OutboundAyamService {
       tx_planning.processed_qty = (tx_planning.processed_qty || 0) + dto.qty_aktual;
       tx_planning.status = tx_planning.processed_qty >= tx_planning.qty ? 'DONE' : 'PROGRESS';
       if (tx_planning.status === 'DONE') {
-        tx_planning.executed_by_username = username;
+        tx_planning.executed_by_username = username || 'system';
         tx_planning.executed_at = new Date();
       }
       await manager.save(PlanningAyam, tx_planning);
@@ -216,7 +216,7 @@ export class OutboundAyamService {
 
       // Mark outbound as published
       saved.published_at = new Date();
-      saved.executed_by_username = username;
+      saved.executed_by_username = username || 'system';
       await manager.save(OutboundAyam, saved);
 
       return saved;
@@ -469,14 +469,14 @@ export class OutboundAyamService {
       planning.processed_qty = (planning.processed_qty || 0) + total_processed;
       planning.status = planning.processed_qty >= planning.qty ? 'DONE' : 'PROGRESS';
       if (planning.status === 'DONE') {
-        planning.executed_by_username = username;
+        planning.executed_by_username = username || 'system';
         planning.executed_at = new Date();
       }
       await manager.save(PlanningAyam, planning);
 
       // 5. Mark outbound as published
       outbound.published_at = new Date();
-      outbound.executed_by_username = username;
+      outbound.executed_by_username = username || 'system';
       await manager.save(OutboundAyam, outbound);
 
       return outbound;
