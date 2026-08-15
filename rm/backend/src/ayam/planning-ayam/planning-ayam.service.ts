@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, IsNull } from 'typeorm';
+import { Repository, DataSource, IsNull, EntityManager } from 'typeorm';
 import { PlanningAyam } from './planning-ayam.entity';
 import {
   CreatePlanningAyamDto,
@@ -35,6 +35,40 @@ export class PlanningAyamService {
     private data_source: DataSource,
   ) {}
 
+  private async adjust_reservation(
+    manager: EntityManager,
+    barang_id: number,
+    qty: number,
+    direction: 1 | -1,
+  ) {
+    const stocks = await manager.find(Stock, {
+      where: { barang: { id: barang_id } },
+      order: { expiry_date: 'ASC', created_at: 'ASC' },
+      lock: { mode: 'pessimistic_write' },
+      loadEagerRelations: false,
+    });
+    let remaining = Number(qty || 0);
+    for (const stock of stocks) {
+      if (remaining <= 0) break;
+      if (direction === 1) {
+        const available = Number(stock.qty || 0) - Number(stock.reserved_qty || 0);
+        const amount = Math.min(Math.max(0, available), remaining);
+        stock.reserved_qty = Number(stock.reserved_qty || 0) + amount;
+        remaining -= amount;
+      } else {
+        const amount = Math.min(Number(stock.reserved_qty || 0), remaining);
+        stock.reserved_qty = Math.max(0, Number(stock.reserved_qty || 0) - amount);
+        remaining -= amount;
+      }
+      await manager.save(Stock, stock);
+    }
+    if (direction === 1 && remaining > 0) {
+      throw new BadRequestException(
+        `Stok tidak mencukupi. Kekurangan ${remaining} dari kebutuhan ${qty}`,
+      );
+    }
+  }
+
   async find_all() {
     return this.repo.find({
       where: { deleted_at: IsNull() },
@@ -63,19 +97,24 @@ export class PlanningAyamService {
       ? await this.shift_repo.findOneBy({ id: dto.shift_id })
       : null;
 
-    const item = this.repo.create({
-      barang,
-      qty: dto.qty,
-      satuan: dto.satuan || barang.satuan,
-      tanggal_planning: new Date(dto.tanggal_planning),
-      shift,
-      tujuan: dto.tujuan,
-      status: dto.status || 'WAIT',
-      keterangan: dto.keterangan,
-      rak_asal: dto.rak_asal,
-    } as any);
-
-    return this.repo.save(item);
+    if (dto.status && dto.status !== 'WAIT') {
+      throw new BadRequestException('Planning baru harus berstatus WAIT');
+    }
+    return this.data_source.transaction(async (manager) => {
+      await this.adjust_reservation(manager, barang.id, dto.qty, 1);
+      const item = manager.create(PlanningAyam, {
+        barang,
+        qty: dto.qty,
+        satuan: dto.satuan || barang.satuan,
+        tanggal_planning: new Date(dto.tanggal_planning),
+        shift,
+        tujuan: dto.tujuan,
+        status: 'WAIT',
+        keterangan: dto.keterangan,
+        rak_asal: dto.rak_asal,
+      } as any);
+      return manager.save(PlanningAyam, item);
+    });
   }
 
   async update(id: number, dto: UpdatePlanningAyamDto) {
@@ -87,6 +126,8 @@ export class PlanningAyamService {
       );
     }
 
+    const old_barang_id = item.barang.id;
+    const old_qty = item.qty;
     if (dto.barang_id) {
       const barang = await this.barang_repo.findOneBy({ id: dto.barang_id });
       if (!barang) throw new NotFoundException('Barang tidak ditemukan');
@@ -107,7 +148,14 @@ export class PlanningAyamService {
     if (dto.keterangan !== undefined) item.keterangan = dto.keterangan;
     if (dto.rak_asal !== undefined) item.rak_asal = dto.rak_asal;
 
-    return this.repo.save(item);
+    if (dto.status !== undefined && dto.status !== 'WAIT') {
+      throw new BadRequestException('Status tidak dapat diubah lewat form edit');
+    }
+    return this.data_source.transaction(async (manager) => {
+      await this.adjust_reservation(manager, old_barang_id, old_qty, -1);
+      await this.adjust_reservation(manager, item.barang.id, item.qty, 1);
+      return manager.save(PlanningAyam, item);
+    });
   }
 
   async update_status(id: number, new_status: string, user_id?: number) {
@@ -134,36 +182,6 @@ export class PlanningAyamService {
       const barang_id = locked.barang?.id;
 
       // Stock adjustment based on target status
-      if (new_status === 'PROGRESS' && barang_id) {
-        const stocks = await txn_mgr.find(Stock, {
-          where: { barang: { id: barang_id } },
-          relations: ['barang'],
-        });
-
-        const total_reserved = stocks.reduce(
-          (sum, s) => sum + (s.reserved_qty || 0),
-          0,
-        );
-        const total_available = stocks.reduce((sum, s) => sum + (s.qty || 0), 0);
-
-        let to_reserve = locked.qty;
-        for (const stock of stocks) {
-          if (to_reserve <= 0) break;
-          const remaining = (stock.qty || 0) - (stock.reserved_qty || 0);
-          if (remaining <= 0) continue;
-          const reserve_now = Math.min(remaining, to_reserve);
-          stock.reserved_qty = (stock.reserved_qty || 0) + reserve_now;
-          await txn_mgr.save(stock);
-          to_reserve -= reserve_now;
-        }
-
-        if (to_reserve > 0) {
-          throw new BadRequestException(
-            `Stok tidak mencukupi. Butuh ${locked.qty}, tersedia ${total_available - total_reserved}`,
-          );
-        }
-      }
-
       if (new_status === 'DONE' && barang_id) {
         const stocks = await txn_mgr.find(Stock, {
           where: { barang: { id: barang_id } },
@@ -185,7 +203,7 @@ export class PlanningAyamService {
           where: { barang: { id: barang_id } },
         });
 
-        let to_release = locked.qty;
+        let to_release = Math.max(0, locked.qty - (locked.processed_qty || 0));
         for (const stock of stocks) {
           if (to_release <= 0) break;
           const release_now = Math.min(stock.reserved_qty || 0, to_release);
@@ -203,10 +221,20 @@ export class PlanningAyamService {
 
   async remove(id: number, user_id?: number) {
     const item = await this.find_one(id);
-
-    await this.repo.update(id, {
-      deleted_at: new Date(),
-      deleted_by: user_id || 0,
+    if (item.status === 'DONE') {
+      throw new BadRequestException('Planning yang sudah selesai tidak dapat dihapus');
+    }
+    await this.data_source.transaction(async (manager) => {
+      await this.adjust_reservation(
+        manager,
+        item.barang.id,
+        Math.max(0, item.qty - (item.processed_qty || 0)),
+        -1,
+      );
+      await manager.update(PlanningAyam, id, {
+        deleted_at: new Date(),
+        deleted_by: user_id || 0,
+      });
     });
     return { deleted: true };
   }

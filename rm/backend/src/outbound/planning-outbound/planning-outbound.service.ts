@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, Between } from 'typeorm';
+import { Repository, DataSource, Between, EntityManager } from 'typeorm';
 import { PlanningOutbound } from './planning-outbound.entity';
 import {
   CreatePlanningOutboundDto,
@@ -28,6 +28,45 @@ export class PlanningOutboundService {
     @InjectRepository(Shift) private shift_repo: Repository<Shift>,
     private data_source: DataSource,
   ) {}
+
+  private async adjust_reservations(
+    manager: EntityManager,
+    items: PlanningOutbound['items'] | null | undefined,
+    direction: 1 | -1,
+  ) {
+    for (const item of items || []) {
+      const stock = await manager.findOne(Stock, {
+        where: {
+          barang: { id: item.barang_id },
+          gudang: { id: item.gudang_id },
+          ...(item.batch_no ? { batch_no: item.batch_no } : {}),
+        },
+        lock: { mode: 'pessimistic_write' },
+        loadEagerRelations: false,
+      });
+      if (!stock) {
+        throw new BadRequestException(
+          `Stock barang ${item.barang_id} di gudang ${item.gudang_id} tidak ditemukan`,
+        );
+      }
+
+      const qty = Number(item.qty || 0);
+      if (qty <= 0) throw new BadRequestException('Qty planning harus lebih dari 0');
+
+      if (direction === 1) {
+        const available = Number(stock.qty || 0) - Number(stock.reserved_qty || 0);
+        if (available < qty) {
+          throw new BadRequestException(
+            `Stok tersedia tidak mencukupi. Tersedia ${available}, diminta ${qty}`,
+          );
+        }
+        stock.reserved_qty = Number(stock.reserved_qty || 0) + qty;
+      } else {
+        stock.reserved_qty = Math.max(0, Number(stock.reserved_qty || 0) - qty);
+      }
+      await manager.save(Stock, stock);
+    }
+  }
 
   async find_all() {
     return this.repo.find({ order: { created_at: 'DESC' } });
@@ -63,17 +102,62 @@ export class PlanningOutboundService {
       ? await this.shift_repo.findOneBy({ id: dto.shift_id })
       : null;
 
-    const item = this.repo.create({
-      ...dto,
-      tanggal_planning: new Date(dto.tanggal_planning),
-      customer,
-      shift,
-    } as any);
-    return this.repo.save(item);
+    return this.data_source.transaction(async (manager) => {
+      await this.adjust_reservations(manager, dto.items, 1);
+      const item = manager.create(PlanningOutbound, {
+        ...dto,
+        tanggal_planning: new Date(dto.tanggal_planning),
+        customer,
+        shift,
+        status: 'WAIT',
+      } as any);
+      return manager.save(PlanningOutbound, item);
+    });
   }
 
   async update(id: number, dto: UpdatePlanningOutboundDto) {
     const item = await this.find_one(id);
+    if (item.status !== 'WAIT') {
+      throw new BadRequestException('Hanya planning berstatus WAIT yang bisa diubah');
+    }
+    if (dto.status !== undefined && dto.status !== 'WAIT') {
+      throw new BadRequestException('Status planning tidak dapat diubah lewat form edit');
+    }
+    if (dto.items !== undefined) {
+      const next_customer =
+        dto.customer_id !== undefined
+          ? dto.customer_id
+            ? await this.customer_repo.findOneBy({ id: dto.customer_id })
+            : null
+          : item.customer;
+      const next_shift =
+        dto.shift_id !== undefined
+          ? dto.shift_id
+            ? await this.shift_repo.findOneBy({ id: dto.shift_id })
+            : null
+          : item.shift;
+      return this.data_source.transaction(async (manager) => {
+        const locked = await manager.findOne(PlanningOutbound, {
+          where: { id },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!locked || locked.status !== 'WAIT') {
+          throw new BadRequestException('Planning tidak ditemukan atau bukan WAIT');
+        }
+        await this.adjust_reservations(manager, locked.items, -1);
+        await this.adjust_reservations(manager, dto.items, 1);
+        Object.assign(locked, {
+          ...dto,
+          tanggal_planning: dto.tanggal_planning
+            ? new Date(dto.tanggal_planning)
+            : locked.tanggal_planning,
+          customer: next_customer,
+          shift: next_shift,
+          status: 'WAIT',
+        });
+        return manager.save(PlanningOutbound, locked);
+      });
+    }
     if (dto.customer_id !== undefined) {
       item.customer = (
         dto.customer_id
@@ -104,7 +188,15 @@ export class PlanningOutboundService {
     if (item.status === 'DONE') {
       throw new BadRequestException('Cannot remove a published planning');
     }
-    return this.repo.remove(item);
+    return this.data_source.transaction(async (manager) => {
+      const locked = await manager.findOne(PlanningOutbound, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!locked) throw new NotFoundException('Planning outbound tidak ditemukan');
+      await this.adjust_reservations(manager, locked.items, -1);
+      return manager.remove(PlanningOutbound, locked);
+    });
   }
 
   async process_outbound(id: number, dto: ProcessPlanningOutboundDto) {
@@ -152,6 +244,10 @@ export class PlanningOutboundService {
             `Planning status harus PROGRESS untuk publish.`,
           );
         }
+
+        // The plan owns this reservation. Release it atomically before consuming
+        // physical stock so available stock is never double-counted.
+        await this.adjust_reservations(manager, planning.items, -1);
 
         for (const item of planning.process_data.items) {
           const barang = await manager.findOneBy(Barang, { id: item.barang_id });

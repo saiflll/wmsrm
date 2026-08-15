@@ -96,17 +96,10 @@ export class OutboundAyamService {
       order: { expiry_date: 'ASC', created_at: 'ASC' },
     });
 
-    // VALIDASI STOCK TERSEDIA
-    const all_stocks = await this.stock_repo.find({
-      where: { barang: { id: planning.barang.id } },
-    });
-    const total_available = all_stocks.reduce(
-      (sum, s) => sum + (s.qty - s.reserved_qty),
-      0,
-    );
-    if (total_available < dto.qty_aktual) {
+    const remaining_plan = planning.qty - (planning.processed_qty || 0);
+    if (dto.qty_aktual > remaining_plan) {
       throw new BadRequestException(
-        `Stok tidak mencukupi. Tersedia: ${total_available}, Diminta: ${dto.qty_aktual}`,
+        `Qty aktual melebihi sisa planning. Sisa: ${remaining_plan}, Diminta: ${dto.qty_aktual}`,
       );
     }
 
@@ -122,6 +115,21 @@ export class OutboundAyamService {
 
       // Use barang from outside transaction (already fetched with relations)
       const barang = planning.barang;
+      const reserved_stocks = await manager.find(Stock, {
+        where: { barang: { id: barang.id } },
+        order: { expiry_date: 'ASC', created_at: 'ASC' },
+        lock: { mode: 'pessimistic_write' },
+        loadEagerRelations: false,
+      });
+      const total_reserved = reserved_stocks.reduce(
+        (sum, row) => sum + Number(row.reserved_qty || 0),
+        0,
+      );
+      if (total_reserved < dto.qty_aktual) {
+        throw new BadRequestException(
+          `Reservasi planning tidak mencukupi. Reserved: ${total_reserved}, diminta: ${dto.qty_aktual}`,
+        );
+      }
 
       const item = manager.create(OutboundAyam, {
         planning_ayam: tx_planning,
@@ -142,9 +150,6 @@ export class OutboundAyamService {
         : [{ tujuan: 'Terserap', qty: dto.qty_aktual }];
 
       for (const alok of distribution) {
-        // Reject: barang kembali — no stock movement, just record
-        if (alok.tujuan === 'Reject') continue;
-
         let remaining = alok.qty;
         const stock_rows = await manager.find(Stock, {
           where: { barang: { id: barang.id } },
@@ -153,10 +158,16 @@ export class OutboundAyamService {
         });
         for (const st of stock_rows) {
           if (remaining <= 0) break;
-          const deduct = Math.min(st.qty, remaining);
-          st.qty -= deduct;
-          remaining -= deduct;
+          const reserved = Number(st.reserved_qty || 0);
+          const amount = Math.min(reserved, remaining);
+          if (amount <= 0) continue;
+          st.reserved_qty = reserved - amount;
+          remaining -= amount;
+          if (alok.tujuan !== 'Reject') st.qty = Number(st.qty || 0) - amount;
           await manager.save(Stock, st);
+
+          // Reject is returned to warehouse: only release its reservation.
+          if (alok.tujuan === 'Reject') continue;
 
           const gudang_id = (st as any).gudangId;
           const gudang = gudang_id
@@ -167,7 +178,7 @@ export class OutboundAyamService {
             type: LogType.OUTBOUND,
             barang,
             gudang,
-            qty: deduct,
+            qty: amount,
             satuan: saved.satuan,
             batch_no: st.batch_no,
             expiry_date: st.expiry_date,
@@ -176,12 +187,27 @@ export class OutboundAyamService {
           });
           await manager.save(StockLog, log);
         }
+        if (remaining > 0) {
+          throw new BadRequestException(
+            `Reservasi stok tidak cukup untuk alokasi ${alok.tujuan}`,
+          );
+        }
       }
 
       // Track processed quantity for partial processing
       tx_planning.processed_qty = (tx_planning.processed_qty || 0) + dto.qty_aktual;
       tx_planning.status = tx_planning.processed_qty >= tx_planning.qty ? 'DONE' : 'PROGRESS';
       await manager.save(PlanningAyam, tx_planning);
+
+      const stock_total = await manager
+        .getRepository(Stock)
+        .createQueryBuilder('stock')
+        .select('COALESCE(SUM(stock.qty), 0)', 'total')
+        .where('stock.barangId = :barangId', { barangId: barang.id })
+        .getRawOne();
+      await manager.update(Barang, barang.id, {
+        stok: Number(stock_total?.total || 0),
+      });
 
       // Mark outbound as published
       saved.published_at = new Date();
