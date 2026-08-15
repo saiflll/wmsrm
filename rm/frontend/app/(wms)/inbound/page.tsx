@@ -720,8 +720,9 @@ function InboundContent() {
 
   const renderPlanningItems = (p: any) => {
     return p.items?.map((item: any, idx: number) => {
-      const bObj = barangs.find((b: any) => String(b.id) === String(item.barangId));
-      const name = bObj ? bObj.nama : `Barang #${item.barangId}`;
+      const barangId = item.barang_id ?? item.barangId;
+      const bObj = barangs.find((b: any) => String(b.id) === String(barangId));
+      const name = bObj ? bObj.nama : `Barang #${barangId}`;
       return (
         <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '2px 0' }}>
           {name} <b>x{item.qty} {item.satuan || bObj?.satuan || ''}</b>
