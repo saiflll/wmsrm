@@ -140,6 +140,7 @@ export class PlanningOutboundService {
         const locked = await manager.findOne(PlanningOutbound, {
           where: { id },
           lock: { mode: 'pessimistic_write' },
+          loadEagerRelations: false,
         });
         if (!locked || locked.status !== 'WAIT') {
           throw new BadRequestException('Planning tidak ditemukan atau bukan WAIT');
@@ -192,6 +193,7 @@ export class PlanningOutboundService {
       const locked = await manager.findOne(PlanningOutbound, {
         where: { id },
         lock: { mode: 'pessimistic_write' },
+        loadEagerRelations: false,
       });
       if (!locked) throw new NotFoundException('Planning outbound tidak ditemukan');
       await this.adjust_reservations(manager, locked.items, -1);

@@ -81,10 +81,10 @@ export default function LoginLogsPage() {
                                 <Table.Tbody>
                                     {filtered.map((log: any) => (
                                         <Table.Tr key={log.id}>
-                                            <Table.Td fw={600}>{log.loginAt ? new Date(log.loginAt).toLocaleString('id-ID') : '-'}</Table.Td>
+                                            <Table.Td fw={600}>{(log.login_at || log.loginAt) ? new Date(log.login_at || log.loginAt).toLocaleString('id-ID') : '-'}</Table.Td>
                                             <Table.Td fw={700}>{log.username || '-'}</Table.Td>
                                             <Table.Td>{log.ip || '-'}</Table.Td>
-                                            <Table.Td style={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.userAgent || '-'}</Table.Td>
+                                            <Table.Td style={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.user_agent || log.userAgent || '-'}</Table.Td>
                                             <Table.Td ta="center">
                                                 <Badge size="xs" color={log.success ? 'green' : 'red'}>
                                                     {log.success ? 'Berhasil' : 'Gagal'}
