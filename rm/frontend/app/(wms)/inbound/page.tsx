@@ -91,8 +91,16 @@ function InboundContent() {
   const [dbPlannings, setDbPlannings] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [canManual, setCanManual] = useState(false);
   const barcodeRef = useRef<any>(null);
   const [selectedZone, setSelectedZone] = useState("");
+
+  useEffect(() => {
+    try {
+      const role = Number(JSON.parse(localStorage.getItem("user") || "{}").role);
+      setCanManual(role === 1 || role === 4 || role === 5);
+    } catch { setCanManual(false); }
+  }, []);
 
   // Sort states
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -960,7 +968,7 @@ function InboundContent() {
                   </Button>
                 </Stack>
               </Paper>
-            ) : (
+            ) : canManual ? (
               <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
                 <Stack gap="xs">
                   <Text fw={800} size="sm" c="green" mb={4} style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: 4 }}>
@@ -1129,6 +1137,11 @@ function InboundContent() {
                     Tambahkan Draft
                   </Button>
                 </Stack>
+              </Paper>
+            ) : (
+              <Paper withBorder p="md" radius="md">
+                <Text size="sm" fw={700}>Eksekusi inbound melalui planning</Text>
+                <Text size="xs" c="dimmed">Input manual hanya tersedia untuk Checker dan Supervisor.</Text>
               </Paper>
             )}
           </Grid.Col>

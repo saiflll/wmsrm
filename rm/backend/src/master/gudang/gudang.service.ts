@@ -19,6 +19,20 @@ export class GudangService {
     });
   }
 
+  async find_paged(page = 1, limit = 20, search = '') {
+    const currentPage = Math.max(1, page || 1);
+    const pageSize = Math.min(100, Math.max(1, limit || 20));
+    const query = this.repo.createQueryBuilder('gudang')
+      .leftJoinAndSelect('gudang.barang', 'barang')
+      .where('gudang.deleted_at IS NULL');
+    if (search) {
+      query.andWhere('(LOWER(gudang.name) LIKE LOWER(:search) OR LOWER(gudang.zone) LIKE LOWER(:search))', { search: `%${search}%` });
+    }
+    const [data, total] = await query.orderBy('gudang.name', 'ASC')
+      .skip((currentPage - 1) * pageSize).take(pageSize).getManyAndCount();
+    return { data, total, page: currentPage, limit: pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
+  }
+
   find_one(id: number) {
     return this.repo.findOne({ where: { id, deleted_at: IsNull() }, relations: ['barang'] });
   }

@@ -95,7 +95,6 @@ const menuGroups: { label: string; links: MenuLink[] }[] = [
         links: [
             { label: 'Report Inbound', href: '/report-inbound', c: 'gray', icon: IconReport },
             { label: 'Report Outbound', href: '/report-outbound', c: 'gray', icon: IconReportAnalytics },
-            { label: 'Report Ayam', href: '/report-ayam', c: 'pink', icon: IconReportAnalytics },
             { label: 'Report Opname', href: '/report-opname', c: 'gray', icon: IconReport },
         ],
     },

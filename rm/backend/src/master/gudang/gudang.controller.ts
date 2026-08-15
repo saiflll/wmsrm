@@ -31,6 +31,15 @@ export class GudangController {
     return this.svc.find_all(s, zone, search);
   }
 
+  @Get('paged')
+  find_paged(
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+    @Query('search') search = '',
+  ) {
+    return this.svc.find_paged(Number(page), Number(limit), search);
+  }
+
   @Get('zones')
   get_zones() {
     return this.svc.get_zones_summary();

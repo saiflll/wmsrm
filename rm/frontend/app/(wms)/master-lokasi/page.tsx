@@ -1,7 +1,7 @@
 'use client';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Box, Group, Button, Title, Text, Table, Badge, Paper, Stack, TextInput, Select, Grid, Loader, ActionIcon, Tooltip, Checkbox, Modal, Radio } from '@mantine/core';
+import { Box, Group, Button, Title, Text, Table, Badge, Paper, Stack, TextInput, Select, Grid, Loader, ActionIcon, Tooltip, Checkbox, Modal, Radio, Pagination } from '@mantine/core';
 import { IconMap2, IconPlus, IconEdit, IconTrash, IconX, IconAlertTriangle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { api, unwrap } from '../lib/api';
@@ -9,6 +9,8 @@ import { api, unwrap } from '../lib/api';
 export default function MasterLokasiPage() {
     const [locs, setLocs] = useState<any[]>([]);
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [editId, setEditId] = useState<number | null>(null);
     const [form, setForm] = useState({ name: '', zone: 'DRY A', level: 1, kolom: '', type: 'Single Deep', capacity: 1000 });
@@ -27,14 +29,19 @@ export default function MasterLokasiPage() {
             const u = JSON.parse(localStorage.getItem('user') || '{}');
             if (u && u.role) setUserRole(u.role);
         } catch (e) { }
-        load();
     }, []);
+
+    useEffect(() => {
+        const timer = window.setTimeout(load, 300);
+        return () => window.clearTimeout(timer);
+    }, [page, search]);
 
     const load = async () => {
         setLoading(true);
         try {
-            const gudangData = unwrap(await api().get('/gudang'));
-            setLocs(Array.isArray(gudangData) ? gudangData : gudangData?.data || []);
+            const payload = unwrap(await api().get('/gudang/paged', { params: { page, limit: 20, search: search.trim() } }));
+            setLocs(payload.data || []);
+            setTotal(payload.total || 0);
             setSelectedIds([]);
         } catch (e) { console.error(e); }
         setLoading(false);
@@ -127,8 +134,13 @@ export default function MasterLokasiPage() {
     };
 
     const f = (k: any, v: any) => setForm(p => ({ ...p, [k]: v }));
-    const filtered = search ? locs.filter((l: any) => l.name?.toLowerCase().includes(search.toLowerCase()) || l.zone?.toLowerCase().includes(search.toLowerCase())) : locs;
-    const displayedItems = filtered.slice(0, 100);
+    const filtered = locs;
+    const pageSize = 20;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const displayedItems = filtered;
+
+    useEffect(() => { setPage(1); }, [search]);
+    useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
@@ -147,7 +159,7 @@ export default function MasterLokasiPage() {
     };
 
     const allChecked = displayedItems.length > 0 && displayedItems.every((l: any) => selectedIds.includes(l.id));
-    const isIndeterminate = selectedIds.length > 0 && !allChecked;
+    const isIndeterminate = displayedItems.some((l: any) => selectedIds.includes(l.id)) && !allChecked;
 
     const handleEdit = (item: any) => {
         setEditId(item.id);
@@ -211,7 +223,7 @@ export default function MasterLokasiPage() {
                         <Paper withBorder p="md" radius="md" style={{ background: '#fff' }}>
                             <Group justify="space-between" mb="sm">
                                 <TextInput placeholder="Cari nama rak, zone..." size="xs" value={search} onChange={e => setSearch(e.target.value)} style={{ width: 220 }} />
-                                <Badge color="blue" variant="light">{filtered.length} total lokasi</Badge>
+                                <Badge color="blue" variant="light">{total} total lokasi</Badge>
                             </Group>
 
                             {loading ? <Loader /> : (
@@ -293,6 +305,12 @@ export default function MasterLokasiPage() {
                                             )}
                                         </Table.Tbody>
                                     </Table>
+                                    {total > pageSize && (
+                                        <Group justify="space-between" mt="md">
+                                            <Text size="xs" c="dimmed">Halaman {page} dari {totalPages} · maksimal {pageSize} data</Text>
+                                            <Pagination value={page} onChange={setPage} total={totalPages} size="sm" withEdges />
+                                        </Group>
+                                    )}
                                 </Box>
                             )}
                         </Paper>
@@ -343,5 +361,3 @@ export default function MasterLokasiPage() {
         </Box>
     );
 }
-
-

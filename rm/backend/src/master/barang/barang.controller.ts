@@ -28,6 +28,29 @@ export class BarangController {
     @InjectRepository(Barang) private readonly repo: Repository<Barang>,
   ) {}
 
+  @Get('paged')
+  async find_paged(
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+    @Query('search') search = '',
+  ) {
+    const currentPage = Math.max(1, Number(page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(limit) || 20));
+    const where: any = search
+      ? [
+          { deleted_at: IsNull(), nama: ILike(`%${search}%`) },
+          { deleted_at: IsNull(), sku: ILike(`%${search}%`) },
+        ]
+      : { deleted_at: IsNull() };
+    const [data, total] = await this.repo.findAndCount({
+      where,
+      order: { id: 'ASC' },
+      skip: (currentPage - 1) * pageSize,
+      take: pageSize,
+    });
+    return { data, total, page: currentPage, limit: pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
+  }
+
   @Get()
   async find_all(
     @Query('side') side?: string,

@@ -24,6 +24,27 @@ import { UserRole } from '../../admin/users/user.entity';
 export class CustomersController {
   constructor(@InjectRepository(Customer) private repo: Repository<Customer>) {}
 
+  @Get('paged')
+  async find_paged(
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+    @Query('search') search = '',
+  ) {
+    const currentPage = Math.max(1, Number(page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(limit) || 20));
+    const where: any = search
+      ? [
+          { deleted_at: IsNull(), nama: ILike(`%${search}%`) },
+          { deleted_at: IsNull(), alamat: ILike(`%${search}%`) },
+        ]
+      : { deleted_at: IsNull() };
+    const [data, total] = await this.repo.findAndCount({
+      where, order: { created_at: 'DESC' },
+      skip: (currentPage - 1) * pageSize, take: pageSize,
+    });
+    return { data, total, page: currentPage, limit: pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
+  }
+
   @Get()
   find_all(@Query('search') search?: string) {
     const where: any = { deleted_at: IsNull() };

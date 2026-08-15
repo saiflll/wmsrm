@@ -55,7 +55,15 @@ export default function OutboundPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [canManual, setCanManual] = useState(false);
   const barcodeRef = useRef<any>(null);
+
+  useEffect(() => {
+    try {
+      const role = Number(JSON.parse(localStorage.getItem("user") || "{}").role);
+      setCanManual(role === 1 || role === 4 || role === 5);
+    } catch { setCanManual(false); }
+  }, []);
 
   // Sorting
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -643,7 +651,7 @@ export default function OutboundPage() {
                   </Button>
                 </Stack>
               </Paper>
-            ) : (
+            ) : canManual ? (
               <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
                 <Stack gap="xs">
                   <Text fw={800} size="sm" c="red" mb={4} style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: 4 }}>
@@ -754,6 +762,11 @@ export default function OutboundPage() {
                     Tambahkan Draft
                   </Button>
                 </Stack>
+              </Paper>
+            ) : (
+              <Paper withBorder p="md" radius="md">
+                <Text size="sm" fw={700}>Eksekusi outbound melalui planning</Text>
+                <Text size="xs" c="dimmed">Input manual hanya tersedia untuk Checker dan Supervisor.</Text>
               </Paper>
             )}
           </Grid.Col>

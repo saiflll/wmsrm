@@ -1,7 +1,7 @@
 'use client';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Box, Group, Button, Title, Text, Table, Paper, Stack, TextInput, Grid, Loader, ActionIcon, Tooltip, Badge, Checkbox, Modal, Radio } from '@mantine/core';
+import { Box, Group, Button, Title, Text, Table, Paper, Stack, TextInput, Grid, Loader, ActionIcon, Tooltip, Badge, Checkbox, Modal, Radio, Pagination } from '@mantine/core';
 import { IconBuildingStore, IconPlus, IconEdit, IconTrash, IconX, IconAlertTriangle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { api, unwrap } from '../lib/api';
@@ -9,6 +9,8 @@ import { api, unwrap } from '../lib/api';
 export default function MasterCustomerPage() {
     const [list, setList] = useState<any[]>([]);
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [editId, setEditId] = useState<number | null>(null);
     const [form, setForm] = useState({ nama: '', alamat: '', telp: '' });
@@ -27,13 +29,19 @@ export default function MasterCustomerPage() {
             const u = JSON.parse(localStorage.getItem('user') || '{}');
             if (u && u.role) setUserRole(u.role);
         } catch (e) { }
-        load();
     }, []);
+
+    useEffect(() => {
+        const timer = window.setTimeout(load, 300);
+        return () => window.clearTimeout(timer);
+    }, [page, search]);
 
     const load = async () => {
         setLoading(true);
         try {
-            setList(unwrap(await api().get('/customers')));
+            const payload = unwrap(await api().get('/customers/paged', { params: { page, limit: 20, search: search.trim() } }));
+            setList(payload.data || []);
+            setTotal(payload.total || 0);
             setSelectedIds([]);
         } catch (e) { console.error(e); }
         setLoading(false);
@@ -124,12 +132,17 @@ export default function MasterCustomerPage() {
         setConfirmOpen(false);
     };
 
-    const filtered = search ? list.filter((l: any) => l.nama?.toLowerCase().includes(search.toLowerCase()) || l.alamat?.toLowerCase().includes(search.toLowerCase())) : list;
+    const filtered = list;
+    const pageSize = 20;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const paginatedItems = filtered;
+    useEffect(() => { setPage(1); }, [search]);
+    useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
     const f = (k: any, v: any) => setForm(p => ({ ...p, [k]: v }));
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            setSelectedIds(filtered.map((c: any) => c.id));
+            setSelectedIds(paginatedItems.map((c: any) => c.id));
         } else {
             setSelectedIds([]);
         }
@@ -143,8 +156,8 @@ export default function MasterCustomerPage() {
         }
     };
 
-    const allChecked = filtered.length > 0 && filtered.every((c: any) => selectedIds.includes(c.id));
-    const isIndeterminate = selectedIds.length > 0 && !allChecked;
+    const allChecked = paginatedItems.length > 0 && paginatedItems.every((c: any) => selectedIds.includes(c.id));
+    const isIndeterminate = paginatedItems.some((c: any) => selectedIds.includes(c.id)) && !allChecked;
 
     const handleEdit = (item: any) => {
         setEditId(item.id);
@@ -203,7 +216,7 @@ export default function MasterCustomerPage() {
                         <Paper withBorder p="md" radius="md" style={{ background: '#fff' }}>
                             <Group justify="space-between" mb="sm">
                                 <TextInput placeholder="Cari nama, alamat..." size="xs" value={search} onChange={e => setSearch(e.target.value)} style={{ width: 220 }} />
-                                <Badge color="teal" variant="light">{filtered.length} total customer</Badge>
+                                <Badge color="teal" variant="light">{total} total customer</Badge>
                             </Group>
 
                             {loading ? <Loader /> : (
@@ -243,7 +256,7 @@ export default function MasterCustomerPage() {
                                             </Table.Tr>
                                         </Table.Thead>
                                         <Table.Tbody>
-                                            {filtered.map((c: any) => {
+                                            {paginatedItems.map((c: any) => {
                                                 const isSelected = selectedIds.includes(c.id);
                                                 return (
                                                     <Table.Tr key={c.id} style={{ background: isSelected ? '#e6fffa' : undefined }}>
@@ -281,6 +294,12 @@ export default function MasterCustomerPage() {
                                             )}
                                         </Table.Tbody>
                                     </Table>
+                                    {total > pageSize && (
+                                        <Group justify="space-between" mt="md">
+                                            <Text size="xs" c="dimmed">Halaman {page} dari {totalPages} · maksimal {pageSize} data</Text>
+                                            <Pagination value={page} onChange={setPage} total={totalPages} size="sm" withEdges />
+                                        </Group>
+                                    )}
                                 </Box>
                             )}
                         </Paper>
@@ -331,5 +350,3 @@ export default function MasterCustomerPage() {
         </Box>
     );
 }
-
-

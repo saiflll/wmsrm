@@ -1,7 +1,7 @@
 'use client';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Box, Group, Button, Title, Text, Table, Badge, Paper, Stack, TextInput, Select, Grid, Loader, ActionIcon, Tooltip, Checkbox, Modal, Radio } from '@mantine/core';
+import { Box, Group, Button, Title, Text, Table, Badge, Paper, Stack, TextInput, Select, Grid, Loader, ActionIcon, Tooltip, Checkbox, Modal, Radio, Pagination } from '@mantine/core';
 import { IconPackage, IconPlus, IconEdit, IconTrash, IconX, IconRefresh, IconAlertTriangle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { api, unwrap } from '../lib/api';
@@ -10,6 +10,8 @@ export default function MasterProdukPage() {
     const [tab, setTab] = useState('items');
     const [items, setItems] = useState<any[]>([]);
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [editId, setEditId] = useState<number | null>(null);
     const [form, setForm] = useState({ sku: '', nama: '', satuan: 'Pcs', kategori: 'Dry', min_stok: 0 });
@@ -28,14 +30,19 @@ export default function MasterProdukPage() {
             const u = JSON.parse(localStorage.getItem('user') || '{}');
             if (u && u.role) setUserRole(u.role);
         } catch (e) { }
-        load();
     }, []);
+
+    useEffect(() => {
+        const timer = window.setTimeout(load, 300);
+        return () => window.clearTimeout(timer);
+    }, [page, search]);
 
     const load = async () => {
         setLoading(true);
         try {
-            const res = await api().get('/barang');
-            setItems(unwrap(res));
+            const payload = unwrap(await api().get('/barang/paged', { params: { page, limit: 20, search: search.trim() } }));
+            setItems(payload.data || []);
+            setTotal(payload.total || 0);
             setSelectedIds([]);
         } catch (e) { console.error(e); }
         setLoading(false);
@@ -143,11 +150,17 @@ export default function MasterProdukPage() {
     };
 
     const f = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
-    const filtered = search ? items.filter((i: any) => i.nama?.toLowerCase().includes(search.toLowerCase()) || i.sku?.toLowerCase().includes(search.toLowerCase())) : items;
+    const filtered = items;
+    const pageSize = 20;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const paginatedItems = filtered;
+
+    useEffect(() => { setPage(1); }, [search]);
+    useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            setSelectedIds(filtered.map((i: any) => i.id));
+            setSelectedIds(paginatedItems.map((i: any) => i.id));
         } else {
             setSelectedIds([]);
         }
@@ -161,8 +174,8 @@ export default function MasterProdukPage() {
         }
     };
 
-    const allChecked = filtered.length > 0 && filtered.every((i: any) => selectedIds.includes(i.id));
-    const isIndeterminate = selectedIds.length > 0 && !allChecked;
+    const allChecked = paginatedItems.length > 0 && paginatedItems.every((i: any) => selectedIds.includes(i.id));
+    const isIndeterminate = paginatedItems.some((i: any) => selectedIds.includes(i.id)) && !allChecked;
 
     // Count by kategori
     const katGroups: Record<string, number> = {};
@@ -286,7 +299,7 @@ export default function MasterProdukPage() {
                                                 </Table.Tr>
                                             </Table.Thead>
                                             <Table.Tbody>
-                                                {filtered.map((item: any) => {
+                                                {paginatedItems.map((item: any) => {
                                                     const isSelected = selectedIds.includes(item.id);
                                                     return (
                                                         <Table.Tr key={item.id} style={{ background: isSelected ? '#fff8f0' : undefined }}>
@@ -320,13 +333,19 @@ export default function MasterProdukPage() {
                                                         </Table.Tr>
                                                     );
                                                 })}
-                                                {filtered.length === 0 && (
+                                            {filtered.length === 0 && (
                                                     <Table.Tr>
                                                         <Table.Td colSpan={7} ta="center" c="dimmed">Tidak ada data produk ditemukan.</Table.Td>
                                                     </Table.Tr>
                                                 )}
                                             </Table.Tbody>
-                                        </Table>
+                                    </Table>
+                                    {total > pageSize && (
+                                        <Group justify="space-between" mt="md">
+                                            <Text size="xs" c="dimmed">Halaman {page} dari {totalPages} · maksimal {pageSize} data</Text>
+                                            <Pagination value={page} onChange={setPage} total={totalPages} size="sm" withEdges />
+                                        </Group>
+                                    )}
                                     </Box>
                                 )}
                             </Paper>
