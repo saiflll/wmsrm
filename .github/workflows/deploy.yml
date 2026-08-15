@@ -89,7 +89,7 @@ jobs:
           curl --fail --silent http://127.0.0.1:3015/ >/dev/null
           LOGIN_RESPONSE="$(curl --fail --silent \
             -H 'Content-Type: application/json' \
-            -d '{"username":"checker","password":"checker123"}' \
+            -d '{"username":"admin","password":"admin123"}' \
             http://127.0.0.1:3014/api/auth/login)"
           TOKEN="$(printf '%s' "$LOGIN_RESPONSE" | jq -r '.data.access_token')"
           test -n "$TOKEN"
