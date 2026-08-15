@@ -87,10 +87,17 @@ jobs:
           done
 
           curl --fail --silent http://127.0.0.1:3015/ >/dev/null
-          curl --fail --silent \
+          LOGIN_RESPONSE="$(curl --fail --silent \
             -H 'Content-Type: application/json' \
             -d '{"username":"checker","password":"checker123"}' \
-            http://127.0.0.1:3014/api/auth/login >/dev/null
+            http://127.0.0.1:3014/api/auth/login)"
+          TOKEN="$(printf '%s' "$LOGIN_RESPONSE" | jq -r '.data.access_token')"
+          test -n "$TOKEN"
+          test "$TOKEN" != null
+          curl --fail --silent -H "Authorization: Bearer $TOKEN" \
+            http://127.0.0.1:3014/api/inventory/dashboard >/dev/null
+          curl --fail --silent -H "Authorization: Bearer $TOKEN" \
+            http://127.0.0.1:3014/api/inventory/dashboard/stock-chart >/dev/null
 
       - name: Tampilkan log jika smoke test gagal
         if: failure()

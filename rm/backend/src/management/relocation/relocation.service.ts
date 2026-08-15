@@ -181,7 +181,7 @@ export class RelocationService {
       const total_stok_result = await manager
         .createQueryBuilder(Stock, 'st')
         .select('COALESCE(SUM(st.qty), 0)', 'total')
-        .where('st.barangId = :barangId', { barang_id: stock.barang.id })
+        .where('st.barangId = :barangId', { barangId: stock.barang.id })
         .getRawOne();
 
       await manager.update(Barang, stock.barang.id, {

@@ -42,7 +42,7 @@ export class InventoryService {
     const result = await manager
       .getRepository(Stock)
       .createQueryBuilder('s')
-      .where('s.barangId = :barangId', { barang_id })
+      .where('s.barangId = :barangId', { barangId: barang_id })
       .select('SUM(s.qty)', 'total')
       .getRawOne();
     const total = parseFloat(result?.total || '0');
@@ -888,7 +888,7 @@ export class InventoryService {
       .createQueryBuilder('s')
       .where('s.expiry_date >= :now AND s.expiry_date <= :thirtyDaysFromNow', {
         now,
-        thirty_days_from_now,
+        thirtyDaysFromNow: thirty_days_from_now,
       })
       .select('COUNT(s.id)', 'cnt')
       .getRawOne();
@@ -1092,9 +1092,9 @@ export class InventoryService {
     const current_stocks: Record<number, number> = {};
     const stock_rows = await this.stock_repo
       .createQueryBuilder('s')
-      .select('s.barang_id', 'barang_id')
+      .select('s.barangId', 'barang_id')
       .addSelect('SUM(s.qty)', 'qty')
-      .groupBy('s.barang_id')
+      .groupBy('s.barangId')
       .getRawMany();
     for (const row of stock_rows) {
       current_stocks[row.barang_id] = parseFloat(row.qty) || 0;
