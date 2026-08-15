@@ -121,6 +121,8 @@ export default function ReportAyamPage() {
       const raw = unwrap(res);
       const list = Array.isArray(raw)
         ? raw
+        : Array.isArray(raw?.rows)
+          ? raw.rows
         : Array.isArray(raw?.data)
           ? raw.data
           : [];
