@@ -21,11 +21,11 @@ class AlokasiItemDto {
 class ProcessInboundItemDto {
   @IsNumber()
   @IsNotEmpty()
-  barangId: number;
+  barang_id: number;
 
   @IsNumber()
   @IsNotEmpty()
-  gudangId: number;
+  gudang_id: number;
 
   @IsNumber()
   @IsNotEmpty()
@@ -58,7 +58,7 @@ class ProcessInboundItemDto {
 class RackAllocationDto {
   @Type(() => Number)
   @IsNumber()
-  gudangId: number;
+  gudang_id: number;
 
   @Type(() => Number)
   @IsNumber()
@@ -68,7 +68,7 @@ class RackAllocationDto {
 class InboundPlanItemDto {
   @Type(() => Number)
   @IsNumber()
-  barangId: number;
+  barang_id: number;
 
   @Type(() => Number)
   @IsNumber()
@@ -86,7 +86,7 @@ class InboundPlanItemDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RackAllocationDto)
-  rackAllocations?: RackAllocationDto[];
+  rack_allocations?: RackAllocationDto[];
 }
 
 export class CreateInboundPlanningDto {
@@ -193,5 +193,5 @@ export class ProcessInboundDto {
 
   @IsOptional()
   @IsNumber()
-  shiftId?: number;
+  shift_id?: number;
 }

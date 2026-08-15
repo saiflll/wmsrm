@@ -27,28 +27,28 @@ export class PlanningAyamService {
 
   constructor(
     @InjectRepository(PlanningAyam) private repo: Repository<PlanningAyam>,
-    @InjectRepository(Barang) private barangRepo: Repository<Barang>,
-    @InjectRepository(Shift) private shiftRepo: Repository<Shift>,
+    @InjectRepository(Barang) private barang_repo: Repository<Barang>,
+    @InjectRepository(Shift) private shift_repo: Repository<Shift>,
     @InjectRepository(OutboundAyam)
-    private outboundAyamRepo: Repository<OutboundAyam>,
-    @InjectRepository(Stock) private stockRepo: Repository<Stock>,
-    private dataSource: DataSource,
+    private outbound_ayam_repo: Repository<OutboundAyam>,
+    @InjectRepository(Stock) private stock_repo: Repository<Stock>,
+    private data_source: DataSource,
   ) {}
 
-  async findAll() {
+  async find_all() {
     return this.repo.find({
       where: { deleted_at: IsNull() },
       order: { created_at: 'DESC' },
     });
   }
 
-  async findOne(id: number) {
+  async find_one(id: number) {
     const item = await this.repo.findOne({ where: { id } });
     if (!item) throw new NotFoundException('Planning ayam tidak ditemukan');
     return item;
   }
 
-  async findByStatus(status: string) {
+  async find_by_status(status: string) {
     return this.repo.find({
       where: { status, deleted_at: IsNull() },
       order: { tanggal_planning: 'ASC' },
@@ -56,11 +56,11 @@ export class PlanningAyamService {
   }
 
   async create(dto: CreatePlanningAyamDto) {
-    const barang = await this.barangRepo.findOneBy({ id: dto.barang_id });
+    const barang = await this.barang_repo.findOneBy({ id: dto.barang_id });
     if (!barang) throw new NotFoundException('Barang tidak ditemukan');
 
     const shift = dto.shift_id
-      ? await this.shiftRepo.findOneBy({ id: dto.shift_id })
+      ? await this.shift_repo.findOneBy({ id: dto.shift_id })
       : null;
 
     const item = this.repo.create({
@@ -79,7 +79,7 @@ export class PlanningAyamService {
   }
 
   async update(id: number, dto: UpdatePlanningAyamDto) {
-    const item = await this.findOne(id);
+    const item = await this.find_one(id);
 
     if (item.status !== 'WAIT') {
       throw new BadRequestException(
@@ -88,13 +88,13 @@ export class PlanningAyamService {
     }
 
     if (dto.barang_id) {
-      const barang = await this.barangRepo.findOneBy({ id: dto.barang_id });
+      const barang = await this.barang_repo.findOneBy({ id: dto.barang_id });
       if (!barang) throw new NotFoundException('Barang tidak ditemukan');
       (item as any).barang = barang;
     }
     if (dto.shift_id !== undefined) {
       const shift = dto.shift_id
-        ? await this.shiftRepo.findOneBy({ id: dto.shift_id })
+        ? await this.shift_repo.findOneBy({ id: dto.shift_id })
         : null;
       (item as any).shift = shift;
     }
@@ -110,108 +110,108 @@ export class PlanningAyamService {
     return this.repo.save(item);
   }
 
-  async updateStatus(id: number, newStatus: string, userId?: number) {
-    const planning = await this.findOne(id);
-    const currentStatus = planning.status;
+  async update_status(id: number, new_status: string, user_id?: number) {
+    const planning = await this.find_one(id);
+    const current_status = planning.status;
 
     // Validate transition
-    const allowed = this.STATUS_FLOW[currentStatus];
-    if (!allowed || !allowed.includes(newStatus)) {
+    const allowed = this.STATUS_FLOW[current_status];
+    if (!allowed || !allowed.includes(new_status)) {
       throw new BadRequestException(
-        `Status tidak bisa diubah dari '${currentStatus}' ke '${newStatus}'`,
+        `Status tidak bisa diubah dari '${current_status}' ke '${new_status}'`,
       );
     }
 
     // Use transaction for stock operations
-    await this.dataSource.transaction(async (txnMgr) => {
+    await this.data_source.transaction(async (txn_mgr) => {
       // Re-fetch planning with relations inside transaction
-      const locked = await txnMgr.findOne(PlanningAyam, {
+      const locked = await txn_mgr.findOne(PlanningAyam, {
         where: { id: Number(id) },
         relations: ['barang'],
       });
       if (!locked) throw new NotFoundException('Planning ayam tidak ditemukan');
 
-      const barangId = locked.barang?.id;
+      const barang_id = locked.barang?.id;
 
       // Stock adjustment based on target status
-      if (newStatus === 'PROGRESS' && barangId) {
-        const stocks = await txnMgr.find(Stock, {
-          where: { barang: { id: barangId } },
+      if (new_status === 'PROGRESS' && barang_id) {
+        const stocks = await txn_mgr.find(Stock, {
+          where: { barang: { id: barang_id } },
           relations: ['barang'],
         });
 
-        const totalReserved = stocks.reduce(
+        const total_reserved = stocks.reduce(
           (sum, s) => sum + (s.reserved_qty || 0),
           0,
         );
-        const totalAvailable = stocks.reduce((sum, s) => sum + (s.qty || 0), 0);
+        const total_available = stocks.reduce((sum, s) => sum + (s.qty || 0), 0);
 
-        let toReserve = locked.qty;
+        let to_reserve = locked.qty;
         for (const stock of stocks) {
-          if (toReserve <= 0) break;
+          if (to_reserve <= 0) break;
           const remaining = (stock.qty || 0) - (stock.reserved_qty || 0);
           if (remaining <= 0) continue;
-          const reserveNow = Math.min(remaining, toReserve);
-          stock.reserved_qty = (stock.reserved_qty || 0) + reserveNow;
-          await txnMgr.save(stock);
-          toReserve -= reserveNow;
+          const reserve_now = Math.min(remaining, to_reserve);
+          stock.reserved_qty = (stock.reserved_qty || 0) + reserve_now;
+          await txn_mgr.save(stock);
+          to_reserve -= reserve_now;
         }
 
-        if (toReserve > 0) {
+        if (to_reserve > 0) {
           throw new BadRequestException(
-            `Stok tidak mencukupi. Butuh ${locked.qty}, tersedia ${totalAvailable - totalReserved}`,
+            `Stok tidak mencukupi. Butuh ${locked.qty}, tersedia ${total_available - total_reserved}`,
           );
         }
       }
 
-      if (newStatus === 'DONE' && barangId) {
-        const stocks = await txnMgr.find(Stock, {
-          where: { barang: { id: barangId } },
+      if (new_status === 'DONE' && barang_id) {
+        const stocks = await txn_mgr.find(Stock, {
+          where: { barang: { id: barang_id } },
         });
 
-        let toDeduct = locked.qty;
+        let to_deduct = locked.qty;
         for (const stock of stocks) {
-          if (toDeduct <= 0) break;
-          const deductNow = Math.min(stock.reserved_qty || 0, toDeduct);
-          stock.qty = (stock.qty || 0) - deductNow;
-          stock.reserved_qty = Math.max(0, (stock.reserved_qty || 0) - deductNow);
-          await txnMgr.save(stock);
-          toDeduct -= deductNow;
+          if (to_deduct <= 0) break;
+          const deduct_now = Math.min(stock.reserved_qty || 0, to_deduct);
+          stock.qty = (stock.qty || 0) - deduct_now;
+          stock.reserved_qty = Math.max(0, (stock.reserved_qty || 0) - deduct_now);
+          await txn_mgr.save(stock);
+          to_deduct -= deduct_now;
         }
       }
 
-      if (newStatus === 'CANCEL' && barangId) {
-        const stocks = await txnMgr.find(Stock, {
-          where: { barang: { id: barangId } },
+      if (new_status === 'CANCEL' && barang_id) {
+        const stocks = await txn_mgr.find(Stock, {
+          where: { barang: { id: barang_id } },
         });
 
-        let toRelease = locked.qty;
+        let to_release = locked.qty;
         for (const stock of stocks) {
-          if (toRelease <= 0) break;
-          const releaseNow = Math.min(stock.reserved_qty || 0, toRelease);
-          stock.reserved_qty = Math.max(0, (stock.reserved_qty || 0) - releaseNow);
-          await txnMgr.save(stock);
-          toRelease -= releaseNow;
+          if (to_release <= 0) break;
+          const release_now = Math.min(stock.reserved_qty || 0, to_release);
+          stock.reserved_qty = Math.max(0, (stock.reserved_qty || 0) - release_now);
+          await txn_mgr.save(stock);
+          to_release -= release_now;
         }
       }
 
       // Update status
-      locked.status = newStatus;
-      await txnMgr.save(locked);
+      locked.status = new_status;
+      await txn_mgr.save(locked);
     });
   }
 
-  async remove(id: number, userId?: number) {
-    const item = await this.findOne(id);
+  async remove(id: number, user_id?: number) {
+    const item = await this.find_one(id);
 
     await this.repo.update(id, {
       deleted_at: new Date(),
-      deleted_by: userId || 0,
+      deleted_by: user_id || 0,
     });
     return { deleted: true };
   }
 
-  async getReport(from?: string, to?: string) {
+  async get_report(from?: string, to?: string) {
     const qb = this.repo
       .createQueryBuilder('p')
       .leftJoinAndSelect('p.barang', 'barang')
@@ -225,10 +225,10 @@ export class PlanningAyamService {
     // For each planning, calculate outbound qty from OutboundAyam
     const rows = await Promise.all(
       plannings.map(async (p) => {
-        const outbounds = await this.outboundAyamRepo.find({
+        const outbounds = await this.outbound_ayam_repo.find({
           where: { planning_ayam: { id: p.id } },
         });
-        const totalOutbound = outbounds.reduce(
+        const total_outbound = outbounds.reduce(
           (sum, o) => sum + (o.qty_aktual || 0),
           0,
         );
@@ -238,9 +238,9 @@ export class PlanningAyamService {
             ? new Date(p.tanggal_planning).toISOString().split('T')[0]
             : '-',
           planning: p.qty || 0,
-          outbound: totalOutbound,
+          outbound: total_outbound,
           serapan:
-            p.qty > 0 ? Math.round((totalOutbound / p.qty) * 10000) / 100 : 0,
+            p.qty > 0 ? Math.round((total_outbound / p.qty) * 10000) / 100 : 0,
           status: p.status,
           barang: (p as any).barang?.nama || '-',
         };

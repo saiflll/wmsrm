@@ -3,6 +3,8 @@ services:
     image: postgres:15-alpine
     container_name: wms-test-db
     restart: unless-stopped
+    mem_limit: 512m
+    cpus: 0.5
     ports:
       - "3013:5432"
     environment:
@@ -11,13 +13,19 @@ services:
       - POSTGRES_DB=wms_db
     volumes:
       - wms_db_data:/var/lib/postgresql/data
+      - ./wms-test/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./wms-test/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
 
   wms-test:
+    image: ghcr.io/${GHCR_OWNER:-ppa-project}/wms-test:latest
     build:
       context: .
       dockerfile: wms-test/Dockerfile
     container_name: wms-test
     restart: unless-stopped
+    mem_limit: 1200m
+    cpus: 1.5
     ports:
       - "3014:3011"
       - "3015:3000"

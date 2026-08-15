@@ -24,16 +24,16 @@ export class OutboundAyamService {
   constructor(
     @InjectRepository(OutboundAyam) private repo: Repository<OutboundAyam>,
     @InjectRepository(PlanningAyam)
-    private planningRepo: Repository<PlanningAyam>,
-    @InjectRepository(Shift) private shiftRepo: Repository<Shift>,
-    @InjectRepository(Stock) private stockRepo: Repository<Stock>,
-    @InjectRepository(StockLog) private logRepo: Repository<StockLog>,
-    @InjectRepository(Barang) private barangRepo: Repository<Barang>,
-    @InjectRepository(Gudang) private gudangRepo: Repository<Gudang>,
-    private dataSource: DataSource,
+    private planning_repo: Repository<PlanningAyam>,
+    @InjectRepository(Shift) private shift_repo: Repository<Shift>,
+    @InjectRepository(Stock) private stock_repo: Repository<Stock>,
+    @InjectRepository(StockLog) private log_repo: Repository<StockLog>,
+    @InjectRepository(Barang) private barang_repo: Repository<Barang>,
+    @InjectRepository(Gudang) private gudang_repo: Repository<Gudang>,
+    private data_source: DataSource,
   ) {}
 
-  async findAll() {
+  async find_all() {
     return this.repo.find({
       where: { deleted_at: IsNull() },
       relations: ['planning_ayam', 'planning_ayam.barang', 'shift'],
@@ -41,10 +41,10 @@ export class OutboundAyamService {
     });
   }
 
-  async findWithFilter(filter: {
+  async find_with_filter(filter: {
     status?: string;
-    dateFrom?: string;
-    dateTo?: string;
+    date_from?: string;
+    date_to?: string;
   }) {
     const qb = this.repo
       .createQueryBuilder('outbound')
@@ -55,14 +55,14 @@ export class OutboundAyamService {
     if (filter.status) {
       qb.andWhere('planning.status = :status', { status: filter.status });
     }
-    if (filter.dateFrom) {
+    if (filter.date_from) {
       qb.andWhere('outbound.created_at >= :dateFrom', {
-        dateFrom: new Date(filter.dateFrom),
+        date_from: new Date(filter.date_from),
       });
     }
-    if (filter.dateTo) {
+    if (filter.date_to) {
       qb.andWhere('outbound.created_at <= :dateTo', {
-        dateTo: new Date(filter.dateTo),
+        date_to: new Date(filter.date_to),
       });
     }
 
@@ -71,14 +71,14 @@ export class OutboundAyamService {
     return qb.getMany();
   }
 
-  async findOne(id: number) {
+  async find_one(id: number) {
     const item = await this.repo.findOne({ where: { id } });
     if (!item) throw new NotFoundException('Outbound ayam tidak ditemukan');
     return item;
   }
 
   async create(dto: CreateOutboundAyamDto) {
-    const planning = await this.planningRepo.findOne({
+    const planning = await this.planning_repo.findOne({
       where: { id: dto.planning_ayam_id },
       relations: ['barang'],
     });
@@ -87,46 +87,46 @@ export class OutboundAyamService {
       throw new BadRequestException('Planning ayam sudah selesai');
 
     const shift = dto.shift_id
-      ? await this.shiftRepo.findOne({ where: { id: dto.shift_id } })
+      ? await this.shift_repo.findOne({ where: { id: dto.shift_id } })
       : null;
 
     // FEFO: ambil stock dengan expiry_date paling awal (untuk batch_no)
-    const stock = await this.stockRepo.findOne({
+    const stock = await this.stock_repo.findOne({
       where: { barang: { id: planning.barang.id } },
       order: { expiry_date: 'ASC', created_at: 'ASC' },
     });
 
     // VALIDASI STOCK TERSEDIA
-    const allStocks = await this.stockRepo.find({
+    const all_stocks = await this.stock_repo.find({
       where: { barang: { id: planning.barang.id } },
     });
-    const totalAvailable = allStocks.reduce(
+    const total_available = all_stocks.reduce(
       (sum, s) => sum + (s.qty - s.reserved_qty),
       0,
     );
-    if (totalAvailable < dto.qty_aktual) {
+    if (total_available < dto.qty_aktual) {
       throw new BadRequestException(
-        `Stok tidak mencukupi. Tersedia: ${totalAvailable}, Diminta: ${dto.qty_aktual}`,
+        `Stok tidak mencukupi. Tersedia: ${total_available}, Diminta: ${dto.qty_aktual}`,
       );
     }
 
     // Create, process, and publish in one transaction
-    return this.dataSource.transaction(async (manager) => {
+    return this.data_source.transaction(async (manager) => {
       // Lock only the planning row (no relations to avoid FOR UPDATE + LEFT JOIN error)
-      const txPlanning = await manager.findOne(PlanningAyam, {
+      const tx_planning = await manager.findOne(PlanningAyam, {
         where: { id: planning.id },
         lock: { mode: 'pessimistic_write' },
         loadEagerRelations: false,
       });
-      if (!txPlanning) throw new NotFoundException('Planning ayam tidak ditemukan');
+      if (!tx_planning) throw new NotFoundException('Planning ayam tidak ditemukan');
 
       // Use barang from outside transaction (already fetched with relations)
       const barang = planning.barang;
 
       const item = manager.create(OutboundAyam, {
-        planning_ayam: txPlanning,
+        planning_ayam: tx_planning,
         qty_aktual: dto.qty_aktual,
-        satuan: dto.satuan || txPlanning.satuan,
+        satuan: dto.satuan || tx_planning.satuan,
         alokasi: dto.alokasi || [],
         tujuan: dto.tujuan,
         shift,
@@ -136,9 +136,9 @@ export class OutboundAyamService {
       const saved = await manager.save(OutboundAyam, item);
 
       // Distribute deductions based on alokasi
-      const alokasiItems = dto.alokasi || [];
-      const distribution = alokasiItems.length > 0
-        ? alokasiItems
+      const alokasi_items = dto.alokasi || [];
+      const distribution = alokasi_items.length > 0
+        ? alokasi_items
         : [{ tujuan: 'Terserap', qty: dto.qty_aktual }];
 
       for (const alok of distribution) {
@@ -146,21 +146,21 @@ export class OutboundAyamService {
         if (alok.tujuan === 'Reject') continue;
 
         let remaining = alok.qty;
-        const stockRows = await manager.find(Stock, {
+        const stock_rows = await manager.find(Stock, {
           where: { barang: { id: barang.id } },
           order: { expiry_date: 'ASC', created_at: 'ASC' },
           loadEagerRelations: false,
         });
-        for (const st of stockRows) {
+        for (const st of stock_rows) {
           if (remaining <= 0) break;
           const deduct = Math.min(st.qty, remaining);
           st.qty -= deduct;
           remaining -= deduct;
           await manager.save(Stock, st);
 
-          const gudangId = (st as any).gudangId;
-          const gudang = gudangId
-            ? (await manager.findOneBy(Gudang, { id: gudangId })) ?? undefined
+          const gudang_id = (st as any).gudangId;
+          const gudang = gudang_id
+            ? (await manager.findOneBy(Gudang, { id: gudang_id })) ?? undefined
             : undefined;
 
           const log = manager.create(StockLog, {
@@ -179,9 +179,9 @@ export class OutboundAyamService {
       }
 
       // Track processed quantity for partial processing
-      txPlanning.processed_qty = (txPlanning.processed_qty || 0) + dto.qty_aktual;
-      txPlanning.status = txPlanning.processed_qty >= txPlanning.qty ? 'DONE' : 'PROGRESS';
-      await manager.save(PlanningAyam, txPlanning);
+      tx_planning.processed_qty = (tx_planning.processed_qty || 0) + dto.qty_aktual;
+      tx_planning.status = tx_planning.processed_qty >= tx_planning.qty ? 'DONE' : 'PROGRESS';
+      await manager.save(PlanningAyam, tx_planning);
 
       // Mark outbound as published
       saved.published_at = new Date();
@@ -192,7 +192,7 @@ export class OutboundAyamService {
   }
 
   async update(id: number, dto: UpdateOutboundAyamDto) {
-    const item = await this.findOne(id);
+    const item = await this.find_one(id);
 
     if (item.published_at) {
       throw new BadRequestException(
@@ -201,7 +201,7 @@ export class OutboundAyamService {
     }
 
     if (dto.planning_ayam_id !== undefined) {
-      const planning = await this.planningRepo.findOne({
+      const planning = await this.planning_repo.findOne({
         where: { id: dto.planning_ayam_id },
       });
       if (!planning)
@@ -210,7 +210,7 @@ export class OutboundAyamService {
     }
     if (dto.shift_id !== undefined) {
       const shift = dto.shift_id
-        ? await this.shiftRepo.findOneBy({ id: dto.shift_id })
+        ? await this.shift_repo.findOneBy({ id: dto.shift_id })
         : null;
       (item as any).shift = shift;
     }
@@ -223,8 +223,8 @@ export class OutboundAyamService {
     return this.repo.save(item);
   }
 
-  async remove(id: number, userId?: number) {
-    const item = await this.findOne(id);
+  async remove(id: number, user_id?: number) {
+    const item = await this.find_one(id);
     if (item.published_at) {
       throw new BadRequestException(
         'Outbound yang sudah dipublish tidak bisa dihapus. Gunakan void.',
@@ -232,40 +232,40 @@ export class OutboundAyamService {
     }
     // revert planning status if it was DONE and reserve stock
     if (item.planning_ayam) {
-      const planning = await this.planningRepo.findOne({
+      const planning = await this.planning_repo.findOne({
         where: { id: item.planning_ayam.id },
       });
       if (planning) {
-        const stocks = await this.stockRepo.find({
+        const stocks = await this.stock_repo.find({
           where: { barang: { id: planning.barang.id } }, // Cannot add deleted_at since stock has no deleted_at
         });
-        let toRelease = item.qty_aktual;
+        let to_release = item.qty_aktual;
         for (const stock of stocks) {
-          if (toRelease <= 0) break;
-          const releaseNow = Math.min(stock.reserved_qty, toRelease);
-          stock.reserved_qty -= releaseNow;
+          if (to_release <= 0) break;
+          const release_now = Math.min(stock.reserved_qty, to_release);
+          stock.reserved_qty -= release_now;
           if (stock.reserved_qty < 0) stock.reserved_qty = 0;
-          await this.stockRepo.save(stock);
-          toRelease -= releaseNow;
+          await this.stock_repo.save(stock);
+          to_release -= release_now;
         }
         planning.status = 'WAIT';
-        await this.planningRepo.save(planning);
+        await this.planning_repo.save(planning);
       }
     }
     await this.repo.update(id, {
       deleted_at: new Date(),
-      deleted_by: userId || 0,
+      deleted_by: user_id || 0,
     });
     return { deleted: true };
   }
 
-  async processOutbound(id: number, dto: ProcessOutboundAyamDto) {
-    const outbound = await this.findOne(id);
+  async process_outbound(id: number, dto: ProcessOutboundAyamDto) {
+    const outbound = await this.find_one(id);
     if (!outbound.planning_ayam) {
       throw new BadRequestException('Planning ayam tidak ditemukan');
     }
 
-    const planning = await this.planningRepo.findOne({
+    const planning = await this.planning_repo.findOne({
       where: { id: outbound.planning_ayam.id },
     });
     if (!planning) {
@@ -284,16 +284,16 @@ export class OutboundAyamService {
 
     // Update planning status to PROGRESS (draft state)
     planning.status = 'PROGRESS';
-    await this.planningRepo.save(planning);
+    await this.planning_repo.save(planning);
 
     return this.repo.save(outbound);
   }
 
-  async publishOutbound(
+  async publish_outbound(
     id: number,
     dto: PublishOutboundAyamDto,
   ): Promise<OutboundAyam> {
-    return this.dataSource.transaction(async (manager) => {
+    return this.data_source.transaction(async (manager) => {
       // 1. Lock outbound row
       const outbound = await manager.findOne(OutboundAyam, {
         where: { id },
@@ -304,13 +304,13 @@ export class OutboundAyamService {
         throw new NotFoundException(`Outbound ayam with ID ${id} not found`);
       }
 
-      const fullOutbound = await manager.findOne(OutboundAyam, {
+      const full_outbound = await manager.findOne(OutboundAyam, {
         where: { id },
         relations: ['planning_ayam', 'shift'],
       });
-      if (fullOutbound) {
-        outbound.planning_ayam = fullOutbound.planning_ayam;
-        outbound.shift = fullOutbound.shift;
+      if (full_outbound) {
+        outbound.planning_ayam = full_outbound.planning_ayam;
+        outbound.shift = full_outbound.shift;
       }
 
       if (!outbound.process_data || !outbound.process_data.items) {
@@ -333,10 +333,10 @@ export class OutboundAyamService {
       for (const item of outbound.process_data.items) {
         // Validate barang exists
         const barang = await manager.findOneBy(Barang, {
-          id: item.barangId,
+          id: item.barang_id,
         });
         if (!barang) {
-          throw new BadRequestException(`Barang ID ${item.barangId} not found`);
+          throw new BadRequestException(`Barang ID ${item.barang_id} not found`);
         }
 
         // Handle different tujuan categories
@@ -347,13 +347,13 @@ export class OutboundAyamService {
           item.tujuan === 'REJECT'
         ) {
           // These are loss/return categories, deduct from stock
-          if (item.gudangId) {
+          if (item.gudang_id) {
             const gudang = await manager.findOneBy(Gudang, {
-              id: item.gudangId,
+              id: item.gudang_id,
             });
             if (!gudang) {
               throw new BadRequestException(
-                `Gudang ID ${item.gudangId} not found`,
+                `Gudang ID ${item.gudang_id} not found`,
               );
             }
 
@@ -390,15 +390,15 @@ export class OutboundAyamService {
           // Normal destination: deduct from current gudang
           if (outbound.planning_ayam) {
             // Use the gudang from outbound's stock source or param
-            const sourceGudang = item.gudangId
-              ? await manager.findOneBy(Gudang, { id: item.gudangId })
+            const source_gudang = item.gudang_id
+              ? await manager.findOneBy(Gudang, { id: item.gudang_id })
               : null;
 
-            if (sourceGudang) {
+            if (source_gudang) {
               const stock = await manager.findOne(Stock, {
                 where: {
                   barang: { id: barang.id },
-                  gudang: { id: sourceGudang.id },
+                  gudang: { id: source_gudang.id },
                   batch_no: item.batch_no || '',
                 },
               });
@@ -412,7 +412,7 @@ export class OutboundAyamService {
               const log = manager.create(StockLog, {
                 type: LogType.OUTBOUND,
                 barang,
-                gudang: sourceGudang,
+                gudang: source_gudang,
                 qty: item.qty,
                 satuan: stock?.satuan || barang.satuan,
                 batch_no: item.batch_no,
@@ -427,10 +427,10 @@ export class OutboundAyamService {
       }
 
       // 4. Track processed quantity, only DONE if fully processed
-      const totalProcessed = outbound.process_data.items.reduce(
+      const total_processed = outbound.process_data.items.reduce(
         (sum, item) => sum + item.qty, 0,
       );
-      planning.processed_qty = (planning.processed_qty || 0) + totalProcessed;
+      planning.processed_qty = (planning.processed_qty || 0) + total_processed;
       planning.status = planning.processed_qty >= planning.qty ? 'DONE' : 'PROGRESS';
       await manager.save(PlanningAyam, planning);
 

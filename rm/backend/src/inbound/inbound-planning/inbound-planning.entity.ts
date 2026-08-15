@@ -19,11 +19,11 @@ export class InboundPlanning {
 
   @Column({ type: 'simple-json', nullable: true })
   items: {
-    barangId: number;
+    barang_id: number;
     qty: number;
     satuan?: string;
     zone?: string;
-    rackAllocations?: { gudangId: number; qty: number }[];
+    rack_allocations?: { gudang_id: number; qty: number }[];
   }[];
 
   @Column({ type: 'float', nullable: true })
@@ -79,8 +79,8 @@ export class InboundPlanning {
     nullable: true,
     default: () => "'[]'",
   })
-  rackAllocations?: {
-    gudangId: number;
+  rack_allocations?: {
+    gudang_id: number;
     qty: number;
   }[];
 }

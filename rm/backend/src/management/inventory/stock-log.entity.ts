@@ -82,7 +82,7 @@ export class StockLog {
   user: User;
 
   @Column({ nullable: true })
-  userId: number;
+  user_id: number;
 
   @Column({ type: 'date', nullable: true })
   tanggal_income: string;

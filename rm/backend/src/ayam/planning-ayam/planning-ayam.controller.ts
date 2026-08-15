@@ -34,9 +34,9 @@ export class PlanningAyamController {
     UserRole.SUPERVISOR,
     UserRole.SUPER_ADMIN,
   )
-  findAll(@Query('status') status?: string) {
-    if (status) return this.svc.findByStatus(status);
-    return this.svc.findAll();
+  find_all(@Query('status') status?: string) {
+    if (status) return this.svc.find_by_status(status);
+    return this.svc.find_all();
   }
 
   @Get('report')
@@ -45,8 +45,8 @@ export class PlanningAyamController {
     UserRole.KOORDINATOR,
     UserRole.SUPER_ADMIN,
   )
-  getReport(@Query('from') from?: string, @Query('to') to?: string) {
-    return this.svc.getReport(from, to);
+  get_report(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.svc.get_report(from, to);
   }
 
   @Get(':id')
@@ -57,8 +57,8 @@ export class PlanningAyamController {
     UserRole.SUPERVISOR,
     UserRole.SUPER_ADMIN,
   )
-  findOne(@Param('id') id: number) {
-    return this.svc.findOne(id);
+  find_one(@Param('id') id: number) {
+    return this.svc.find_one(id);
   }
 
   @Post()
@@ -93,12 +93,12 @@ export class PlanningAyamController {
     UserRole.SUPERVISOR,
     UserRole.SUPER_ADMIN,
   )
-  updateStatus(
+  update_status(
     @Param('id') id: number,
     @Body() dto: UpdateStatusDto,
     @Request() req: any,
   ) {
-    return this.svc.updateStatus(id, dto.status, dto.userId || req.user?.id || 0);
+    return this.svc.update_status(id, dto.status, dto.user_id || req.user?.id || 0);
   }
 
   @Delete(':id')

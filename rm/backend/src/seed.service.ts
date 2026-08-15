@@ -18,66 +18,66 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
   constructor(
-    @InjectRepository(User) private userRepo: Repository<User>,
-    @InjectRepository(Customer) private customerRepo: Repository<Customer>,
-    @InjectRepository(Gudang) private gudangRepo: Repository<Gudang>,
-    @InjectRepository(Barang) private barangRepo: Repository<Barang>,
-    @InjectRepository(Suplayer) private suplayerRepo: Repository<Suplayer>,
-    @InjectRepository(Shift) private shiftRepo: Repository<Shift>,
-    @InjectRepository(Transaksi) private transaksiRepo: Repository<Transaksi>,
-    @InjectRepository(Stock) private stockRepo: Repository<Stock>,
-    @InjectRepository(StockLog) private stockLogRepo: Repository<StockLog>,
+    @InjectRepository(User) private user_repo: Repository<User>,
+    @InjectRepository(Customer) private customer_repo: Repository<Customer>,
+    @InjectRepository(Gudang) private gudang_repo: Repository<Gudang>,
+    @InjectRepository(Barang) private barang_repo: Repository<Barang>,
+    @InjectRepository(Suplayer) private suplayer_repo: Repository<Suplayer>,
+    @InjectRepository(Shift) private shift_repo: Repository<Shift>,
+    @InjectRepository(Transaksi) private transaksi_repo: Repository<Transaksi>,
+    @InjectRepository(Stock) private stock_repo: Repository<Stock>,
+    @InjectRepository(StockLog) private stock_log_repo: Repository<StockLog>,
     @InjectRepository(PlanningAyam)
-    private planningAyamRepo: Repository<PlanningAyam>,
+    private planning_ayam_repo: Repository<PlanningAyam>,
     @InjectRepository(OutboundAyam)
-    private outboundAyamRepo: Repository<OutboundAyam>,
+    private outbound_ayam_repo: Repository<OutboundAyam>,
     @InjectRepository(InboundPlanning)
-    private inboundPlanningRepo: Repository<InboundPlanning>,
+    private inbound_planning_repo: Repository<InboundPlanning>,
   ) {}
 
   async onApplicationBootstrap() {
-    await this.seedUsers();
-    const shifts = await this.seedShifts();
-    const barangs = await this.seedBarang();
-    const gudangs = await this.seedGudang(barangs);
-    const suplayers = await this.seedSuplayer();
-    await this.seedCustomer();
-    const users = await this.userRepo.find();
-    await this.seedTransaksi(barangs, suplayers, gudangs, shifts, users);
-    await this.seedStock(barangs, gudangs);
-    await this.seedStockLog(barangs, gudangs, shifts, users);
-    await this.seedPlanningAyam(barangs, shifts);
-    const plannings = await this.planningAyamRepo.find({
+    await this.seed_users();
+    const shifts = await this.seed_shifts();
+    const barangs = await this.seed_barang();
+    const gudangs = await this.seed_gudang(barangs);
+    const suplayers = await this.seed_suplayer();
+    await this.seed_customer();
+    const users = await this.user_repo.find();
+    await this.seed_transaksi(barangs, suplayers, gudangs, shifts, users);
+    await this.seed_stock(barangs, gudangs);
+    await this.seed_stock_log(barangs, gudangs, shifts, users);
+    await this.seed_planning_ayam(barangs, shifts);
+    const plannings = await this.planning_ayam_repo.find({
       relations: ['barang', 'shift'],
     });
-    await this.seedOutboundAyam(plannings, shifts);
-    await this.seedInboundPlanning();
+    await this.seed_outbound_ayam(plannings, shifts);
+    await this.seed_inbound_planning();
     console.log('🌱 All seed data inserted successfully!');
   }
 
   // ── Helpers ──────────────────────────────────────────
-  private pickRandom<T>(arr: T[]): T {
+  private pick_random<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  private randomDate(daysBack: number, daysForward: number = 0): Date {
+  private random_date(days_back: number, days_forward: number = 0): Date {
     const d = new Date();
     d.setDate(
       d.getDate() -
-        Math.floor(Math.random() * daysBack) +
-        Math.floor(Math.random() * daysForward),
+        Math.floor(Math.random() * days_back) +
+        Math.floor(Math.random() * days_forward),
     );
     return d;
   }
 
-  private randomTime(): string {
+  private random_time(): string {
     const h = String(Math.floor(Math.random() * 14) + 6).padStart(2, '0'); // 06-19
     const m = String(Math.floor(Math.random() * 60)).padStart(2, '0');
     const s = String(Math.floor(Math.random() * 60)).padStart(2, '0');
     return `${h}:${m}:${s}`;
   }
 
-  private randomPhone(): string {
+  private random_phone(): string {
     const prefixes = [
       '0812',
       '0813',
@@ -94,7 +94,7 @@ export class SeedService implements OnApplicationBootstrap {
     return prefix + num;
   }
 
-  private randomNopol(): string {
+  private random_nopol(): string {
     const letters = ['B', 'D', 'L', 'AG', 'N', 'W', 'H', 'AA', 'T', 'DK'];
     const l = letters[Math.floor(Math.random() * letters.length)];
     const num = 1000 + Math.floor(Math.random() * 9000);
@@ -109,9 +109,9 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   // ── Users (existing logic kept) ──────────────────────
-  private async seedUsers() {
-    const hasUsers = (await this.userRepo.count()) > 0;
-    if (!hasUsers) {
+  private async seed_users() {
+    const has_users = (await this.user_repo.count()) > 0;
+    if (!has_users) {
       const users = [
         {
           username: 'checker',
@@ -144,47 +144,47 @@ export class SeedService implements OnApplicationBootstrap {
           role: UserRole.MANAGER,
         },
       ];
-      await this.userRepo.save(this.userRepo.create(users));
+      await this.user_repo.save(this.user_repo.create(users));
       console.log('✅ Seed users (6 rows)');
     } else {
-      const superadminExists = await this.userRepo.findOne({
+      const superadmin_exists = await this.user_repo.findOne({
         where: { username: 'superadmin' },
       });
-      if (!superadminExists) {
-        const sa = this.userRepo.create({
+      if (!superadmin_exists) {
+        const sa = this.user_repo.create({
           username: 'superadmin',
           pass: await bcrypt.hash('super123', 10),
           role: UserRole.SUPER_ADMIN,
         });
-        await this.userRepo.save(sa);
+        await this.user_repo.save(sa);
         console.log('✅ Added missing superadmin user');
       }
     }
   }
 
   // ── Shifts ───────────────────────────────────────────
-  private async seedShifts(): Promise<Shift[]> {
-    const count = await this.shiftRepo.count();
+  private async seed_shifts(): Promise<Shift[]> {
+    const count = await this.shift_repo.count();
     if (count > 0) {
       console.log('⏭️  Shifts already seeded');
-      return this.shiftRepo.find();
+      return this.shift_repo.find();
     }
-    const shifts = this.shiftRepo.create([
+    const shifts = this.shift_repo.create([
       { name: 'Pagi' },
       { name: 'Siang' },
       { name: 'Malam' },
     ]);
-    await this.shiftRepo.save(shifts);
+    await this.shift_repo.save(shifts);
     console.log('✅ Seed shifts (3 rows)');
     return shifts;
   }
 
   // ── Barang (28 rows) ────────────────────────────────
-  private async seedBarang(): Promise<Barang[]> {
-    const count = await this.barangRepo.count();
+  private async seed_barang(): Promise<Barang[]> {
+    const count = await this.barang_repo.count();
     if (count > 0) {
       console.log('⏭️  Barang already seeded');
-      return this.barangRepo.find();
+      return this.barang_repo.find();
     }
     const data: Partial<Barang>[] = [
       {
@@ -510,17 +510,17 @@ export class SeedService implements OnApplicationBootstrap {
         max_stok: 3000,
       },
     ];
-    const saved = await this.barangRepo.save(this.barangRepo.create(data));
+    const saved = await this.barang_repo.save(this.barang_repo.create(data));
     console.log(`✅ Seed barang (${saved.length} rows)`);
     return saved;
   }
 
   // ── Gudang (28 rows) ─────────────────────────────────
-  private async seedGudang(barangs: Barang[]): Promise<Gudang[]> {
-    const count = await this.gudangRepo.count();
+  private async seed_gudang(barangs: Barang[]): Promise<Gudang[]> {
+    const count = await this.gudang_repo.count();
     if (count > 0) {
       console.log('⏭️  Gudang already seeded');
-      return this.gudangRepo.find();
+      return this.gudang_repo.find();
     }
     const racks: Partial<Gudang>[] = [];
     const zones = [
@@ -531,7 +531,7 @@ export class SeedService implements OnApplicationBootstrap {
       { zone: 'WET A', side: false, count: 4, rows: ['A'] },
     ];
 
-    let globalIdx = 0;
+    let global_idx = 0;
     for (const z of zones) {
       for (const row of z.rows) {
         for (let col = 1; col <= Math.ceil(z.count / z.rows.length); col++) {
@@ -539,9 +539,9 @@ export class SeedService implements OnApplicationBootstrap {
             const name = `${row}${(col - 1) * 3 + lvl}`;
             const type =
               lvl <= 2 ? GudangType.SINGLE_DEEP : GudangType.DOUBLE_DEEP;
-            const assignBarang =
-              globalIdx % 3 === 0 && barangs.length > 0
-                ? barangs[globalIdx % barangs.length]
+            const assign_barang =
+              global_idx % 3 === 0 && barangs.length > 0
+                ? barangs[global_idx % barangs.length]
                 : null;
             racks.push({
               side: z.side,
@@ -552,9 +552,9 @@ export class SeedService implements OnApplicationBootstrap {
               level: lvl,
               kolom: row,
               capacity: 500 + Math.floor(Math.random() * 1500),
-              barang: assignBarang as any,
+              barang: assign_barang as any,
             });
-            globalIdx++;
+            global_idx++;
             if (racks.length >= 28) break;
           }
           if (racks.length >= 28) break;
@@ -564,356 +564,356 @@ export class SeedService implements OnApplicationBootstrap {
       if (racks.length >= 28) break;
     }
 
-    const saved = await this.gudangRepo.save(this.gudangRepo.create(racks));
+    const saved = await this.gudang_repo.save(this.gudang_repo.create(racks));
     console.log(`✅ Seed gudang (${saved.length} rows)`);
     return saved;
   }
 
   // ── Suplayer (28 rows) ───────────────────────────────
-  private async seedSuplayer(): Promise<Suplayer[]> {
-    const count = await this.suplayerRepo.count();
+  private async seed_suplayer(): Promise<Suplayer[]> {
+    const count = await this.suplayer_repo.count();
     if (count > 0) {
       console.log('⏭️  Suplayer already seeded');
-      return this.suplayerRepo.find();
+      return this.suplayer_repo.find();
     }
     const data: Partial<Suplayer>[] = [
       {
         name: 'PT. Pangan Nusantara',
         alamat: 'Jl. Raya Industri No.12, Cikarang, Bekasi',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'UD. Berkah Jaya',
         alamat: 'Jl. Ahmad Yani No.45, Semarang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'CV. Makmur Sentosa',
         alamat: 'Jl. Pahlawan No.78, Surabaya',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Sumber Protein Indonesia',
         alamat: 'Jl. Gatot Subroto No.200, Bandung',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Agro Makmur Sejahtera',
         alamat: 'Jl. Raya Bogor KM 45, Cibinong, Bogor',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'CV. Tani Jaya Abadi',
         alamat: 'Jl. Diponegoro No.33, Malang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Hasil Laut Nusantara',
         alamat: 'Jl. Pelabuhan No.5, Tanjung Priok, Jakarta Utara',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'UD. Sari Bumi',
         alamat: 'Jl. Raya Solo No.88, Karanganyar',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Indo Fresh Food',
         alamat: 'Jl. Industri Raya No.55, Tangerang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'CV. Mitra Ternak Lestari',
         alamat: 'Jl. Raya Parung No.120, Bogor',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Prima Daging Nusantara',
         alamat: 'Jl. Pemuda No.67, Bekasi',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'UD. Lancar Jaya',
         alamat: 'Jl. Merdeka No.23, Yogyakarta',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Cold Storage Indonesia',
         alamat: 'Jl. Raya Serang KM 25, Balaraja, Tangerang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'CV. Bahari Nusantara',
         alamat: 'Jl. Tambak Lorok No.14, Semarang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Telur Nusantara',
         alamat: 'Jl. Raya Blitar No.90, Blitar',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'UD. Subur Makmur',
         alamat: 'Jl. Sudirman No.155, Tegal',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Sentra Pangan Indonesia',
         alamat: 'Jl. Raya Cileungsi No.88, Bogor',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'CV. Bina Tani Mandiri',
         alamat: 'Jl. Veteran No.42, Kediri',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Indomarco Pangan',
         alamat: 'Jl. Ancol Barat No.10, Jakarta Utara',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'UD. Sumber Rejeki',
         alamat: 'Jl. Gajah Mada No.77, Denpasar',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Rasa Nusantara Food',
         alamat: 'Jl. Raya Cikupa No.33, Tangerang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'CV. Wahana Pangan',
         alamat: 'Jl. Kaligawe No.50, Semarang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Multi Guna Pangan',
         alamat: 'Jl. Raya Darmo No.200, Surabaya',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'UD. Barokah Tani',
         alamat: 'Jl. Raya Magelang No.112, Magelang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Surya Pangan Lestari',
         alamat: 'Jl. Margomulyo No.44, Surabaya',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'CV. Agro Niaga Perkasa',
         alamat: 'Jl. Raya Purwakarta No.78, Purwakarta',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'PT. Nutrifood Indonesia',
         alamat: 'Jl. Raya Bogor KM 35, Cimanggis, Depok',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
       {
         name: 'UD. Harapan Baru',
         alamat: 'Jl. Imam Bonjol No.21, Jember',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
       },
     ];
-    const saved = await this.suplayerRepo.save(this.suplayerRepo.create(data));
+    const saved = await this.suplayer_repo.save(this.suplayer_repo.create(data));
     console.log(`✅ Seed suplayer (${saved.length} rows)`);
     return saved;
   }
 
   // ── Customer (28 rows) ──────────────────────────────
-  private async seedCustomer(): Promise<Customer[]> {
-    const count = await this.customerRepo.count();
+  private async seed_customer(): Promise<Customer[]> {
+    const count = await this.customer_repo.count();
     if (count > 0) {
       console.log('⏭️  Customer already seeded');
-      return this.customerRepo.find();
+      return this.customer_repo.find();
     }
     const data: Partial<Customer>[] = [
       {
         nama: 'PT. Sumber Pangan',
         alamat: 'Jl. Mawar No.10, Jakarta Pusat',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'UD. Berkah Jaya',
         alamat: 'Jl. Melati No.22, Bandung',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'CV. Makmur Sentosa',
         alamat: 'Jl. Samarinda No.15, Surabaya',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'PT. Resto Indonesia Group',
         alamat: 'Jl. Sudirman No.99, Jakarta Selatan',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'UD. Sari Laut',
         alamat: 'Jl. Pantai Indah No.8, Semarang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'CV. Nusa Food',
         alamat: 'Jl. Diponegoro No.55, Denpasar',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'PT. Fast Food Nusantara',
         alamat: 'Jl. Gatot Subroto No.120, Medan',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'UD. Dapur Sehat',
         alamat: 'Jl. AH Nasution No.77, Bandung',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'CV. Anugerah Catering',
         alamat: 'Jl. Pemuda No.33, Yogyakarta',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'PT. Hotel Santika Group',
         alamat: 'Jl. Thamrin No.88, Jakarta Pusat',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'UD. Warung Nusantara',
         alamat: 'Jl. Kenanga No.14, Malang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'CV. Boga Jaya',
         alamat: 'Jl. Raya Serang No.65, Tangerang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'PT. Gizi Prima Indonesia',
         alamat: 'Jl. Industri No.40, Bekasi',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'UD. Sumber Rezeki',
         alamat: 'Jl. Kawi No.19, Malang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'CV. Sentral Logistik',
         alamat: 'Jl. Raya Bogor No.85, Cibinong',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'PT. Ayam Geprek Indonesia',
         alamat: 'Jl. Soekarno Hatta No.55, Bandung',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'UD. Seafood Express',
         alamat: 'Jl. Jimbaran No.12, Badung',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'CV. Mitra Bisnis Pangan',
         alamat: 'Jl. Cik Ditiro No.18, Yogyakarta',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'PT. Indo Catering Service',
         alamat: 'Jl. Rasuna Said No.77, Jakarta Selatan',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'UD. Bina Pangan Jaya',
         alamat: 'Jl. Veteran No.44, Semarang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'CV. Kuliner Nusantara',
         alamat: 'Jl. Merdeka No.101, Bogor',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'PT. Frozen Food Indo',
         alamat: 'Jl. Raya Cikarang No.200, Bekasi',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'UD. Mart Sejahtera',
         alamat: 'Jl. Ahmad Yani No.35, Palembang',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'CV. Rumah Makan Padang Jaya',
         alamat: 'Jl. Margonda No.150, Depok',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'PT. Food Service Indonesia',
         alamat: 'Jl. Casablanca No.22, Jakarta Selatan',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'UD. Lentera Pangan',
         alamat: 'Jl. Raya Kuta No.67, Badung',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'CV. Sarana Pangan Abadi',
         alamat: 'Jl. Cempaka Putih No.30, Jakarta Pusat',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
       {
         nama: 'PT. Deli Food Indonesia',
         alamat: 'Jl. Mangga Dua No.11, Jakarta Utara',
-        telp: this.randomPhone(),
+        telp: this.random_phone(),
         tipe: 'customer',
       },
     ];
-    const saved = await this.customerRepo.save(this.customerRepo.create(data));
+    const saved = await this.customer_repo.save(this.customer_repo.create(data));
     console.log(`✅ Seed customer (${saved.length} rows)`);
     return saved;
   }
 
   // ── Transaksi (26 rows) ─────────────────────────────
-  private async seedTransaksi(
+  private async seed_transaksi(
     barangs: Barang[],
     suplayers: Suplayer[],
     gudangs: Gudang[],
     shifts: Shift[],
     users: User[],
   ) {
-    const count = await this.transaksiRepo.count();
+    const count = await this.transaksi_repo.count();
     if (count > 0) {
       console.log('⏭️  Transaksi already seeded');
       return;
@@ -948,32 +948,32 @@ export class SeedService implements OnApplicationBootstrap {
     ];
     const data: Partial<Transaksi>[] = [];
     for (let i = 0; i < 26; i++) {
-      const isOut = i >= 16; // first 16 IN, last 10 OUT
+      const is_out = i >= 16; // first 16 IN, last 10 OUT
       data.push({
         jumlah: 10 + Math.floor(Math.random() * 200),
         barang: barangs[i % barangs.length],
         suplayer: suplayers[i % suplayers.length],
         gudang: gudangs[i % gudangs.length],
-        shift: this.pickRandom(shifts),
-        user: this.pickRandom(users),
+        shift: this.pick_random(shifts),
+        user: this.pick_random(users),
         datein: undefined as any, // auto CreateDateColumn
-        exp: isOut ? undefined : this.randomDate(0, 180), // future expiry
-        jam_datang: this.randomTime(),
-        jam_bongkar: this.randomTime(),
-        jam_selesai: this.randomTime(),
+        exp: is_out ? undefined : this.random_date(0, 180), // future expiry
+        jam_datang: this.random_time(),
+        jam_bongkar: this.random_time(),
+        jam_selesai: this.random_time(),
         note: notes[i % notes.length],
-        model: isOut ? TransaksiModel.OUT : TransaksiModel.IN,
+        model: is_out ? TransaksiModel.OUT : TransaksiModel.IN,
       });
     }
-    const saved = await this.transaksiRepo.save(
-      this.transaksiRepo.create(data),
+    const saved = await this.transaksi_repo.save(
+      this.transaksi_repo.create(data),
     );
     console.log(`✅ Seed transaksi (${saved.length} rows)`);
   }
 
   // ── Stock (25 rows) ─────────────────────────────────
-  private async seedStock(barangs: Barang[], gudangs: Gudang[]) {
-    const count = await this.stockRepo.count();
+  private async seed_stock(barangs: Barang[], gudangs: Gudang[]) {
+    const count = await this.stock_repo.count();
     if (count > 0) {
       console.log('⏭️  Stock already seeded');
       return;
@@ -982,35 +982,35 @@ export class SeedService implements OnApplicationBootstrap {
     for (let i = 0; i < 25; i++) {
       const b = barangs[i % barangs.length];
       const g = gudangs[i % gudangs.length];
-      const batchNo = `BATCH-${String(i + 1).padStart(3, '0')}`;
+      const batch_no = `BATCH-${String(i + 1).padStart(3, '0')}`;
       data.push({
         barang: b,
         gudang: g,
-        batch_no: batchNo,
+        batch_no: batch_no,
         lot_no: `LOT-${Math.floor(Math.random() * 900) + 100}`,
         qty: 20 + Math.floor(Math.random() * 300),
         reserved_qty: Math.random() > 0.6 ? Math.floor(Math.random() * 30) : 0,
-        expiry_date: this.randomDate(0, 365),
+        expiry_date: this.random_date(0, 365),
         satuan: b.satuan,
       });
     }
-    const saved = await this.stockRepo.save(this.stockRepo.create(data));
+    const saved = await this.stock_repo.save(this.stock_repo.create(data));
     console.log(`✅ Seed stock (${saved.length} rows)`);
   }
 
   // ── StockLog (26 rows) ──────────────────────────────
-  private async seedStockLog(
+  private async seed_stock_log(
     barangs: Barang[],
     gudangs: Gudang[],
     shifts: Shift[],
     users: User[],
   ) {
-    const count = await this.stockLogRepo.count();
+    const count = await this.stock_log_repo.count();
     if (count > 0) {
       console.log('⏭️  StockLog already seeded');
       return;
     }
-    const logTypes = [
+    const log_types = [
       LogType.INBOUND,
       LogType.OUTBOUND,
       LogType.RELOCATION,
@@ -1038,32 +1038,32 @@ export class SeedService implements OnApplicationBootstrap {
 
     const data: Partial<StockLog>[] = [];
     for (let i = 0; i < 26; i++) {
-      const logType = this.pickRandom(logTypes);
+      const log_type = this.pick_random(log_types);
       const b = barangs[i % barangs.length];
       const g = gudangs[i % gudangs.length];
       const g2 = gudangs[(i + 3) % gudangs.length];
-      const isRelocation = logType === LogType.RELOCATION;
-      const isPicking = logType === LogType.PICKING;
+      const is_relocation = log_type === LogType.RELOCATION;
+      const is_picking = log_type === LogType.PICKING;
       data.push({
-        type: logType,
+        type: log_type,
         no_po: `PO-${String(i + 1).padStart(4, '0')}`,
         no_ref: `REF-${String(Math.floor(Math.random() * 9000) + 1000)}`,
         barang: b,
         gudang: g,
-        gudang_tujuan: isRelocation ? g2 : undefined,
+        gudang_tujuan: is_relocation ? g2 : undefined,
         qty: 5 + Math.floor(Math.random() * 150),
         satuan: b.satuan,
         batch_no: `BATCH-${String((i % 25) + 1).padStart(3, '0')}`,
         lot_no: `LOT-${Math.floor(Math.random() * 900) + 100}`,
-        expiry_date: this.randomDate(0, 180),
-        supplier: this.pickRandom(suppliers),
-        tujuan: isPicking
+        expiry_date: this.random_date(0, 180),
+        supplier: this.pick_random(suppliers),
+        tujuan: is_picking
           ? 'Customer ' + ['A', 'B', 'C', 'D'][i % 4]
           : undefined,
-        status: isPicking ? this.pickRandom(statuses) : undefined,
+        status: is_picking ? this.pick_random(statuses) : undefined,
         actual_qty:
           Math.random() > 0.3 ? 5 + Math.floor(Math.random() * 140) : undefined,
-        alokasi: isPicking
+        alokasi: is_picking
           ? [
               {
                 tujuan: 'Store ' + ((i % 5) + 1),
@@ -1076,22 +1076,22 @@ export class SeedService implements OnApplicationBootstrap {
             ]
           : undefined,
         keterangan: notes[i % notes.length],
-        shift: this.pickRandom(shifts),
-        user: this.pickRandom(users),
-        tanggal_income: this.randomDate(30).toISOString().split('T')[0],
-        jam_datang: this.randomTime(),
-        jam_bongkar: this.randomTime(),
-        jam_selesai: this.randomTime(),
+        shift: this.pick_random(shifts),
+        user: this.pick_random(users),
+        tanggal_income: this.random_date(30).toISOString().split('T')[0],
+        jam_datang: this.random_time(),
+        jam_bongkar: this.random_time(),
+        jam_selesai: this.random_time(),
         note: notes[(i + 2) % notes.length],
       });
     }
-    const saved = await this.stockLogRepo.save(this.stockLogRepo.create(data));
+    const saved = await this.stock_log_repo.save(this.stock_log_repo.create(data));
     console.log(`✅ Seed stock_log (${saved.length} rows)`);
   }
 
   // ── PlanningAyam (27 rows) ──────────────────────────
-  private async seedPlanningAyam(barangs: Barang[], shifts: Shift[]) {
-    const count = await this.planningAyamRepo.count();
+  private async seed_planning_ayam(barangs: Barang[], shifts: Shift[]) {
+    const count = await this.planning_ayam_repo.count();
     if (count > 0) {
       console.log('⏭️  PlanningAyam already seeded');
       return;
@@ -1120,21 +1120,21 @@ export class SeedService implements OnApplicationBootstrap {
 
     const data: Partial<PlanningAyam>[] = [];
     // Focus on chicken/meat products for planning_ayam
-    const ayamBarangs = barangs.filter(
+    const ayam_barangs = barangs.filter(
       (b) =>
         b.nama.toLowerCase().includes('ayam') ||
         b.nama.toLowerCase().includes('daging') ||
         b.nama.toLowerCase().includes('telur') ||
         b.nama.toLowerCase().includes('ikan'),
     );
-    const useBarangs = ayamBarangs.length >= 5 ? ayamBarangs : barangs;
+    const use_barangs = ayam_barangs.length >= 5 ? ayam_barangs : barangs;
 
     for (let i = 0; i < 27; i++) {
-      const b = useBarangs[i % useBarangs.length];
+      const b = use_barangs[i % use_barangs.length];
       const s = statuses[i % statuses.length];
-      const planDate = new Date();
-      planDate.setDate(
-        planDate.getDate() -
+      const plan_date = new Date();
+      plan_date.setDate(
+        plan_date.getDate() -
           Math.floor(Math.random() * 15) +
           Math.floor(Math.random() * 15),
       );
@@ -1142,22 +1142,22 @@ export class SeedService implements OnApplicationBootstrap {
         barang: b,
         qty: 50 + Math.floor(Math.random() * 500),
         satuan: b.satuan,
-        tanggal_planning: planDate,
-        shift: this.pickRandom(shifts),
+        tanggal_planning: plan_date,
+        shift: this.pick_random(shifts),
         tujuan: dests[i % dests.length],
         status: s,
         keterangan: notes[i % notes.length],
       });
     }
-    const saved = await this.planningAyamRepo.save(
-      this.planningAyamRepo.create(data),
+    const saved = await this.planning_ayam_repo.save(
+      this.planning_ayam_repo.create(data),
     );
     console.log(`✅ Seed planning_ayam (${saved.length} rows)`);
   }
 
   // ── OutboundAyam (26 rows) ──────────────────────────
-  private async seedOutboundAyam(plannings: PlanningAyam[], shifts: Shift[]) {
-    const count = await this.outboundAyamRepo.count();
+  private async seed_outbound_ayam(plannings: PlanningAyam[], shifts: Shift[]) {
+    const count = await this.outbound_ayam_repo.count();
     if (count > 0) {
       console.log('⏭️  OutboundAyam already seeded');
       return;
@@ -1187,40 +1187,40 @@ export class SeedService implements OnApplicationBootstrap {
     const data: Partial<OutboundAyam>[] = [];
     for (let i = 0; i < 26; i++) {
       const p = plannings[i % plannings.length];
-      const plannedQty = Number(p.qty) || 50;
-      const actualQty =
-        Math.round(plannedQty * (0.7 + Math.random() * 0.3) * 10) / 10;
+      const planned_qty = Number(p.qty) || 50;
+      const actual_qty =
+        Math.round(planned_qty * (0.7 + Math.random() * 0.3) * 10) / 10;
       const dest = dests[i % dests.length];
       data.push({
         planning_ayam: p,
-        qty_aktual: actualQty,
+        qty_aktual: actual_qty,
         satuan: p.satuan,
         alokasi: [
-          { tujuan: dest, qty: Math.round(actualQty * 0.6 * 10) / 10 },
+          { tujuan: dest, qty: Math.round(actual_qty * 0.6 * 10) / 10 },
           {
             tujuan: dest + ' - Sub',
-            qty: Math.round(actualQty * 0.4 * 10) / 10,
+            qty: Math.round(actual_qty * 0.4 * 10) / 10,
           },
         ],
         tujuan: dest,
-        shift: this.pickRandom(shifts),
+        shift: this.pick_random(shifts),
         keterangan: notes[i % notes.length],
       });
     }
-    const saved = await this.outboundAyamRepo.save(
-      this.outboundAyamRepo.create(data),
+    const saved = await this.outbound_ayam_repo.save(
+      this.outbound_ayam_repo.create(data),
     );
     console.log(`✅ Seed outbound_ayam (${saved.length} rows)`);
   }
 
   // ── InboundPlanning (27 rows) ──────────────────────
-  private async seedInboundPlanning() {
-    const count = await this.inboundPlanningRepo.count();
+  private async seed_inbound_planning() {
+    const count = await this.inbound_planning_repo.count();
     if (count > 0) {
       console.log('⏭️  InboundPlanning already seeded');
       return;
     }
-    const barangs = await this.barangRepo.find();
+    const barangs = await this.barang_repo.find();
     const drivers = [
       'Budi Santoso',
       'Agus Widodo',
@@ -1280,26 +1280,26 @@ export class SeedService implements OnApplicationBootstrap {
       const selisih = realisasi
         ? Math.round((realisasi.getTime() - eta.getTime()) / 60000)
         : undefined;
-      const plannedQty = 50 + Math.floor(Math.random() * 450);
-      const receivedQty = realisasi
-        ? Math.round(plannedQty * (0.85 + Math.random() * 0.15))
+      const planned_qty = 50 + Math.floor(Math.random() * 450);
+      const received_qty = realisasi
+        ? Math.round(planned_qty * (0.85 + Math.random() * 0.15))
         : 0;
       const dest = 'Store ' + ((i % 8) + 1);
-      const randomBarang1 = this.pickRandom(barangs);
-      const itemsList = [
+      const random_barang1 = this.pick_random(barangs);
+      const items_list = [
         {
-          barangId: randomBarang1?.id || 1,
-          qty: plannedQty,
-          satuan: randomBarang1?.satuan || 'Pcs',
+          barang_id: random_barang1?.id || 1,
+          qty: planned_qty,
+          satuan: random_barang1?.satuan || 'Pcs',
         },
       ];
       data.push({
         no_po: `PO-IN-${String(i + 1).padStart(4, '0')}`,
-        supplier: this.pickRandom(suppliers),
-        qty: plannedQty,
-        qty_diterima: realisasi ? receivedQty : undefined,
-        alokasi: [{ tujuan: dest, qty: plannedQty }],
-        items: itemsList,
+        supplier: this.pick_random(suppliers),
+        qty: planned_qty,
+        qty_diterima: realisasi ? received_qty : undefined,
+        alokasi: [{ tujuan: dest, qty: planned_qty }],
+        items: items_list,
         estimasi_datang: eta,
         status: statuses[i % statuses.length],
         tanggal_realisasi: realisasi,
@@ -1307,8 +1307,8 @@ export class SeedService implements OnApplicationBootstrap {
         note: notes[i % notes.length],
       });
     }
-    const saved = await this.inboundPlanningRepo.save(
-      this.inboundPlanningRepo.create(data),
+    const saved = await this.inbound_planning_repo.save(
+      this.inbound_planning_repo.create(data),
     );
     console.log(`✅ Seed inbound_planning (${saved.length} rows)`);
   }

@@ -1,0 +1,4 @@
+{
+  "canActivate": "can_activate",
+  "onApplicationBootstrap": "on_application_bootstrap"
+}

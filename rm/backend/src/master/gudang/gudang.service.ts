@@ -7,7 +7,7 @@ import { Gudang } from './gudang.entity';
 export class GudangService {
   constructor(@InjectRepository(Gudang) private repo: Repository<Gudang>) {}
 
-  findAll(side?: boolean, zone?: string, search?: string) {
+  find_all(side?: boolean, zone?: string, search?: string) {
     const where: any = { deleted_at: IsNull() };
     if (side !== undefined) where.side = side;
     if (zone) where.zone = zone;
@@ -19,15 +19,15 @@ export class GudangService {
     });
   }
 
-  findOne(id: number) {
+  find_one(id: number) {
     return this.repo.findOne({ where: { id, deleted_at: IsNull() }, relations: ['barang'] });
   }
 
-  findBySlot(name: string) {
+  find_by_slot(name: string) {
     return this.repo.findOne({ where: { name, deleted_at: IsNull() }, relations: ['barang'] });
   }
 
-  findByZone(zone: string) {
+  find_by_zone(zone: string) {
     return this.repo.find({
       where: { zone, deleted_at: IsNull() },
       relations: ['barang'],
@@ -57,7 +57,7 @@ export class GudangService {
         throw new ConflictException(`Lokasi "${data.name}" pada zone "${data.zone || 'DRY A'}" sudah ada`);
     }
     await this.repo.update(id, data);
-    return this.findOne(id);
+    return this.find_one(id);
   }
 
   async remove(id: number, cascade: boolean = false) {
@@ -91,7 +91,7 @@ export class GudangService {
   }
 
   // Get zones summary for dashboard
-  async getZonesSummary() {
+  async get_zones_summary() {
     const zones = ['CS FROZEN', 'CHILL', 'DRY A', 'DRY B', 'DRY FG', 'WASTE'];
     const result: any[] = [];
     for (const z of zones) {

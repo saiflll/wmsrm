@@ -20,35 +20,35 @@ import { UserRole } from './user.entity';
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly users_service: UsersService) {}
 
   @Get()
   @Roles(UserRole.SUPER_ADMIN)
-  findAll() {
-    return this.usersService.findAll();
+  find_all() {
+    return this.users_service.find_all();
   }
 
   @Get(':id')
   @Roles(UserRole.SUPER_ADMIN)
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.findOne(id);
+  find_one(@Param('id', ParseIntPipe) id: number) {
+    return this.users_service.find_one(id);
   }
 
   @Post()
   @Roles(UserRole.SUPER_ADMIN)
   create(@Body() dto: CreateUserDto) {
-    return this.usersService.create(dto);
+    return this.users_service.create(dto);
   }
 
   @Patch(':id')
   @Roles(UserRole.SUPER_ADMIN)
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(id, dto);
+    return this.users_service.update(id, dto);
   }
 
   @Delete(':id')
   @Roles(UserRole.SUPER_ADMIN)
   remove(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
-    return this.usersService.remove(id, req.user?.id);
+    return this.users_service.remove(id, req.user?.id);
   }
 }

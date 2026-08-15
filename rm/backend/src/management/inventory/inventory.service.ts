@@ -24,44 +24,44 @@ import {
 @Injectable()
 export class InventoryService {
   constructor(
-    @InjectRepository(Stock) private stockRepo: Repository<Stock>,
-    @InjectRepository(StockLog) private logRepo: Repository<StockLog>,
-    @InjectRepository(Barang) private barangRepo: Repository<Barang>,
-    @InjectRepository(Gudang) private gudangRepo: Repository<Gudang>,
-    @InjectRepository(Shift) private shiftRepo: Repository<Shift>,
+    @InjectRepository(Stock) private stock_repo: Repository<Stock>,
+    @InjectRepository(StockLog) private log_repo: Repository<StockLog>,
+    @InjectRepository(Barang) private barang_repo: Repository<Barang>,
+    @InjectRepository(Gudang) private gudang_repo: Repository<Gudang>,
+    @InjectRepository(Shift) private shift_repo: Repository<Shift>,
     @InjectRepository(InboundPlanning)
-    private inboundPlanningRepo: Repository<InboundPlanning>,
+    private inbound_planning_repo: Repository<InboundPlanning>,
     @InjectRepository(PlanningAyam)
-    private planningAyamRepo: Repository<PlanningAyam>,
+    private planning_ayam_repo: Repository<PlanningAyam>,
     @InjectRepository(OutboundAyam)
-    private outboundAyamRepo: Repository<OutboundAyam>,
-    private dataSource: DataSource,
+    private outbound_ayam_repo: Repository<OutboundAyam>,
+    private data_source: DataSource,
   ) {}
 
-  private async syncBarangStok(manager: any, barangId: number) {
+  private async sync_barang_stok(manager: any, barang_id: number) {
     const result = await manager
       .getRepository(Stock)
       .createQueryBuilder('s')
-      .where('s.barangId = :barangId', { barangId })
+      .where('s.barangId = :barangId', { barang_id })
       .select('SUM(s.qty)', 'total')
       .getRawOne();
     const total = parseFloat(result?.total || '0');
-    await manager.update(Barang, barangId, { stok: total });
+    await manager.update(Barang, barang_id, { stok: total });
   }
 
-  async syncAllBarangStok() {
-    return this.dataSource.transaction(async (manager) => {
+  async sync_all_barang_stok() {
+    return this.data_source.transaction(async (manager) => {
       const barangs = await manager.find(Barang);
       for (const b of barangs) {
-        await this.syncBarangStok(manager, b.id);
+        await this.sync_barang_stok(manager, b.id);
       }
       return { message: `Synced ${barangs.length} items` };
     });
   }
 
   // ========== INBOUND ==========
-  async postInbound(items: InboundItemDto[], userId?: number) {
-    return this.dataSource.transaction(async (manager) => {
+  async post_inbound(items: InboundItemDto[], user_id?: number) {
+    return this.data_source.transaction(async (manager) => {
       const logs: StockLog[] = [];
 
       for (const item of items) {
@@ -107,7 +107,7 @@ export class InventoryService {
           } as any);
         }
         await manager.save(Stock, stock);
-        await this.syncBarangStok(manager, barang.id);
+        await this.sync_barang_stok(manager, barang.id);
 
         // Create log
         const log = manager.create(StockLog, {
@@ -130,7 +130,7 @@ export class InventoryService {
           jam_selesai: item.jam_selesai,
           note: item.note,
           keterangan: item.keterangan,
-          user: userId ? ({ id: userId } as any) : undefined,
+          user: user_id ? ({ id: user_id } as any) : undefined,
         } as any);
         await manager.save(StockLog, log);
         logs.push(log);
@@ -140,25 +140,25 @@ export class InventoryService {
           where: { no_po: item.no_po },
         });
         if (plan && plan.status !== 'DONE') {
-          let arrivalDate = new Date();
+          let arrival_date = new Date();
           if (item.tanggal_income) {
             const base = item.tanggal_income;
             const time = item.jam_datang || '00:00';
             const parsed = new Date(`${base}T${time}`);
             if (!isNaN(parsed.getTime())) {
-              arrivalDate = parsed;
+              arrival_date = parsed;
             }
           }
           let selisih = 0;
           if (plan.estimasi_datang) {
             selisih = Math.round(
-              (arrivalDate.getTime() -
+              (arrival_date.getTime() -
                 new Date(plan.estimasi_datang).getTime()) /
                 60000,
             );
           }
           plan.status = 'DONE';
-          plan.tanggal_realisasi = arrivalDate;
+          plan.tanggal_realisasi = arrival_date;
           plan.selisih_menit = selisih;
           await manager.save(InboundPlanning, plan);
         }
@@ -168,8 +168,8 @@ export class InventoryService {
   }
 
   // ========== OUTBOUND (Picking) ==========
-  async postOutbound(items: OutboundItemDto[], userId?: number) {
-    return this.dataSource.transaction(async (manager) => {
+  async post_outbound(items: OutboundItemDto[], user_id?: number) {
+    return this.data_source.transaction(async (manager) => {
       const logs: StockLog[] = [];
 
       for (const item of items) {
@@ -200,10 +200,10 @@ export class InventoryService {
           );
         }
 
-        const availableQty = stock.qty - stock.reserved_qty;
-        if (availableQty < item.qty) {
+        const available_qty = stock.qty - stock.reserved_qty;
+        if (available_qty < item.qty) {
           throw new BadRequestException(
-            `Stok tersedia tidak cukup untuk ${barang.nama} di ${gudang.name} (Tersedia: ${availableQty}, Diminta: ${item.qty})`,
+            `Stok tersedia tidak cukup untuk ${barang.nama} di ${gudang.name} (Tersedia: ${available_qty}, Diminta: ${item.qty})`,
           );
         }
 
@@ -216,7 +216,7 @@ export class InventoryService {
           await manager.remove(Stock, stock);
         }
 
-        await this.syncBarangStok(manager, barang.id);
+        await this.sync_barang_stok(manager, barang.id);
 
         const shift = item.shift_id
           ? await manager.findOneBy(Shift, { id: item.shift_id })
@@ -239,7 +239,7 @@ export class InventoryService {
           jam_datang: item.jam_datang,
           jam_bongkar: item.jam_bongkar,
           jam_selesai: item.jam_selesai,
-          user: userId ? ({ id: userId } as any) : undefined,
+          user: user_id ? ({ id: user_id } as any) : undefined,
         } as any);
         await manager.save(StockLog, log);
         logs.push(log);
@@ -249,8 +249,8 @@ export class InventoryService {
   }
 
   // ========== PICKING PLAN ==========
-  async postPicking(items: PickingItemDto[], userId?: number) {
-    return this.dataSource.transaction(async (manager) => {
+  async post_picking(items: PickingItemDto[], user_id?: number) {
+    return this.data_source.transaction(async (manager) => {
       const logs: StockLog[] = [];
 
       for (const item of items) {
@@ -281,20 +281,20 @@ export class InventoryService {
           );
         }
 
-        const actualQty =
+        const actual_qty =
           item.actual_qty !== undefined && item.actual_qty !== null
             ? item.actual_qty
             : item.qty;
-        const availableQty = stock.qty - stock.reserved_qty;
-        if (availableQty < actualQty) {
+        const available_qty = stock.qty - stock.reserved_qty;
+        if (available_qty < actual_qty) {
           throw new BadRequestException(
             `Stok tersedia tidak cukup untuk ${barang.nama} di ${gudang.name}. ` +
-              `Tersedia: ${availableQty} (Total: ${stock.qty}, Reserved: ${stock.reserved_qty}), Diminta: ${actualQty}`,
+              `Tersedia: ${available_qty} (Total: ${stock.qty}, Reserved: ${stock.reserved_qty}), Diminta: ${actual_qty}`,
           );
         }
 
         // Increment reserved_qty by actual qty
-        stock.reserved_qty += actualQty;
+        stock.reserved_qty += actual_qty;
         await manager.save(Stock, stock);
 
         const shift = item.shift_id
@@ -308,7 +308,7 @@ export class InventoryService {
           barang,
           gudang,
           qty: item.qty,
-          actual_qty: actualQty,
+          actual_qty: actual_qty,
           alokasi: item.alokasi || [],
           keterangan: item.keterangan,
           satuan: item.satuan || barang.satuan,
@@ -316,7 +316,7 @@ export class InventoryService {
           shift: shift || undefined,
           batch_no: stock.batch_no,
           expiry_date: stock.expiry_date,
-          user: userId ? ({ id: userId } as any) : undefined,
+          user: user_id ? ({ id: user_id } as any) : undefined,
         } as any);
         await manager.save(StockLog, log);
         logs.push(log);
@@ -325,10 +325,10 @@ export class InventoryService {
     });
   }
 
-  async confirmPicking(noRef: string, userId?: number) {
-    return this.dataSource.transaction(async (manager) => {
+  async confirm_picking(no_ref: string, user_id?: number) {
+    return this.data_source.transaction(async (manager) => {
       const logs = await manager.find(StockLog, {
-        where: { no_ref: noRef, type: LogType.PICKING, status: 'RESERVED' },
+        where: { no_ref: no_ref, type: LogType.PICKING, status: 'RESERVED' },
         relations: ['barang', 'gudang'],
       });
 
@@ -355,21 +355,21 @@ export class InventoryService {
           );
         }
 
-        const actualQty =
+        const actual_qty =
           log.actual_qty !== undefined && log.actual_qty !== null
             ? log.actual_qty
             : log.qty;
-        if (stock.qty < actualQty) {
+        if (stock.qty < actual_qty) {
           throw new BadRequestException(
             `Stok fisik tidak cukup untuk ${log.barang?.nama || 'item'} di ${log.gudang?.name || 'gudang'}. ` +
-              `Tersedia: ${stock.qty}, Diminta: ${actualQty}. ` +
+              `Tersedia: ${stock.qty}, Diminta: ${actual_qty}. ` +
               `Stok mungkin telah dikeluarkan oleh transaksi lain.`,
           );
         }
 
         // Deduct physical qty and reserved_qty
-        stock.qty -= actualQty;
-        stock.reserved_qty = Math.max(0, stock.reserved_qty - actualQty);
+        stock.qty -= actual_qty;
+        stock.reserved_qty = Math.max(0, stock.reserved_qty - actual_qty);
 
         if (stock.qty <= 0) {
           await manager.remove(Stock, stock);
@@ -377,7 +377,7 @@ export class InventoryService {
           await manager.save(Stock, stock);
         }
 
-        await this.syncBarangStok(manager, log.barang.id);
+        await this.sync_barang_stok(manager, log.barang.id);
 
         // Update log type and status to indicate checkout
         log.type = LogType.OUTBOUND;
@@ -389,10 +389,10 @@ export class InventoryService {
     });
   }
 
-  async cancelPicking(noRef: string, userId?: number) {
-    return this.dataSource.transaction(async (manager) => {
+  async cancel_picking(no_ref: string, user_id?: number) {
+    return this.data_source.transaction(async (manager) => {
       const logs = await manager.find(StockLog, {
-        where: { no_ref: noRef, type: LogType.PICKING, status: 'RESERVED' },
+        where: { no_ref: no_ref, type: LogType.PICKING, status: 'RESERVED' },
         relations: ['barang', 'gudang'],
       });
 
@@ -410,11 +410,11 @@ export class InventoryService {
         });
 
         if (stock) {
-          const actualQty =
+          const actual_qty =
             log.actual_qty !== undefined && log.actual_qty !== null
               ? log.actual_qty
               : log.qty;
-          stock.reserved_qty = Math.max(0, stock.reserved_qty - actualQty);
+          stock.reserved_qty = Math.max(0, stock.reserved_qty - actual_qty);
           await manager.save(Stock, stock);
         }
 
@@ -426,8 +426,8 @@ export class InventoryService {
     });
   }
 
-  async getPendingPickings() {
-    const logs = await this.logRepo.find({
+  async get_pending_pickings() {
+    const logs = await this.log_repo.find({
       where: { type: LogType.PICKING, status: 'RESERVED' },
       relations: ['barang', 'gudang', 'shift'],
       order: { created_at: 'DESC' },
@@ -453,10 +453,10 @@ export class InventoryService {
   }
 
   // ========== REVERT OUTBOUND ==========
-  async revertOutbound(noRef: string, userId?: number) {
-    return this.dataSource.transaction(async (manager) => {
+  async revert_outbound(no_ref: string, user_id?: number) {
+    return this.data_source.transaction(async (manager) => {
       const logs = await manager.find(StockLog, {
-        where: { no_ref: noRef, type: LogType.OUTBOUND },
+        where: { no_ref: no_ref, type: LogType.OUTBOUND },
         relations: ['barang', 'gudang'],
       });
 
@@ -491,15 +491,15 @@ export class InventoryService {
 
         // Delete log
         await manager.remove(StockLog, log);
-        await this.syncBarangStok(manager, log.barang.id);
+        await this.sync_barang_stok(manager, log.barang.id);
       }
       return { message: 'Reverted successfully' };
     });
   }
 
   // ========== RELOCATION ==========
-  async relocate(dto: RelocationDto, userId?: number) {
-    return this.dataSource.transaction(async (manager) => {
+  async relocate(dto: RelocationDto, user_id?: number) {
+    return this.data_source.transaction(async (manager) => {
       const stock = await manager.findOne(Stock, {
         where: { id: dto.stock_id },
         relations: ['barang', 'gudang'],
@@ -514,20 +514,20 @@ export class InventoryService {
       if (!tujuan) throw new NotFoundException('Gudang tujuan not found');
 
       // Save source values for logging before modifying
-      const sourceGudang = stock.gudang;
+      const source_gudang = stock.gudang;
 
       // Increase destination
-      let destStock = await manager.findOne(Stock, {
+      let dest_stock = await manager.findOne(Stock, {
         where: {
           barang: { id: stock.barang.id },
           gudang: { id: tujuan.id },
           batch_no: stock.batch_no,
         },
       });
-      if (destStock) {
-        destStock.qty += dto.qty;
+      if (dest_stock) {
+        dest_stock.qty += dto.qty;
       } else {
-        destStock = manager.create(Stock, {
+        dest_stock = manager.create(Stock, {
           barang: stock.barang,
           gudang: tujuan,
           batch_no: stock.batch_no,
@@ -537,7 +537,7 @@ export class InventoryService {
           expiry_date: stock.expiry_date,
         });
       }
-      await manager.save(Stock, destStock);
+      await manager.save(Stock, dest_stock);
 
       // Log
       const log = manager.create(StockLog, {
@@ -551,7 +551,7 @@ export class InventoryService {
         batch_no: stock.batch_no,
         expiry_date: stock.expiry_date,
         note: dto.note,
-        user: userId ? ({ id: userId } as any) : undefined,
+        user: user_id ? ({ id: user_id } as any) : undefined,
       } as any);
       await manager.save(StockLog, log);
 
@@ -562,21 +562,21 @@ export class InventoryService {
         await manager.save(Stock, stock);
       }
 
-      await this.syncBarangStok(manager, stock.barang.id);
+      await this.sync_barang_stok(manager, stock.barang.id);
 
       return log;
     });
   }
 
   // ========== STOCK OPNAME ==========
-  async opname(dto: OpnameDto, userId?: number) {
+  async opname(dto: OpnameDto, user_id?: number) {
     if (!dto.shift_id) {
       throw new BadRequestException(
         'Shift wajib dipilih untuk melakukan opname.',
       );
     }
 
-    return this.dataSource.transaction(async (manager) => {
+    return this.data_source.transaction(async (manager) => {
       const today = new Date().toISOString().split('T')[0];
 
       const stocks = await manager.find(Stock, {
@@ -587,20 +587,20 @@ export class InventoryService {
       if (!stocks.length)
         throw new NotFoundException('Stock not found at this location');
 
-      const totalOldQty = stocks.reduce((sum, s) => sum + s.qty, 0);
-      const diff = dto.qty_opname - totalOldQty;
+      const total_old_qty = stocks.reduce((sum, s) => sum + s.qty, 0);
+      const diff = dto.qty_opname - total_old_qty;
 
       // Reorder so that the target stock_id is processed last (absorbs the diff)
-      const targetIndex = dto.stock_id
+      const target_index = dto.stock_id
         ? stocks.findIndex((s) => s.id === dto.stock_id)
         : 0;
-      const primaryStock = stocks.splice(
-        targetIndex !== -1 ? targetIndex : 0,
+      const primary_stock = stocks.splice(
+        target_index !== -1 ? target_index : 0,
         1,
       )[0];
-      stocks.push(primaryStock); // primaryStock is now at the END of the array
+      stocks.push(primary_stock); // primaryStock is now at the END of the array
 
-      const existingLog = await manager.findOne(StockLog, {
+      const existing_log = await manager.findOne(StockLog, {
         where: {
           gudang: { id: dto.gudang_id },
           type: LogType.OPNAME,
@@ -610,18 +610,18 @@ export class InventoryService {
         relations: ['shift'],
       });
 
-      if (existingLog) {
+      if (existing_log) {
         // Allow re-opname (update) for coordinator and above
         // Update existing log instead of throwing error
-        let remainingOpname = dto.qty_opname;
+        let remaining_opname = dto.qty_opname;
         for (let i = 0; i < stocks.length; i++) {
           const s = stocks[i];
           if (i === stocks.length - 1) {
-            s.qty = remainingOpname;
+            s.qty = remaining_opname;
           } else {
-            const assign = Math.min(s.qty, remainingOpname);
+            const assign = Math.min(s.qty, remaining_opname);
             s.qty = assign;
-            remainingOpname -= assign;
+            remaining_opname -= assign;
           }
           if (s.qty <= 0) {
             await manager.remove(Stock, s);
@@ -630,30 +630,30 @@ export class InventoryService {
           }
         }
 
-        await this.syncBarangStok(manager, primaryStock.barang.id);
+        await this.sync_barang_stok(manager, primary_stock.barang.id);
 
-        existingLog.qty = dto.qty_opname;
-        existingLog.note =
+        existing_log.qty = dto.qty_opname;
+        existing_log.note =
           dto.note ||
-          `Opname Rak (Update): ${totalOldQty} → ${dto.qty_opname} (diff: ${diff > 0 ? '+' : ''}${diff})`;
-        existingLog.keterangan = dto.keterangan ?? null;
-        existingLog.created_at = new Date();
-        await manager.save(StockLog, existingLog);
+          `Opname Rak (Update): ${total_old_qty} → ${dto.qty_opname} (diff: ${diff > 0 ? '+' : ''}${diff})`;
+        existing_log.keterangan = dto.keterangan ?? null;
+        existing_log.created_at = new Date();
+        await manager.save(StockLog, existing_log);
 
-        return { stock: primaryStock, log: existingLog, diff, updated: true };
+        return { stock: primary_stock, log: existing_log, diff, updated: true };
       }
 
-      let remainingOpname = dto.qty_opname;
+      let remaining_opname = dto.qty_opname;
 
       // Distribute the new qty_opname across available stocks
       for (let i = 0; i < stocks.length; i++) {
         const s = stocks[i];
         if (i === stocks.length - 1) {
-          s.qty = remainingOpname; // Last one takes whatever is left
+          s.qty = remaining_opname; // Last one takes whatever is left
         } else {
-          const assign = Math.min(s.qty, remainingOpname);
+          const assign = Math.min(s.qty, remaining_opname);
           s.qty = assign;
-          remainingOpname -= assign;
+          remaining_opname -= assign;
         }
 
         if (s.qty <= 0) {
@@ -664,7 +664,7 @@ export class InventoryService {
       }
 
       // Sync global stock
-      await this.syncBarangStok(manager, primaryStock.barang.id);
+      await this.sync_barang_stok(manager, primary_stock.barang.id);
 
       // Resolve shift if provided
       const shift = dto.shift_id
@@ -673,25 +673,25 @@ export class InventoryService {
 
       const log = manager.create(StockLog, {
         type: LogType.OPNAME,
-        barang: primaryStock.barang,
-        gudang: primaryStock.gudang,
+        barang: primary_stock.barang,
+        gudang: primary_stock.gudang,
         qty: dto.qty_opname,
-        satuan: primaryStock.satuan,
+        satuan: primary_stock.satuan,
         shift: shift || undefined,
         note:
           dto.note ||
-          `Opname Rak: ${totalOldQty} → ${dto.qty_opname} (diff: ${diff > 0 ? '+' : ''}${diff})`,
+          `Opname Rak: ${total_old_qty} → ${dto.qty_opname} (diff: ${diff > 0 ? '+' : ''}${diff})`,
         keterangan: dto.keterangan,
-        user: userId ? ({ id: userId } as any) : undefined,
+        user: user_id ? ({ id: user_id } as any) : undefined,
       } as any);
       await manager.save(StockLog, log);
 
-      return { stock: primaryStock, log, diff };
+      return { stock: primary_stock, log, diff };
     });
   }
 
   // ========== QUERIES ==========
-  async findAllStock(
+  async find_all_stock(
     side?: boolean,
     search?: string,
     page: number = 1,
@@ -701,7 +701,7 @@ export class InventoryService {
     if (side !== undefined) where.barang = { side };
     if (search) where.barang = { ...where.barang, nama: ILike(`%${search}%`) };
 
-    const [data, total] = await this.stockRepo.findAndCount({
+    const [data, total] = await this.stock_repo.findAndCount({
       where,
       relations: ['barang', 'gudang'],
       order: { created_at: 'DESC' },
@@ -712,38 +712,38 @@ export class InventoryService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  findStockByGudang(gudangId: number) {
-    return this.stockRepo.find({
-      where: { gudang: { id: gudangId } },
+  find_stock_by_gudang(gudang_id: number) {
+    return this.stock_repo.find({
+      where: { gudang: { id: gudang_id } },
       relations: ['barang', 'gudang'],
     });
   }
 
-  findStockByBarang(barangId: number) {
-    return this.stockRepo.find({
-      where: { barang: { id: barangId } },
+  find_stock_by_barang(barang_id: number) {
+    return this.stock_repo.find({
+      where: { barang: { id: barang_id } },
       relations: ['barang', 'gudang'],
     });
   }
 
-  async getExpiredAlerts(gudangId?: number) {
+  async get_expired_alerts(gudang_id?: number) {
     const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    const thirty_days_from_now = new Date();
+    thirty_days_from_now.setDate(thirty_days_from_now.getDate() + 30);
 
     const where: any = {};
-    if (gudangId) where.gudang = { id: gudangId };
+    if (gudang_id) where.gudang = { id: gudang_id };
 
-    const expired = await this.stockRepo.find({
+    const expired = await this.stock_repo.find({
       where: { ...where, expiry_date: LessThan(now) },
       relations: ['barang', 'gudang'],
       order: { expiry_date: 'ASC' },
     });
 
-    const nearExpired = await this.stockRepo.find({
+    const near_expired = await this.stock_repo.find({
       where: {
         ...where,
-        expiry_date: Between(now, thirtyDaysFromNow),
+        expiry_date: Between(now, thirty_days_from_now),
       },
       relations: ['barang', 'gudang'],
       order: { expiry_date: 'ASC' },
@@ -762,7 +762,7 @@ export class InventoryService {
           (now.getTime() - s.expiry_date.getTime()) / 86400000,
         ),
       })),
-      nearExpired: nearExpired.map((s) => ({
+      near_expired: near_expired.map((s) => ({
         id: s.id,
         barang: s.barang?.nama,
         sku: s.barang?.sku,
@@ -778,7 +778,7 @@ export class InventoryService {
   }
 
   // Logs with filters
-  findLogs(filters: {
+  find_logs(filters: {
     type?: LogType;
     from?: string;
     to?: string;
@@ -795,7 +795,7 @@ export class InventoryService {
       );
     }
 
-    return this.logRepo.find({
+    return this.log_repo.find({
       where,
       relations: ['barang', 'gudang', 'gudang_tujuan', 'shift', 'user'],
       order: { created_at: 'DESC' },
@@ -804,21 +804,21 @@ export class InventoryService {
   }
 
   // Dashboard stats
-  async getDashboardStats() {
+  async get_dashboard_stats() {
     // totalSku: count distinct barang that has stock (qty > 0)
-    const totalSkuResult = await this.stockRepo
+    const total_sku_result = await this.stock_repo
       .createQueryBuilder('s')
       .select('COUNT(DISTINCT s.barangId)', 'cnt')
       .where('s.qty > 0')
       .getRawOne();
-    const totalSku = Number(totalSkuResult?.cnt || 0);
+    const total_sku = Number(total_sku_result?.cnt || 0);
 
     // totalStock: sum all stock quantities
-    const totalStockResult = await this.stockRepo
+    const total_stock_result = await this.stock_repo
       .createQueryBuilder('s')
       .select('SUM(s.qty)', 'total')
       .getRawOne();
-    const totalStock = Number(totalStockResult?.total || 0);
+    const total_stock = Number(total_stock_result?.total || 0);
 
     // inboundHariIni: count inbound logs created today
     const today = new Date();
@@ -826,7 +826,7 @@ export class InventoryService {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const inboundHariIniResult = await this.logRepo
+    const inbound_hari_ini_result = await this.log_repo
       .createQueryBuilder('l')
       .where(
         'l.type = :type AND l.created_at >= :today AND l.created_at < :tomorrow',
@@ -838,10 +838,10 @@ export class InventoryService {
       )
       .select('COUNT(l.id)', 'cnt')
       .getRawOne();
-    const inboundHariIni = Number(inboundHariIniResult?.cnt || 0);
+    const inbound_hari_ini = Number(inbound_hari_ini_result?.cnt || 0);
 
     // outboundHariIni: count outbound logs created today
-    const outboundHariIniResult = await this.logRepo
+    const outbound_hari_ini_result = await this.log_repo
       .createQueryBuilder('l')
       .where(
         'l.type = :type AND l.created_at >= :today AND l.created_at < :tomorrow',
@@ -853,9 +853,9 @@ export class InventoryService {
       )
       .select('COUNT(l.id)', 'cnt')
       .getRawOne();
-    const outboundHariIni = Number(outboundHariIniResult?.cnt || 0);
+    const outbound_hari_ini = Number(outbound_hari_ini_result?.cnt || 0);
 
-    const pickingPendingCountRaw = await this.logRepo
+    const picking_pending_count_raw = await this.log_repo
       .createQueryBuilder('l')
       .where('l.type = :type AND l.status = :status', {
         type: LogType.PICKING,
@@ -863,48 +863,48 @@ export class InventoryService {
       })
       .select('COUNT(DISTINCT l.no_ref)', 'cnt')
       .getRawOne();
-    const pickingPendingCount = Number(pickingPendingCountRaw?.cnt || 0);
+    const picking_pending_count = Number(picking_pending_count_raw?.cnt || 0);
 
     // Gudang utilization
-    const totalSlots = await this.gudangRepo.count();
-    const filledSlots = await this.stockRepo
+    const total_slots = await this.gudang_repo.count();
+    const filled_slots = await this.stock_repo
       .createQueryBuilder('s')
       .select('COUNT(DISTINCT s.gudangId)', 'cnt')
       .getRawOne();
 
     // Expired alerts
     const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    const thirty_days_from_now = new Date();
+    thirty_days_from_now.setDate(thirty_days_from_now.getDate() + 30);
 
-    const expiredCountRaw = await this.stockRepo
+    const expired_count_raw = await this.stock_repo
       .createQueryBuilder('s')
       .where('s.expiry_date < :now', { now })
       .select('COUNT(s.id)', 'cnt')
       .getRawOne();
-    const expiredCount = Number(expiredCountRaw?.cnt || 0);
+    const expired_count = Number(expired_count_raw?.cnt || 0);
 
-    const nearExpiredCountRaw = await this.stockRepo
+    const near_expired_count_raw = await this.stock_repo
       .createQueryBuilder('s')
       .where('s.expiry_date >= :now AND s.expiry_date <= :thirtyDaysFromNow', {
         now,
-        thirtyDaysFromNow,
+        thirty_days_from_now,
       })
       .select('COUNT(s.id)', 'cnt')
       .getRawOne();
-    const nearExpiredCount = Number(nearExpiredCountRaw?.cnt || 0);
+    const near_expired_count = Number(near_expired_count_raw?.cnt || 0);
 
     // Waste count
-    const wasteCountRaw = await this.stockRepo
+    const waste_count_raw = await this.stock_repo
       .createQueryBuilder('s')
       .leftJoin('s.gudang', 'g')
       .where('g.zone = :zone', { zone: 'WASTE' })
       .select('COUNT(s.id)', 'cnt')
       .getRawOne();
-    const wasteCount = Number(wasteCountRaw?.cnt || 0);
+    const waste_count = Number(waste_count_raw?.cnt || 0);
 
     // Summary Waktu
-    const parseTimeToMinutes = (t: string) => {
+    const parse_time_to_minutes = (t: string) => {
       if (!t) return null;
       const parts = t.split(':');
       if (parts.length < 2) return null;
@@ -914,52 +914,52 @@ export class InventoryService {
       return h * 60 + m;
     };
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const inboundLogs = await this.logRepo.find({
+    const thirty_days_ago = new Date();
+    thirty_days_ago.setDate(thirty_days_ago.getDate() - 30);
+    const inbound_logs = await this.log_repo.find({
       where: {
         type: LogType.INBOUND,
-        created_at: Between(thirtyDaysAgo, new Date()),
+        created_at: Between(thirty_days_ago, new Date()),
       },
     });
 
-    let totalWaitTime = 0;
-    let totalUnloadTime = 0;
-    let waitCount = 0;
-    let unloadCount = 0;
+    let total_wait_time = 0;
+    let total_unload_time = 0;
+    let wait_count = 0;
+    let unload_count = 0;
 
-    for (const log of inboundLogs) {
-      const tDatang = parseTimeToMinutes(log.jam_datang);
-      const tBongkar = parseTimeToMinutes(log.jam_bongkar);
-      const tSelesai = parseTimeToMinutes(log.jam_selesai);
+    for (const log of inbound_logs) {
+      const t_datang = parse_time_to_minutes(log.jam_datang);
+      const t_bongkar = parse_time_to_minutes(log.jam_bongkar);
+      const t_selesai = parse_time_to_minutes(log.jam_selesai);
 
-      if (tDatang !== null && tBongkar !== null && tBongkar >= tDatang) {
-        totalWaitTime += tBongkar - tDatang;
-        waitCount++;
+      if (t_datang !== null && t_bongkar !== null && t_bongkar >= t_datang) {
+        total_wait_time += t_bongkar - t_datang;
+        wait_count++;
       }
-      if (tBongkar !== null && tSelesai !== null && tSelesai >= tBongkar) {
-        totalUnloadTime += tSelesai - tBongkar;
-        unloadCount++;
+      if (t_bongkar !== null && t_selesai !== null && t_selesai >= t_bongkar) {
+        total_unload_time += t_selesai - t_bongkar;
+        unload_count++;
       }
     }
 
-    const avgWaitingTime =
-      waitCount > 0 ? Math.round(totalWaitTime / waitCount) : 0;
-    const avgUnloadingTime =
-      unloadCount > 0 ? Math.round(totalUnloadTime / unloadCount) : 0;
+    const avg_waiting_time =
+      wait_count > 0 ? Math.round(total_wait_time / wait_count) : 0;
+    const avg_unloading_time =
+      unload_count > 0 ? Math.round(total_unload_time / unload_count) : 0;
 
     // Inbound Driver Planning stats
-    const planWaitCount = await this.stockRepo.manager.count(InboundPlanning, {
+    const plan_wait_count = await this.stock_repo.manager.count(InboundPlanning, {
       where: { status: 'WAIT' },
     });
-    const planFailCount = await this.stockRepo.manager.count(InboundPlanning, {
+    const plan_fail_count = await this.stock_repo.manager.count(InboundPlanning, {
       where: { status: 'FAIL' },
     });
-    const planDoneCount = await this.stockRepo.manager.count(InboundPlanning, {
+    const plan_done_count = await this.stock_repo.manager.count(InboundPlanning, {
       where: { status: 'DONE' },
     });
 
-    const delayResult = await this.stockRepo.manager
+    const delay_result = await this.stock_repo.manager
       .getRepository(InboundPlanning)
       .createQueryBuilder('p')
       .where('p.status = :status AND p.selisih_menit IS NOT NULL', {
@@ -967,51 +967,51 @@ export class InventoryService {
       })
       .select('AVG(p.selisih_menit)', 'avg')
       .getRawOne();
-    const avgDelay = delayResult?.avg
-      ? Math.round(parseFloat(delayResult.avg))
+    const avg_delay = delay_result?.avg
+      ? Math.round(parseFloat(delay_result.avg))
       : 0;
 
     return {
-      totalSku,
-      totalStock,
-      inboundCount: inboundHariIni,
-      outboundCount: outboundHariIni,
-      inboundHariIni,
-      outboundHariIni,
-      pickingPendingCount,
-      totalSlots,
-      filledSlots: Number(filledSlots?.cnt || 0),
+      total_sku,
+      total_stock,
+      inboundCount: inbound_hari_ini,
+      outboundCount: outbound_hari_ini,
+      inbound_hari_ini,
+      outbound_hari_ini,
+      picking_pending_count,
+      total_slots,
+      filled_slots: Number(filled_slots?.cnt || 0),
       utilization:
-        totalSlots > 0
-          ? ((Number(filledSlots?.cnt || 0) / totalSlots) * 100).toFixed(1)
+        total_slots > 0
+          ? ((Number(filled_slots?.cnt || 0) / total_slots) * 100).toFixed(1)
           : '0',
-      expiredCount,
-      nearExpiredCount,
-      wasteCount,
-      avgWaitingTime,
-      avgUnloadingTime,
-      planWaitCount,
-      planFailCount,
-      planDoneCount,
-      avgDelay,
+      expired_count,
+      near_expired_count,
+      waste_count,
+      avg_waiting_time,
+      avg_unloading_time,
+      plan_wait_count,
+      plan_fail_count,
+      plan_done_count,
+      avg_delay,
     };
   }
 
-  async getInOutChartData() {
-    const oneYearAgo = new Date();
-    oneYearAgo.setDate(oneYearAgo.getDate() - 365);
+  async get_in_out_chart_data() {
+    const one_year_ago = new Date();
+    one_year_ago.setDate(one_year_ago.getDate() - 365);
 
-    const logs = await this.logRepo.find({
+    const logs = await this.log_repo.find({
       where: {
-        created_at: Between(oneYearAgo, new Date()),
+        created_at: Between(one_year_ago, new Date()),
       },
       order: { created_at: 'ASC' },
     });
 
-    const weeklyData: Record<string, { inbound: number; outbound: number }> =
+    const weekly_data: Record<string, { inbound: number; outbound: number }> =
       {};
 
-    const getMonday = (d: Date) => {
+    const get_monday = (d: Date) => {
       const date = new Date(d);
       const day = date.getDay();
       const diff = date.getDate() - day + (day === 0 ? -6 : 1);
@@ -1022,35 +1022,35 @@ export class InventoryService {
     for (const log of logs) {
       if (log.type !== LogType.INBOUND && log.type !== LogType.OUTBOUND)
         continue;
-      const monStr = getMonday(log.created_at);
-      if (!weeklyData[monStr]) {
-        weeklyData[monStr] = { inbound: 0, outbound: 0 };
+      const mon_str = get_monday(log.created_at);
+      if (!weekly_data[mon_str]) {
+        weekly_data[mon_str] = { inbound: 0, outbound: 0 };
       }
       if (log.type === LogType.INBOUND) {
-        weeklyData[monStr].inbound += log.qty;
+        weekly_data[mon_str].inbound += log.qty;
       } else if (log.type === LogType.OUTBOUND) {
-        weeklyData[monStr].outbound += log.qty;
+        weekly_data[mon_str].outbound += log.qty;
       }
     }
 
-    const sortedWeeks = Object.keys(weeklyData).sort();
-    return sortedWeeks.map((weekStr) => ({
-      week: weekStr,
-      inbound: Math.round(weeklyData[weekStr].inbound),
-      outbound: Math.round(weeklyData[weekStr].outbound),
+    const sorted_weeks = Object.keys(weekly_data).sort();
+    return sorted_weeks.map((week_str) => ({
+      week: week_str,
+      inbound: Math.round(weekly_data[week_str].inbound),
+      outbound: Math.round(weekly_data[week_str].outbound),
     }));
   }
 
   // Stock chart data - daily stock levels per product (last 30 days)
-  async getStockChartData(barangId?: number) {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  async get_stock_chart_data(barang_id?: number) {
+    const thirty_days_ago = new Date();
+    thirty_days_ago.setDate(thirty_days_ago.getDate() - 30);
     const today = new Date();
 
     // Generate date range
     const dates: string[] = [];
     for (
-      let d = new Date(thirtyDaysAgo);
+      let d = new Date(thirty_days_ago);
       d <= today;
       d.setDate(d.getDate() + 1)
     ) {
@@ -1059,18 +1059,18 @@ export class InventoryService {
 
     // Get all products
     const where: any = {};
-    if (barangId) where.id = barangId;
-    const barangs = await this.barangRepo.find({ where });
+    if (barang_id) where.id = barang_id;
+    const barangs = await this.barang_repo.find({ where });
 
     // Get logs in date range (only INBOUND/OUTBOUND)
-    const logs = await this.logRepo.find({
+    const logs = await this.log_repo.find({
       where: {
         created_at: Between(
-          thirtyDaysAgo,
+          thirty_days_ago,
           new Date(today.getTime() + 86400000),
         ),
         type: In([LogType.INBOUND, LogType.OUTBOUND]),
-        ...(barangId ? { barang: { id: barangId } } : {}),
+        ...(barang_id ? { barang: { id: barang_id } } : {}),
       },
       relations: ['barang'],
       order: { created_at: 'ASC' },
@@ -1089,24 +1089,24 @@ export class InventoryService {
     }
 
     // Get current stock per product
-    const currentStocks: Record<number, number> = {};
-    const stockRows = await this.stockRepo
+    const current_stocks: Record<number, number> = {};
+    const stock_rows = await this.stock_repo
       .createQueryBuilder('s')
       .select('s.barang_id', 'barang_id')
       .addSelect('SUM(s.qty)', 'qty')
       .groupBy('s.barang_id')
       .getRawMany();
-    for (const row of stockRows) {
-      currentStocks[row.barang_id] = parseFloat(row.qty) || 0;
+    for (const row of stock_rows) {
+      current_stocks[row.barang_id] = parseFloat(row.qty) || 0;
     }
 
     // Build series: work backwards from current stock
     const series: any[] = [];
     for (const brg of barangs) {
-      const curStock = currentStocks[brg.id] || 0;
+      const cur_stock = current_stocks[brg.id] || 0;
       // Compute cumulative forward stock
       let running = 0;
-      const dataPoints = dates.map((dt) => {
+      const data_points = dates.map((dt) => {
         const net = changes[brg.id]?.[dt] || 0;
         running += net;
         return { date: dt, net };
@@ -1114,12 +1114,12 @@ export class InventoryService {
 
       // Current stock = sum of all net changes up to today + starting stock
       // starting stock = curStock - total net change
-      const totalNet = dataPoints.reduce((s, d) => s + d.net, 0);
-      const startingStock = Math.max(0, curStock - totalNet);
+      const total_net = data_points.reduce((s, d) => s + d.net, 0);
+      const starting_stock = Math.max(0, cur_stock - total_net);
 
       // Compute cumulative stock level
-      let cum = startingStock;
-      const stockData = dataPoints.map((d) => {
+      let cum = starting_stock;
+      const stock_data = data_points.map((d) => {
         cum += d.net;
         return { date: d.date, stock: Math.round(cum * 10) / 10 };
       });
@@ -1134,7 +1134,7 @@ export class InventoryService {
             : brg.kategori === 'Waste'
               ? '#845ef7'
               : '#1c7ed6',
-        data: stockData,
+        data: stock_data,
       });
     }
 
@@ -1142,11 +1142,11 @@ export class InventoryService {
   }
 
   // Occupancy data: capacity usage per zone
-  async getOccupancyData(zone?: string, from?: string, to?: string) {
-    const gudangs = await this.gudangRepo.find({ order: { id: 'ASC' } });
-    const stocks = await this.stockRepo.find({ relations: ['gudang'] });
+  async get_occupancy_data(zone?: string, from?: string, to?: string) {
+    const gudangs = await this.gudang_repo.find({ order: { id: 'ASC' } });
+    const stocks = await this.stock_repo.find({ relations: ['gudang'] });
 
-    const zoneColor: Record<string, string> = {
+    const zone_color: Record<string, string> = {
       A: '#228be6',
       B: '#40c057',
       C: '#fd7e14',
@@ -1155,95 +1155,95 @@ export class InventoryService {
     };
 
     // Aggregate by zone: count total racks and occupied racks (racks with any stock)
-    const zoneMap: Record<
+    const zone_map: Record<
       string,
-      { totalRacks: number; occupiedRacks: number; count: number }
+      { total_racks: number; occupied_racks: number; count: number }
     > = {};
     for (const g of gudangs) {
       const z = g.zone || 'UNKNOWN';
-      if (!zoneMap[z])
-        zoneMap[z] = { totalRacks: 0, occupiedRacks: 0, count: 0 };
-      zoneMap[z].totalRacks++;
-      zoneMap[z].count++;
+      if (!zone_map[z])
+        zone_map[z] = { total_racks: 0, occupied_racks: 0, count: 0 };
+      zone_map[z].total_racks++;
+      zone_map[z].count++;
     }
     // Track which gudang IDs already counted as occupied (to avoid double-counting)
-    const occupiedGudangIds = new Set<number>();
+    const occupied_gudang_ids = new Set<number>();
     for (const s of stocks) {
       if (!s.gudang) continue;
-      if (s.qty > 0 && !occupiedGudangIds.has(s.gudang.id)) {
-        occupiedGudangIds.add(s.gudang.id);
+      if (s.qty > 0 && !occupied_gudang_ids.has(s.gudang.id)) {
+        occupied_gudang_ids.add(s.gudang.id);
         const z = s.gudang.zone || 'UNKNOWN';
-        if (zoneMap[z]) zoneMap[z].occupiedRacks++;
+        if (zone_map[z]) zone_map[z].occupied_racks++;
       }
     }
 
-    const gauges = Object.entries(zoneMap).map(([z, data]) => {
+    const gauges = Object.entries(zone_map).map(([z, data]) => {
       const pct =
-        data.totalRacks > 0
+        data.total_racks > 0
           ? Math.min(
               100,
-              Math.round((data.occupiedRacks / data.totalRacks) * 100),
+              Math.round((data.occupied_racks / data.total_racks) * 100),
             )
           : 0;
-      const color = zoneColor[z] || '#868e96';
+      const color = zone_color[z] || '#868e96';
       return {
         id: z,
         name: `Zone ${z}`,
         zone: z,
-        totalRacks: data.totalRacks,
-        occupiedRacks: data.occupiedRacks,
+        total_racks: data.total_racks,
+        occupied_racks: data.occupied_racks,
         pct,
         color,
       };
     });
 
     // Date range: default 1 year if not specified
-    const startDate = from ? new Date(from) : new Date();
-    startDate.setFullYear(startDate.getFullYear() - 1);
-    const endDate = to ? new Date(to) : new Date();
+    const start_date = from ? new Date(from) : new Date();
+    start_date.setFullYear(start_date.getFullYear() - 1);
+    const end_date = to ? new Date(to) : new Date();
 
     // Daily data for the selected range
-    const dailyData: Record<string, number> = {};
+    const daily_data: Record<string, number> = {};
     for (
-      let d = new Date(startDate);
-      d <= endDate;
+      let d = new Date(start_date);
+      d <= end_date;
       d.setDate(d.getDate() + 1)
     ) {
       const key = d.toISOString().split('T')[0];
-      dailyData[key] = 0;
+      daily_data[key] = 0;
     }
 
-    const logs = await this.logRepo.find({
+    const logs = await this.log_repo.find({
       where: {
-        created_at: Between(startDate, endDate),
+        created_at: Between(start_date, end_date),
         type: In([LogType.INBOUND, LogType.OUTBOUND]),
       },
       relations: ['gudang'],
       order: { created_at: 'ASC' },
     });
 
-    const zoneDaily: Record<string, Record<string, number>> = {};
+    const zone_daily: Record<string, Record<string, number>> = {};
     for (const log of logs) {
       const z = log.gudang?.zone || 'UNKNOWN';
-      const dateKey = log.created_at.toISOString().split('T')[0];
-      if (!zoneDaily[z]) zoneDaily[z] = {};
-      if (!zoneDaily[z][dateKey]) zoneDaily[z][dateKey] = 0;
-      zoneDaily[z][dateKey] += log.qty;
+      const date_key = log.created_at.toISOString().split('T')[0];
+      if (!zone_daily[z]) zone_daily[z] = {};
+      if (!zone_daily[z][date_key]) zone_daily[z][date_key] = 0;
+      zone_daily[z][date_key] += log.qty;
     }
 
     // If zone is selected, return daily data for that zone
     if (zone) {
-      const zoneData = zoneDaily[zone] || {};
-      const dailySeries = Object.entries(dailyData).map(([date]) => ({
+      const zone_data = zone_daily[zone] || {};
+      const daily_series = Object.entries(daily_data).map(([date]) => ({
         date,
-        value: zoneData[date] || 0,
+        value: zone_data[date] || 0,
       }));
 
       // Get items in this zone
-      const zoneGudangs = gudangs.filter((g) => g.zone === zone);
-      const zoneGudangIds = zoneGudangs.map((g) => g.id);
+      const zone_gudangs = gudangs.filter((g) => g.zone === zone);
+      const zone_gudang_ids = zone_gudangs.map((g) => g.id);
       const items = stocks
-        .filter((s) => s.gudang && zoneGudangIds.includes(s.gudang.id))
+        .filter((s) => s.gudang && zone_gudang_ids.includes(s.gudang.id))
         .map((s) => ({
           id: s.id,
           barang: s.barang?.nama || '-',
@@ -1258,11 +1258,11 @@ export class InventoryService {
       return {
         gauges,
         selectedZone: zone,
-        dailySeries,
+        daily_series,
         items,
         range: {
-          from: startDate.toISOString().split('T')[0],
-          to: endDate.toISOString().split('T')[0],
+          from: start_date.toISOString().split('T')[0],
+          to: end_date.toISOString().split('T')[0],
         },
       };
     }
@@ -1270,54 +1270,54 @@ export class InventoryService {
     // Default: weekly summary for all zones
     const weeks: string[] = [];
     for (let i = 51; i >= 0; i--) {
-      const d = new Date(endDate);
+      const d = new Date(end_date);
       d.setDate(d.getDate() - i * 7);
       const mon = new Date(d);
       mon.setDate(mon.getDate() - mon.getDay() + 1);
       weeks.push(mon.toISOString().split('T')[0]);
     }
 
-    const zoneGroups: Record<
+    const zone_groups: Record<
       string,
       { label: string; color: string; data: number[] }
     > = {};
 
     for (let w = 0; w < weeks.length; w++) {
-      const weekEnd = new Date(weeks[w]);
-      weekEnd.setDate(weekEnd.getDate() + 6);
-      const zoneQty: Record<string, number> = {};
+      const week_end = new Date(weeks[w]);
+      week_end.setDate(week_end.getDate() + 6);
+      const zone_qty: Record<string, number> = {};
       for (const log of logs) {
-        const logDate = new Date(log.created_at);
-        if (logDate >= new Date(weeks[w]) && logDate <= weekEnd) {
+        const log_date = new Date(log.created_at);
+        if (log_date >= new Date(weeks[w]) && log_date <= week_end) {
           const z = log.gudang?.zone || 'UNKNOWN';
-          zoneQty[z] = (zoneQty[z] || 0) + log.qty;
+          zone_qty[z] = (zone_qty[z] || 0) + log.qty;
         }
       }
-      for (const [z, qty] of Object.entries(zoneQty)) {
-        if (!zoneGroups[z]) {
-          zoneGroups[z] = {
+      for (const [z, qty] of Object.entries(zone_qty)) {
+        if (!zone_groups[z]) {
+          zone_groups[z] = {
             label: `Zone ${z}`,
-            color: zoneColor[z] || '#868e96',
+            color: zone_color[z] || '#868e96',
             data: new Array(weeks.length).fill(0),
           };
         }
-        zoneGroups[z].data[w] = Math.round(qty);
+        zone_groups[z].data[w] = Math.round(qty);
       }
     }
 
     return {
       gauges,
       weeks: weeks.map((w, i) => ({ key: w, label: `W${i + 1}` })),
-      series: Object.values(zoneGroups),
+      series: Object.values(zone_groups),
       range: {
-        from: startDate.toISOString().split('T')[0],
-        to: endDate.toISOString().split('T')[0],
+        from: start_date.toISOString().split('T')[0],
+        to: end_date.toISOString().split('T')[0],
       },
     };
   }
 
   // OFTI data: inbound planning vs actual (on-time vs late)
-  async getOFTIData(from?: string, to?: string) {
+  async get_ofti_data(from?: string, to?: string) {
     const start = from
       ? new Date(from)
       : (() => {
@@ -1327,19 +1327,19 @@ export class InventoryService {
         })();
     const end = to ? new Date(to + 'T23:59:59') : new Date();
 
-    const plans = await this.inboundPlanningRepo.find({
+    const plans = await this.inbound_planning_repo.find({
       where: { estimasi_datang: Between(start, end) },
       order: { estimasi_datang: 'ASC' },
     });
 
-    const dayNames = ['M', 'Se', 'R', 'K', 'J', 'Sb', 'M'];
+    const day_names = ['M', 'Se', 'R', 'K', 'J', 'Sb', 'M'];
     const daily: Record<
       string,
       { ontime: number; late: number; label: string }
     > = {};
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = d.toISOString().split('T')[0];
-      daily[key] = { ontime: 0, late: 0, label: dayNames[d.getDay()] };
+      daily[key] = { ontime: 0, late: 0, label: day_names[d.getDay()] };
     }
 
     const weekly: Record<
@@ -1354,49 +1354,49 @@ export class InventoryService {
       const tmp = new Date(p.estimasi_datang);
       tmp.setHours(0, 0, 0, 0);
       tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
-      const yearStart = new Date(tmp.getFullYear(), 0, 1);
-      const weekNo = Math.ceil(
-        ((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+      const year_start = new Date(tmp.getFullYear(), 0, 1);
+      const week_no = Math.ceil(
+        ((tmp.getTime() - year_start.getTime()) / 86400000 + 1) / 7,
       );
-      const wKey = `W${String(weekNo).padStart(2, '0')}`;
-      if (!weekly[wKey])
-        weekly[wKey] = { ontime: 0, late: 0, planned: 0, label: wKey };
+      const w_key = `W${String(week_no).padStart(2, '0')}`;
+      if (!weekly[w_key])
+        weekly[w_key] = { ontime: 0, late: 0, planned: 0, label: w_key };
 
       // Count as planned
-      weekly[wKey].planned += 1;
+      weekly[w_key].planned += 1;
 
       // If DONE with realisasi, check if ontime or late
       if (p.status === 'DONE' || p.tanggal_realisasi) {
-        const planDate = new Date(p.estimasi_datang);
-        const key = planDate.toISOString().split('T')[0];
+        const plan_date = new Date(p.estimasi_datang);
+        const key = plan_date.toISOString().split('T')[0];
         // tepat waktu = selisih_menit <= 0 (atau jika tidak ada selisih_menit, anggap tepat waktu jika status DONE)
-        const isOnTime = p.selisih_menit === null || p.selisih_menit === undefined || p.selisih_menit <= 0;
+        const is_on_time = p.selisih_menit === null || p.selisih_menit === undefined || p.selisih_menit <= 0;
         if (daily[key]) {
-          if (isOnTime) daily[key].ontime += 1;
+          if (is_on_time) daily[key].ontime += 1;
           else daily[key].late += 1;
         }
-        if (isOnTime) weekly[wKey].ontime += 1;
-        else weekly[wKey].late += 1;
+        if (is_on_time) weekly[w_key].ontime += 1;
+        else weekly[w_key].late += 1;
       }
     }
 
-    const dailyArray = Object.entries(daily)
+    const daily_array = Object.entries(daily)
       .map(([date, v]) => ({ date, ...v }))
       .sort((a, b) => a.date.localeCompare(b.date));
-    const weeklyArray = Object.entries(weekly)
+    const weekly_array = Object.entries(weekly)
       .map(([week, v]) => ({ week, ...v }))
       .sort((a, b) => a.week.localeCompare(b.week));
 
     // OTIF weekly percentages and table
-    const otifSeries = weeklyArray.map((w) => {
+    const otif_series = weekly_array.map((w) => {
       const total = w.ontime + w.late;
       const otif = total > 0 ? Math.round((w.ontime / total) * 100) : 0;
-      const notOtif = total > 0 ? 100 - otif : 0;
-      return { week: w.week, ontime: w.ontime, late: w.late, planned: w.planned, otif, notOtif };
+      const not_otif = total > 0 ? 100 - otif : 0;
+      return { week: w.week, ontime: w.ontime, late: w.late, planned: w.planned, otif, not_otif };
     });
 
     // Table: planned vs actual per week
-    const table = weeklyArray.map((w) => ({
+    const table = weekly_array.map((w) => ({
       week: w.week,
       planned: w.planned,
       actual: w.ontime + w.late,
@@ -1404,57 +1404,57 @@ export class InventoryService {
       late: w.late,
     }));
 
-    return { daily: dailyArray, weekly: otifSeries, table };
+    return { daily: daily_array, weekly: otif_series, table };
   }
 
   // Serapan Ayam data: planned vs actual outbound ayam (weekly for 1 year)
-  async getSerapanAyamData(from?: string, to?: string) {
+  async get_serapan_ayam_data(from?: string, to?: string) {
     const start = from ? new Date(from) : new Date();
     if (!from) start.setFullYear(start.getFullYear() - 1);
     const end = to ? new Date(to + 'T23:59:59') : new Date();
 
-    const plans = await this.planningAyamRepo.find({
+    const plans = await this.planning_ayam_repo.find({
       where: { tanggal_planning: Between(start, end) },
       relations: ['barang'],
     });
-    const outbounds = await this.outboundAyamRepo.find({
+    const outbounds = await this.outbound_ayam_repo.find({
       where: { created_at: Between(start, end) },
       relations: ['planning_ayam', 'planning_ayam.barang'],
     });
 
-    const getWeekKey = (d: Date) => {
+    const get_week_key = (d: Date) => {
       const tmp = new Date(d);
       tmp.setHours(0, 0, 0, 0);
       tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
-      const yearStart = new Date(tmp.getFullYear(), 0, 1);
-      const weekNo = Math.ceil(
-        ((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+      const year_start = new Date(tmp.getFullYear(), 0, 1);
+      const week_no = Math.ceil(
+        ((tmp.getTime() - year_start.getTime()) / 86400000 + 1) / 7,
       );
-      return `W${String(weekNo).padStart(2, '0')}`;
+      return `W${String(week_no).padStart(2, '0')}`;
     };
 
-    const weeklyMap: Record<
+    const weekly_map: Record<
       string,
       { week: string; planning: number; serapan: number }
     > = {};
 
     for (const p of plans) {
       if (!p.tanggal_planning) continue;
-      const key = getWeekKey(new Date(p.tanggal_planning));
-      if (!weeklyMap[key])
-        weeklyMap[key] = { week: key, planning: 0, serapan: 0 };
-      weeklyMap[key].planning += Number(p.qty || 0);
+      const key = get_week_key(new Date(p.tanggal_planning));
+      if (!weekly_map[key])
+        weekly_map[key] = { week: key, planning: 0, serapan: 0 };
+      weekly_map[key].planning += Number(p.qty || 0);
     }
 
     for (const o of outbounds) {
       if (!o.created_at) continue;
-      const key = getWeekKey(new Date(o.created_at));
-      if (!weeklyMap[key])
-        weeklyMap[key] = { week: key, planning: 0, serapan: 0 };
-      weeklyMap[key].serapan += Number(o.qty_aktual || 0);
+      const key = get_week_key(new Date(o.created_at));
+      if (!weekly_map[key])
+        weekly_map[key] = { week: key, planning: 0, serapan: 0 };
+      weekly_map[key].serapan += Number(o.qty_aktual || 0);
     }
 
-    const data = Object.values(weeklyMap)
+    const data = Object.values(weekly_map)
       .sort((a, b) => a.week.localeCompare(b.week))
       .map((w) => ({
         ...w,
@@ -1468,27 +1468,27 @@ export class InventoryService {
   }
 
   // Inventory matrix data (daily in/out/balance per item)
-  async getInventoryMatrix(side: boolean, from?: string, to?: string) {
-    const barangs = await this.barangRepo.find({ where: { side } });
+  async get_inventory_matrix(side: boolean, from?: string, to?: string) {
+    const barangs = await this.barang_repo.find({ where: { side } });
     const result: any[] = [];
 
     for (const brg of barangs) {
-      const stocks = await this.stockRepo.find({
+      const stocks = await this.stock_repo.find({
         where: { barang: { id: brg.id } },
         relations: ['gudang'],
       });
-      const totalQty = stocks.reduce((s, st) => s + st.qty, 0);
+      const total_qty = stocks.reduce((s, st) => s + st.qty, 0);
 
       // Get daily logs
-      const logWhere: any = { barang: { id: brg.id } };
+      const log_where: any = { barang: { id: brg.id } };
       if (from && to)
-        logWhere.created_at = Between(
+        log_where.created_at = Between(
           new Date(from),
           new Date(to + 'T23:59:59'),
         );
 
-      const logs = await this.logRepo.find({
-        where: logWhere,
+      const logs = await this.log_repo.find({
+        where: log_where,
         relations: ['shift'],
         order: { created_at: 'ASC' },
       });
@@ -1522,7 +1522,7 @@ export class InventoryService {
         sku: brg.sku,
         satuan: brg.satuan,
         saldoAwal: brg.stok,
-        totalQty,
+        total_qty,
         daily,
         stocks,
       });
@@ -1531,22 +1531,22 @@ export class InventoryService {
   }
 
   // Stock opname summary for a zone
-  async getOpnameSummary(zone?: string) {
+  async get_opname_summary(zone?: string) {
     const where: any = {};
     if (zone) where.zone = zone;
 
-    const gudangs = await this.gudangRepo.find({ where });
+    const gudangs = await this.gudang_repo.find({ where });
     const result: any[] = [];
 
     for (const g of gudangs) {
-      const stocks = await this.stockRepo.find({
+      const stocks = await this.stock_repo.find({
         where: { gudang: { id: g.id } },
         relations: ['barang'],
       });
 
       // Check if opnamed today
       const today = new Date().toISOString().split('T')[0];
-      const opnameLog = await this.logRepo.findOne({
+      const opname_log = await this.log_repo.findOne({
         where: {
           gudang: { id: g.id },
           type: LogType.OPNAME,
@@ -1557,166 +1557,166 @@ export class InventoryService {
       result.push({
         gudang: g,
         stocks,
-        totalQty: stocks.reduce((s, st) => s + st.qty, 0),
+        total_qty: stocks.reduce((s, st) => s + st.qty, 0),
         totalReservedQty: stocks.reduce(
           (s, st) => s + (st.reserved_qty || 0),
           0,
         ),
         filled: stocks.some((st) => st.qty > 0),
-        opnamed: !!opnameLog,
+        opnamed: !!opname_log,
       });
     }
     return result;
   }
 
   // Stock opname export data (for Excel/PDF) - accuracy is UNIVERSAL per barang across all racks
-  async getOpnameExportData(zone?: string, from?: string, to?: string) {
-    const whereGudang: any = {};
-    if (zone && zone !== 'ALL') whereGudang.zone = zone;
+  async get_opname_export_data(zone?: string, from?: string, to?: string) {
+    const where_gudang: any = {};
+    if (zone && zone !== 'ALL') where_gudang.zone = zone;
 
-    const gudangs = await this.gudangRepo.find({ where: whereGudang });
+    const gudangs = await this.gudang_repo.find({ where: where_gudang });
     const today = new Date();
 
     // Step 1: Collect all stock keyed by barang_id to compute universal accuracy
     // Universal accuracy = total qty opname (seluruh rak barang A) vs total qty sistem (seluruh rak barang A)
-    const barangAccMap: Record<
+    const barang_acc_map: Record<
       number,
-      { totalSistem: number; totalOpname: number; shift?: string }
+      { total_sistem: number; total_opname: number; shift?: string }
     > = {};
 
     // Kumpulkan semua stok yang relevan
-    const allStocksInZone = await this.stockRepo.find({
+    const all_stocks_in_zone = await this.stock_repo.find({
       where: gudangs.map((g) => ({ gudang: { id: g.id } })),
       relations: ['barang', 'gudang'],
     });
 
     // Get opname logs per gudang (latest per gudang)
-    const opnameLogsPerGudang: Record<
+    const opname_logs_per_gudang: Record<
       number,
       { qty: number; shift?: string; created_at?: Date }
     > = {};
     for (const g of gudangs) {
-      const logWhere: any = { gudang: { id: g.id }, type: LogType.OPNAME };
+      const log_where: any = { gudang: { id: g.id }, type: LogType.OPNAME };
       if (from && to) {
-        logWhere.created_at = Between(
+        log_where.created_at = Between(
           new Date(from),
           new Date(to + 'T23:59:59'),
         );
       }
-      const opnameLogs = await this.logRepo.find({
-        where: logWhere,
+      const opname_logs = await this.log_repo.find({
+        where: log_where,
         relations: ['shift'],
         order: { created_at: 'DESC' },
         take: 1,
       });
-      if (opnameLogs[0]) {
-        opnameLogsPerGudang[g.id] = {
-          qty: opnameLogs[0].qty,
-          shift: opnameLogs[0].shift?.name,
-          created_at: opnameLogs[0].created_at,
+      if (opname_logs[0]) {
+        opname_logs_per_gudang[g.id] = {
+          qty: opname_logs[0].qty,
+          shift: opname_logs[0].shift?.name,
+          created_at: opname_logs[0].created_at,
         };
       }
     }
 
     // Aggregate per barang_id across all racks for universal accuracy
-    for (const stock of allStocksInZone) {
+    for (const stock of all_stocks_in_zone) {
       if (!stock.barang) continue;
       const bid = stock.barang.id;
-      if (!barangAccMap[bid])
-        barangAccMap[bid] = { totalSistem: 0, totalOpname: 0 };
-      barangAccMap[bid].totalSistem += stock.qty;
-      const opLog = opnameLogsPerGudang[stock.gudang?.id];
-      if (opLog) {
-        barangAccMap[bid].totalOpname += opLog.qty;
-        if (!barangAccMap[bid].shift) barangAccMap[bid].shift = opLog.shift;
+      if (!barang_acc_map[bid])
+        barang_acc_map[bid] = { total_sistem: 0, total_opname: 0 };
+      barang_acc_map[bid].total_sistem += stock.qty;
+      const op_log = opname_logs_per_gudang[stock.gudang?.id];
+      if (op_log) {
+        barang_acc_map[bid].total_opname += op_log.qty;
+        if (!barang_acc_map[bid].shift) barang_acc_map[bid].shift = op_log.shift;
       }
     }
 
     const result: any[] = [];
 
     for (const g of gudangs) {
-      const stocks = await this.stockRepo.find({
+      const stocks = await this.stock_repo.find({
         where: { gudang: { id: g.id } },
         relations: ['barang'],
       });
 
       if (!stocks.length) continue;
 
-      const opnameLog = opnameLogsPerGudang[g.id];
+      const opname_log = opname_logs_per_gudang[g.id];
 
       for (const stock of stocks) {
         const expiry = stock.expiry_date;
-        let daysToExp: number | null = null;
-        let daysInStorage: number | null = null;
+        let days_to_exp: number | null = null;
+        let days_in_storage: number | null = null;
 
         // Aging: lama simpan dari saat stok masuk
         if (stock.created_at) {
-          daysInStorage = Math.floor(
+          days_in_storage = Math.floor(
             (today.getTime() - new Date(stock.created_at).getTime()) /
               (1000 * 60 * 60 * 24),
           );
         }
 
         if (expiry) {
-          daysToExp = Math.floor(
+          days_to_exp = Math.floor(
             (new Date(expiry).getTime() - today.getTime()) /
               (1000 * 60 * 60 * 24),
           );
         }
 
-        const stockOpname = opnameLog?.qty ?? null;
-        const stockAkhir = stock.qty;
-        const variance = stockOpname !== null ? stockOpname - stockAkhir : null;
-        const absVariance = variance !== null ? Math.abs(variance) : null;
-        const variancePct =
-          stockAkhir > 0 && variance !== null
-            ? ((Math.abs(variance) / stockAkhir) * 100).toFixed(2)
+        const stock_opname = opname_log?.qty ?? null;
+        const stock_akhir = stock.qty;
+        const variance = stock_opname !== null ? stock_opname - stock_akhir : null;
+        const abs_variance = variance !== null ? Math.abs(variance) : null;
+        const variance_pct =
+          stock_akhir > 0 && variance !== null
+            ? ((Math.abs(variance) / stock_akhir) * 100).toFixed(2)
             : null;
 
         // === UNIVERSAL ACCURACY: berdasarkan total seluruh rak per barang ===
         const bid = stock.barang?.id;
-        let accuracyPct = '100';
-        if (bid && barangAccMap[bid]) {
-          const { totalSistem, totalOpname } = barangAccMap[bid];
-          if (totalSistem > 0 && totalOpname > 0) {
-            accuracyPct = (
-              (Math.min(totalOpname, totalSistem) /
-                Math.max(totalOpname, totalSistem)) *
+        let accuracy_pct = '100';
+        if (bid && barang_acc_map[bid]) {
+          const { total_sistem, total_opname } = barang_acc_map[bid];
+          if (total_sistem > 0 && total_opname > 0) {
+            accuracy_pct = (
+              (Math.min(total_opname, total_sistem) /
+                Math.max(total_opname, total_sistem)) *
               100
             ).toFixed(2);
           }
         }
 
         // === AGING STATUS ===
-        let agingStatus = 'NORMAL';
+        let aging_status = 'NORMAL';
 
         // Prioritas 1: berdasarkan lama simpan (>90 hari = AGING)
-        if (daysInStorage !== null && daysInStorage > 90) {
-          agingStatus = 'AGING';
+        if (days_in_storage !== null && days_in_storage > 90) {
+          aging_status = 'AGING';
         }
 
         // Prioritas 2: override jika expiry date lebih darurat
-        if (daysToExp !== null) {
-          if (daysToExp < 0) agingStatus = 'EXPIRED';
-          else if (daysToExp < 30) agingStatus = 'NEAR EXPIRED';
+        if (days_to_exp !== null) {
+          if (days_to_exp < 0) aging_status = 'EXPIRED';
+          else if (days_to_exp < 30) aging_status = 'NEAR EXPIRED';
         }
 
         let notes = '';
-        let noteColor = '#000000';
+        let note_color = '#000000';
 
-        if (agingStatus === 'AGING' && daysInStorage !== null) {
-          if (daysInStorage >= 120)
-            noteColor = '#ef4444'; // Merah
-          else if (daysInStorage >= 90)
-            noteColor = '#f97316'; // Orange
-          else noteColor = '#eab308'; // Kuning
-          notes = `AGING (${daysInStorage} hari simpan)`;
-        } else if (agingStatus === 'EXPIRED') {
-          noteColor = '#ef4444';
-          notes = `EXPIRED: ${daysToExp !== null ? Math.abs(daysToExp) + ' hari lalu' : ''}`;
-        } else if (agingStatus === 'NEAR EXPIRED') {
-          noteColor = '#f97316';
-          notes = `NEAR EXPIRED: ${daysToExp} hari tersisa`;
+        if (aging_status === 'AGING' && days_in_storage !== null) {
+          if (days_in_storage >= 120)
+            note_color = '#ef4444'; // Merah
+          else if (days_in_storage >= 90)
+            note_color = '#f97316'; // Orange
+          else note_color = '#eab308'; // Kuning
+          notes = `AGING (${days_in_storage} hari simpan)`;
+        } else if (aging_status === 'EXPIRED') {
+          note_color = '#ef4444';
+          notes = `EXPIRED: ${days_to_exp !== null ? Math.abs(days_to_exp) + ' hari lalu' : ''}`;
+        } else if (aging_status === 'NEAR EXPIRED') {
+          note_color = '#f97316';
+          notes = `NEAR EXPIRED: ${days_to_exp} hari tersisa`;
         }
 
         result.push({
@@ -1730,22 +1730,22 @@ export class InventoryService {
           expiry_date: expiry
             ? new Date(expiry).toISOString().split('T')[0]
             : null,
-          stock_akhir: stockAkhir,
+          stock_akhir: stock_akhir,
           reserved_qty: stock.reserved_qty || 0,
           available_qty: stock.qty - (stock.reserved_qty || 0),
-          stock_opname: stockOpname,
+          stock_opname: stock_opname,
           variance_phys_book: variance,
-          abs_variance: absVariance,
-          variance_pct: variancePct,
-          accuracy_pct: accuracyPct,
-          aging_status: agingStatus,
-          days_to_exp: daysToExp,
-          days_in_storage: daysInStorage,
-          tolerance_ok: absVariance !== null ? absVariance <= 5 : true,
+          abs_variance: abs_variance,
+          variance_pct: variance_pct,
+          accuracy_pct: accuracy_pct,
+          aging_status: aging_status,
+          days_to_exp: days_to_exp,
+          days_in_storage: days_in_storage,
+          tolerance_ok: abs_variance !== null ? abs_variance <= 5 : true,
           notes: notes,
-          note_color: noteColor,
-          shift: opnameLog?.shift || null,
-          created_at: opnameLog?.created_at || stock.created_at || null,
+          note_color: note_color,
+          shift: opname_log?.shift || null,
+          created_at: opname_log?.created_at || stock.created_at || null,
         });
       }
     }

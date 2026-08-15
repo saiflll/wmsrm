@@ -22,33 +22,33 @@ export class GudangController {
   constructor(private readonly svc: GudangService) {}
 
   @Get()
-  findAll(
+  find_all(
     @Query('side') side?: string,
     @Query('zone') zone?: string,
     @Query('search') search?: string,
   ) {
     const s = side === 'true' ? true : side === 'false' ? false : undefined;
-    return this.svc.findAll(s, zone, search);
+    return this.svc.find_all(s, zone, search);
   }
 
   @Get('zones')
-  getZones() {
-    return this.svc.getZonesSummary();
+  get_zones() {
+    return this.svc.get_zones_summary();
   }
 
   @Get('slot')
-  findBySlot(@Query('name') name: string) {
-    return this.svc.findBySlot(name);
+  find_by_slot(@Query('name') name: string) {
+    return this.svc.find_by_slot(name);
   }
 
   @Get('zone/:zone')
-  findByZone(@Param('zone') zone: string) {
-    return this.svc.findByZone(zone);
+  find_by_zone(@Param('zone') zone: string) {
+    return this.svc.find_by_zone(zone);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.svc.findOne(+id);
+  find_one(@Param('id') id: string) {
+    return this.svc.find_one(+id);
   }
 
   @Post()

@@ -10,7 +10,7 @@ export class ShiftsController {
   constructor(@InjectRepository(Shift) private repo: Repository<Shift>) {}
 
   @Get()
-  findAll() {
+  find_all() {
     return this.repo.find({ order: { id: 'ASC' } });
   }
 }

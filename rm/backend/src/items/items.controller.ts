@@ -15,21 +15,21 @@ import { Item } from './item.entity';
 @Controller('items')
 // @UseGuards(JwtAuthGuard)
 export class ItemsController {
-  constructor(private readonly itemsService: ItemsService) {}
+  constructor(private readonly items_service: ItemsService) {}
 
   @Get()
-  findAll(): Promise<Item[]> {
-    return this.itemsService.findAll();
+  find_all(): Promise<Item[]> {
+    return this.items_service.find_all();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<Item | null> {
-    return this.itemsService.findOne(+id);
+  find_one(@Param('id') id: string): Promise<Item | null> {
+    return this.items_service.find_one(+id);
   }
 
   @Post()
   create(@Body() item: Partial<Item>): Promise<Item> {
-    return this.itemsService.create(item);
+    return this.items_service.create(item);
   }
 
   @Put(':id')
@@ -37,11 +37,11 @@ export class ItemsController {
     @Param('id') id: string,
     @Body() item: Partial<Item>,
   ): Promise<Item | null> {
-    return this.itemsService.update(+id, item);
+    return this.items_service.update(+id, item);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string): Promise<void> {
-    return this.itemsService.remove(+id);
+    return this.items_service.remove(+id);
   }
 }

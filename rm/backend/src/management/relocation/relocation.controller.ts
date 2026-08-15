@@ -9,29 +9,29 @@ import { CreateRelocationDto } from './relocation.dto';
 @Controller('relocation')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class RelocationController {
-  constructor(private readonly relocationService: RelocationService) {}
+  constructor(private readonly relocation_service: RelocationService) {}
 
   @Get()
   @Roles(UserRole.CHECKER, UserRole.ADMIN, UserRole.KOORDINATOR, UserRole.SUPERVISOR, UserRole.SUPER_ADMIN)
-  findAll() {
-    return this.relocationService.findAll();
+  find_all() {
+    return this.relocation_service.find_all();
   }
 
   @Post()
   @Roles(UserRole.CHECKER, UserRole.ADMIN, UserRole.KOORDINATOR, UserRole.SUPERVISOR, UserRole.SUPER_ADMIN)
-  createRelocation(@Body() dto: CreateRelocationDto) {
-    return this.relocationService.createRelocation(dto);
+  create_relocation(@Body() dto: CreateRelocationDto) {
+    return this.relocation_service.create_relocation(dto);
   }
 
   @Post(':id/execute')
   @Roles(UserRole.CHECKER, UserRole.ADMIN, UserRole.KOORDINATOR, UserRole.SUPERVISOR, UserRole.SUPER_ADMIN)
-  executeRelocation(@Param('id') id: string) {
-    return this.relocationService.executeRelocation(+id);
+  execute_relocation(@Param('id') id: string) {
+    return this.relocation_service.execute_relocation(+id);
   }
 
   @Delete(':id')
   @Roles(UserRole.CHECKER, UserRole.ADMIN, UserRole.KOORDINATOR, UserRole.SUPERVISOR, UserRole.SUPER_ADMIN)
-  deleteRelocation(@Param('id') id: string) {
-    return this.relocationService.deleteRelocation(+id);
+  delete_relocation(@Param('id') id: string) {
+    return this.relocation_service.delete_relocation(+id);
   }
 }

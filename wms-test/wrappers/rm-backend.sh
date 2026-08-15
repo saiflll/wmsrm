@@ -4,6 +4,7 @@ cd /app/rm-backend
 export PORT=3011
 export DATABASE_URL=${DATABASE_URL:-postgresql://wms_user:wms_password@wms-test-db:5432/wms_db}
 export JWT_SECRET=rm_super_secret_key_change_me
+export NODE_OPTIONS="--max-old-space-size=512"
 
 # Extract hostname and port from DATABASE_URL
 DB_HOST=$(echo $DATABASE_URL | sed -e 's|.*@||' -e 's|:.*||' -e 's|/.*||')

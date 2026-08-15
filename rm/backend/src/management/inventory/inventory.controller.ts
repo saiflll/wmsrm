@@ -32,13 +32,13 @@ import { LogType } from './stock-log.entity';
 export class InventoryController {
   constructor(
     private readonly svc: InventoryService,
-    private readonly relocationService: RelocationService,
+    private readonly relocation_service: RelocationService,
   ) {}
 
   @Get('sync-all')
   @Roles(UserRole.SUPERVISOR)
-  syncAll() {
-    return this.svc.syncAllBarangStok();
+  sync_all() {
+    return this.svc.sync_all_barang_stok();
   }
 
   // ========== STOCK ==========
@@ -51,7 +51,7 @@ export class InventoryController {
     UserRole.MANAGER,
     UserRole.SUPER_ADMIN,
   )
-  findAllStock(
+  find_all_stock(
     @Query('side') side?: string,
     @Query('search') search?: string,
     @Query('page') page?: number,
@@ -60,7 +60,7 @@ export class InventoryController {
     const s = side === 'true' ? true : side === 'false' ? false : undefined;
     const p = page ? Number(page) : 1;
     const l = limit ? Number(limit) : 50;
-    return this.svc.findAllStock(s, search, p, l);
+    return this.svc.find_all_stock(s, search, p, l);
   }
 
   @Get('export/stock')
@@ -70,13 +70,13 @@ export class InventoryController {
     UserRole.ADMIN,
     UserRole.MANAGER,
   )
-  async exportStock(
+  async export_stock(
     @Res() res: Response,
-    @Query('gudang_id') gudangId?: string,
+    @Query('gudang_id') gudang_id?: string,
   ) {
-    const data = gudangId
-      ? await this.svc.findStockByGudang(Number(gudangId))
-      : await this.svc.findAllStock(undefined, undefined, 1, 10000); // 10k max limit for export
+    const data = gudang_id
+      ? await this.svc.find_stock_by_gudang(Number(gudang_id))
+      : await this.svc.find_all_stock(undefined, undefined, 1, 10000); // 10k max limit for export
 
     // Simple CSV export
     const headers = [
@@ -114,8 +114,8 @@ export class InventoryController {
 
   @Get('expired-alerts')
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.CHECKER)
-  async getExpiredAlerts(@Query('gudang_id') gudangId?: string) {
-    return this.svc.getExpiredAlerts(gudangId ? Number(gudangId) : undefined);
+  async get_expired_alerts(@Query('gudang_id') gudang_id?: string) {
+    return this.svc.get_expired_alerts(gudang_id ? Number(gudang_id) : undefined);
   }
 
   @Get('stock/by-gudang')
@@ -125,8 +125,8 @@ export class InventoryController {
     UserRole.CHECKER,
     UserRole.KOORDINATOR,
   )
-  findStockByGudang(@Query('gudang_id') id: string) {
-    return this.svc.findStockByGudang(+id);
+  find_stock_by_gudang(@Query('gudang_id') id: string) {
+    return this.svc.find_stock_by_gudang(+id);
   }
 
   @Get('stock/by-barang')
@@ -136,66 +136,66 @@ export class InventoryController {
     UserRole.CHECKER,
     UserRole.KOORDINATOR,
   )
-  findStockByBarang(@Query('barang_id') id: string) {
-    return this.svc.findStockByBarang(+id);
+  find_stock_by_barang(@Query('barang_id') id: string) {
+    return this.svc.find_stock_by_barang(+id);
   }
 
   // ========== INBOUND ==========
   @Post('inbound')
   @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
-  postInbound(@Body() dto: InboundPostDto, @Request() req) {
-    return this.svc.postInbound(dto.items, req.user?.id);
+  post_inbound(@Body() dto: InboundPostDto, @Request() req) {
+    return this.svc.post_inbound(dto.items, req.user?.id);
   }
 
   // ========== OUTBOUND ==========
   @Post('outbound')
   @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
-  postOutbound(@Body() dto: OutboundPostDto, @Request() req) {
-    return this.svc.postOutbound(dto.items, req.user?.id);
+  post_outbound(@Body() dto: OutboundPostDto, @Request() req) {
+    return this.svc.post_outbound(dto.items, req.user?.id);
   }
 
   @Delete('outbound/:id')
   @Roles(UserRole.SUPERVISOR)
-  revertOutbound(@Param('id') id: string, @Request() req) {
-    return this.svc.revertOutbound(id, req.user?.id);
+  revert_outbound(@Param('id') id: string, @Request() req) {
+    return this.svc.revert_outbound(id, req.user?.id);
   }
 
   // ========== PICKING ==========
   @Post('picking')
   @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.KOORDINATOR)
-  postPicking(@Body() dto: PickingPostDto, @Request() req) {
-    return this.svc.postPicking(dto.items, req.user?.id);
+  post_picking(@Body() dto: PickingPostDto, @Request() req) {
+    return this.svc.post_picking(dto.items, req.user?.id);
   }
 
   @Post('outbound/confirm')
   @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
-  confirmPicking(@Body() dto: ConfirmPickingDto, @Request() req) {
-    return this.svc.confirmPicking(dto.no_ref, req.user?.id);
+  confirm_picking(@Body() dto: ConfirmPickingDto, @Request() req) {
+    return this.svc.confirm_picking(dto.no_ref, req.user?.id);
   }
 
   @Delete('picking/:id')
   @Roles(UserRole.SUPERVISOR, UserRole.CHECKER)
-  cancelPicking(@Param('id') id: string, @Request() req) {
-    return this.svc.cancelPicking(id, req.user?.id);
+  cancel_picking(@Param('id') id: string, @Request() req) {
+    return this.svc.cancel_picking(id, req.user?.id);
   }
 
   @Get('picking/pending')
   @Roles(UserRole.SUPERVISOR, UserRole.CHECKER, UserRole.KOORDINATOR)
-  getPendingPickings() {
-    return this.svc.getPendingPickings();
+  get_pending_pickings() {
+    return this.svc.get_pending_pickings();
   }
 
   // ========== RELOCATION ==========
   @Post('relocation')
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
-  createRelocation(@Body() dto: CreateRelocationDto) {
-    return this.relocationService.createRelocation(dto);
+  create_relocation(@Body() dto: CreateRelocationDto) {
+    return this.relocation_service.create_relocation(dto);
   }
 
   @Post('relocation/:id/execute')
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
-  executeRelocation(@Param('id') id: string) {
-    return this.relocationService.executeRelocation(+id);
+  execute_relocation(@Param('id') id: string) {
+    return this.relocation_service.execute_relocation(+id);
   }
 
   // ========== OPNAME ==========
@@ -207,18 +207,18 @@ export class InventoryController {
 
   @Get('opname/summary')
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
-  getOpnameSummary(@Query('zone') zone?: string) {
-    return this.svc.getOpnameSummary(zone);
+  get_opname_summary(@Query('zone') zone?: string) {
+    return this.svc.get_opname_summary(zone);
   }
 
   @Get('opname/export')
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
-  getOpnameExport(
+  get_opname_export(
     @Query('zone') zone?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return this.svc.getOpnameExportData(zone, from, to);
+    return this.svc.get_opname_export_data(zone, from, to);
   }
 
   // ========== LOGS / REPORTS ==========
@@ -230,14 +230,14 @@ export class InventoryController {
     UserRole.ADMIN,
     UserRole.MANAGER,
   )
-  getLogs(
+  get_logs(
     @Query('type') type?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('shift_id') shift_id?: string,
     @Query('search') search?: string,
   ) {
-    return this.svc.findLogs({
+    return this.svc.find_logs({
       type: type as LogType,
       from,
       to,
@@ -255,12 +255,12 @@ export class InventoryController {
     UserRole.MANAGER,
     UserRole.SUPER_ADMIN,
   )
-  getInboundLogs(
+  get_inbound_logs(
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('shift_id') shift_id?: string,
   ) {
-    return this.svc.findLogs({
+    return this.svc.find_logs({
       type: LogType.INBOUND,
       from,
       to,
@@ -277,12 +277,12 @@ export class InventoryController {
     UserRole.MANAGER,
     UserRole.SUPER_ADMIN,
   )
-  getOutboundLogs(
+  get_outbound_logs(
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('shift_id') shift_id?: string,
   ) {
-    return this.svc.findLogs({
+    return this.svc.find_logs({
       type: LogType.OUTBOUND,
       from,
       to,
@@ -299,12 +299,12 @@ export class InventoryController {
     UserRole.MANAGER,
     UserRole.SUPER_ADMIN,
   )
-  getPickingLogs(
+  get_picking_logs(
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('shift_id') shift_id?: string,
   ) {
-    return this.svc.findLogs({
+    return this.svc.find_logs({
       type: LogType.PICKING,
       from,
       to,
@@ -320,12 +320,12 @@ export class InventoryController {
     UserRole.MANAGER,
     UserRole.SUPER_ADMIN,
   )
-  getOpnameLogs(
+  get_opname_logs(
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('shift_id') shift_id?: string,
   ) {
-    return this.svc.findLogs({
+    return this.svc.find_logs({
       type: LogType.OPNAME,
       from,
       to,
@@ -342,8 +342,8 @@ export class InventoryController {
     UserRole.KOORDINATOR,
     UserRole.MANAGER,
   )
-  getDashboard() {
-    return this.svc.getDashboardStats();
+  get_dashboard() {
+    return this.svc.get_dashboard_stats();
   }
 
   @Get('dashboard/inout-chart')
@@ -354,8 +354,8 @@ export class InventoryController {
     UserRole.KOORDINATOR,
     UserRole.MANAGER,
   )
-  getDashboardInOutChart() {
-    return this.svc.getInOutChartData();
+  get_dashboard_in_out_chart() {
+    return this.svc.get_in_out_chart_data();
   }
 
   @Get('dashboard/stock-chart')
@@ -366,8 +366,8 @@ export class InventoryController {
     UserRole.KOORDINATOR,
     UserRole.MANAGER,
   )
-  getStockChart(@Query('barang_id') barangId?: string) {
-    return this.svc.getStockChartData(barangId ? +barangId : undefined);
+  get_stock_chart(@Query('barang_id') barang_id?: string) {
+    return this.svc.get_stock_chart_data(barang_id ? +barang_id : undefined);
   }
 
   @Get('dashboard/occupancy')
@@ -377,12 +377,12 @@ export class InventoryController {
     UserRole.KOORDINATOR,
     UserRole.MANAGER,
   )
-  getDashboardOccupancy(
+  get_dashboard_occupancy(
     @Query('zone') zone?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return this.svc.getOccupancyData(zone, from, to);
+    return this.svc.get_occupancy_data(zone, from, to);
   }
 
   @Get('dashboard/ofti')
@@ -393,8 +393,8 @@ export class InventoryController {
     UserRole.KOORDINATOR,
     UserRole.MANAGER,
   )
-  getDashboardOFTI(@Query('from') from?: string, @Query('to') to?: string) {
-    return this.svc.getOFTIData(from, to);
+  get_dashboard_ofti(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.svc.get_ofti_data(from, to);
   }
 
   @Get('dashboard/serapan-ayam')
@@ -406,11 +406,11 @@ export class InventoryController {
     UserRole.MANAGER,
     UserRole.SUPER_ADMIN,
   )
-  getDashboardSerapanAyam(
+  get_dashboard_serapan_ayam(
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return this.svc.getSerapanAyamData(from, to);
+    return this.svc.get_serapan_ayam_data(from, to);
   }
 
   // ========== INVENTORY MATRIX ==========
@@ -422,12 +422,12 @@ export class InventoryController {
     UserRole.KOORDINATOR,
     UserRole.MANAGER,
   )
-  getMatrix(
+  get_matrix(
     @Query('side') side?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
     const s = side !== 'false';
-    return this.svc.getInventoryMatrix(s, from, to);
+    return this.svc.get_inventory_matrix(s, from, to);
   }
 }

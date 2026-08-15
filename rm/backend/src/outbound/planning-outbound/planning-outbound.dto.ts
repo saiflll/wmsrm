@@ -10,10 +10,10 @@ import { Type } from 'class-transformer';
 
 class PlanItemDto {
   @IsNumber()
-  barangId: number;
+  barang_id: number;
 
   @IsNumber()
-  gudangId: number;
+  gudang_id: number;
 
   @IsNumber()
   qty: number;
@@ -95,7 +95,7 @@ export class UpdatePlanningOutboundDto {
 
 class ProcessItemDto {
   @IsNumber()
-  barangId: number;
+  barang_id: number;
 
   @IsNumber()
   qty: number;
@@ -105,7 +105,7 @@ class ProcessItemDto {
 
   @IsOptional()
   @IsNumber()
-  gudangId?: number;
+  gudang_id?: number;
 
   @IsOptional()
   @IsString()

@@ -7,28 +7,28 @@ import { Item } from './item.entity';
 export class ItemsService {
   constructor(
     @InjectRepository(Item)
-    private itemsRepository: Repository<Item>,
+    private items_repository: Repository<Item>,
   ) {}
 
-  findAll(): Promise<Item[]> {
-    return this.itemsRepository.find();
+  find_all(): Promise<Item[]> {
+    return this.items_repository.find();
   }
 
-  findOne(id: number): Promise<Item | null> {
-    return this.itemsRepository.findOneBy({ id });
+  find_one(id: number): Promise<Item | null> {
+    return this.items_repository.findOneBy({ id });
   }
 
   create(item: Partial<Item>): Promise<Item> {
-    const newItem = this.itemsRepository.create(item);
-    return this.itemsRepository.save(newItem);
+    const new_item = this.items_repository.create(item);
+    return this.items_repository.save(new_item);
   }
 
   async update(id: number, item: Partial<Item>): Promise<Item | null> {
-    await this.itemsRepository.update(id, item);
-    return this.findOne(id);
+    await this.items_repository.update(id, item);
+    return this.find_one(id);
   }
 
   async remove(id: number): Promise<void> {
-    await this.itemsRepository.delete(id);
+    await this.items_repository.delete(id);
   }
 }

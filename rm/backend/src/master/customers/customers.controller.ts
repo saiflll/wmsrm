@@ -25,14 +25,14 @@ export class CustomersController {
   constructor(@InjectRepository(Customer) private repo: Repository<Customer>) {}
 
   @Get()
-  findAll(@Query('search') search?: string) {
+  find_all(@Query('search') search?: string) {
     const where: any = { deleted_at: IsNull() };
     if (search) where.nama = ILike(`%${search}%`);
     return this.repo.find({ where, order: { created_at: 'DESC' } });
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  find_one(@Param('id') id: number) {
     return this.repo.findOne({ where: { id, deleted_at: IsNull() } });
   }
 
@@ -62,19 +62,19 @@ export class CustomersController {
   @Delete(':id')
   @Roles(UserRole.SUPERVISOR, UserRole.SUPER_ADMIN)
   async remove(@Param('id') id: string, @Query('cascade') cascade?: string) {
-    const numId = +id;
+    const num_id = +id;
     if (cascade === 'true') {
-      try { await this.repo.manager.query(`DELETE FROM transaksi WHERE suplayer_id = $1 OR "suplayer_id" = $1 OR "customerId" = $1 OR customer_id = $1`, [numId]); } catch (e) {}
-      try { await this.repo.manager.query(`UPDATE planning_outbound SET "customerId" = NULL WHERE "customerId" = $1`, [numId]); } catch (e) {}
-      try { await this.repo.manager.query(`UPDATE planning_outbound SET customer_id = NULL WHERE customer_id = $1`, [numId]); } catch (e) {}
+      try { await this.repo.manager.query(`DELETE FROM transaksi WHERE suplayer_id = $1 OR "suplayer_id" = $1 OR "customerId" = $1 OR customer_id = $1`, [num_id]); } catch (e) {}
+      try { await this.repo.manager.query(`UPDATE planning_outbound SET "customerId" = NULL WHERE "customerId" = $1`, [num_id]); } catch (e) {}
+      try { await this.repo.manager.query(`UPDATE planning_outbound SET customer_id = NULL WHERE customer_id = $1`, [num_id]); } catch (e) {}
       try {
-        await this.repo.delete(numId);
+        await this.repo.delete(num_id);
       } catch (err: any) {
         throw new ConflictException(`Gagal hapus customer (ada relasi tersisa): ${err?.message || err}`);
       }
       return { deleted: true, cascade: true };
     }
-    await this.repo.update(numId, { deleted_at: new Date() });
+    await this.repo.update(num_id, { deleted_at: new Date() });
     return { deleted: true };
   }
 }

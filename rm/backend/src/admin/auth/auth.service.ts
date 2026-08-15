@@ -12,16 +12,16 @@ export class AuthService {
 
   constructor(
     @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    private readonly user_repo: Repository<User>,
     @InjectRepository(LoginLog)
-    private readonly loginLogRepo: Repository<LoginLog>,
-    private readonly jwtService: JwtService,
+    private readonly login_log_repo: Repository<LoginLog>,
+    private readonly jwt_service: JwtService,
   ) {}
 
-  async validateUser(username: string, pass: string): Promise<any> {
+  async validate_user(username: string, pass: string): Promise<any> {
     try {
       this.logger.debug(`Attempting to validate user: ${username}`);
-      const user = await this.userRepo.findOneBy({ username });
+      const user = await this.user_repo.findOneBy({ username });
 
       if (!user) {
         this.logger.warn(`User not found: ${username}`);
@@ -34,9 +34,9 @@ export class AuthService {
       }
 
       this.logger.debug(`User found: ${username}, comparing passwords...`);
-      const isPasswordValid = await bcrypt.compare(pass, user.pass);
+      const is_password_valid = await bcrypt.compare(pass, user.pass);
 
-      if (!isPasswordValid) {
+      if (!is_password_valid) {
         this.logger.warn(`Invalid password for user: ${username}`);
         return null;
       }
@@ -53,19 +53,19 @@ export class AuthService {
     }
   }
 
-  async login(user: any, ip?: string, userAgent?: string) {
+  async login(user: any, ip?: string, user_agent?: string) {
     const payload = { username: user.username, sub: user.id, role: user.role };
-    await this.loginLogRepo.save(
-      this.loginLogRepo.create({
-        userId: user.id,
+    await this.login_log_repo.save(
+      this.login_log_repo.create({
+        user_id: user.id,
         username: user.username,
         ip: ip || '',
-        userAgent: userAgent || '',
+        user_agent: user_agent || '',
         success: true,
       }),
     );
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwt_service.sign(payload),
       user: {
         id: user.id,
         username: user.username,
@@ -74,21 +74,21 @@ export class AuthService {
     };
   }
 
-  async loginFailed(username: string, ip?: string, userAgent?: string) {
-    await this.loginLogRepo.save(
-      this.loginLogRepo.create({
-        userId: null,
+  async login_failed(username: string, ip?: string, user_agent?: string) {
+    await this.login_log_repo.save(
+      this.login_log_repo.create({
+        user_id: null,
         username: username || 'unknown',
         ip: ip || '',
-        userAgent: userAgent || '',
+        user_agent: user_agent || '',
         success: false,
       }),
     );
   }
 
-  async getLoginLogs(page: number = 1, limit: number = 50) {
-    const [logs, total] = await this.loginLogRepo.findAndCount({
-      order: { loginAt: 'DESC' },
+  async get_login_logs(page: number = 1, limit: number = 50) {
+    const [logs, total] = await this.login_log_repo.findAndCount({
+      order: { login_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });

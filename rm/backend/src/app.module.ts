@@ -52,9 +52,9 @@ import { SeedService } from './seed.service';
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: (config_service: ConfigService) => ({
         type: 'postgres',
-        url: configService.get('DATABASE_URL'),
+        url: config_service.get('DATABASE_URL'),
         entities: [
           User,
           LoginLog,

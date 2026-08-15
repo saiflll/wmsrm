@@ -13,21 +13,21 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
+    const required_roles = this.reflector.getAllAndOverride<UserRole[]>(
       ROLES_KEY,
       [context.getHandler(), context.getClass()],
     );
-    if (!requiredRoles || requiredRoles.length === 0) {
+    if (!required_roles || required_roles.length === 0) {
       return true;
     }
     const { user } = context.switchToHttp().getRequest();
     if (!user) {
       throw new ForbiddenException('No user found in request');
     }
-    const hasRole =
+    const has_role =
       user.role === UserRole.SUPER_ADMIN ||
-      requiredRoles.some((role) => user.role === role);
-    if (!hasRole) {
+      required_roles.some((role) => user.role === role);
+    if (!has_role) {
       throw new ForbiddenException(
         'You do not have permission to access this resource',
       );

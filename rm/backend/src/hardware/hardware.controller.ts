@@ -19,8 +19,8 @@ interface HwPayload {
 @Controller('hardware')
 export class HardwareController {
   constructor(
-    @InjectRepository(Barang) private barangRepo: Repository<Barang>,
-    @InjectRepository(Gudang) private gudangRepo: Repository<Gudang>,
+    @InjectRepository(Barang) private barang_repo: Repository<Barang>,
+    @InjectRepository(Gudang) private gudang_repo: Repository<Gudang>,
   ) {}
 
   @Post('sniff')
@@ -31,14 +31,14 @@ export class HardwareController {
 
     // Map SKU/barcode to product
     if (payload.sku || payload.barcode) {
-      barang = await this.barangRepo.findOneBy({
+      barang = await this.barang_repo.findOneBy({
         sku: payload.sku || payload.barcode,
       });
     }
 
     // Map rack to location
     if (payload.rack) {
-      gudang = await this.gudangRepo.findOneBy({ name: payload.rack });
+      gudang = await this.gudang_repo.findOneBy({ name: payload.rack });
     }
 
     return {

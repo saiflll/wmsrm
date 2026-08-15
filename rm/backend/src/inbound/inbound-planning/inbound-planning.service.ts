@@ -23,19 +23,19 @@ export class InboundPlanningService {
     @InjectRepository(InboundPlanning)
     private readonly repo: Repository<InboundPlanning>,
     @InjectRepository(Stock)
-    private readonly stockRepo: Repository<Stock>,
+    private readonly stock_repo: Repository<Stock>,
     @InjectRepository(StockLog)
-    private readonly logRepo: Repository<StockLog>,
+    private readonly log_repo: Repository<StockLog>,
     @InjectRepository(Barang)
-    private readonly barangRepo: Repository<Barang>,
+    private readonly barang_repo: Repository<Barang>,
     @InjectRepository(Gudang)
-    private readonly gudangRepo: Repository<Gudang>,
+    private readonly gudang_repo: Repository<Gudang>,
     @InjectRepository(Shift)
-    private readonly shiftRepo: Repository<Shift>,
-    private dataSource: DataSource,
+    private readonly shift_repo: Repository<Shift>,
+    private data_source: DataSource,
   ) {}
 
-  async findAll(page: number = 1, limit: number = 50) {
+  async find_all(page: number = 1, limit: number = 50) {
     const now = new Date();
     const [plans, total] = await this.repo.findAndCount({
       where: { deleted_at: IsNull() },
@@ -54,7 +54,7 @@ export class InboundPlanningService {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: number) {
+  async find_one(id: number) {
     const item = await this.repo.findOneBy({ id });
     if (!item)
       throw new NotFoundException(`Inbound planning with ID ${id} not found`);
@@ -72,22 +72,22 @@ export class InboundPlanningService {
   }
 
   async update(id: number, dto: UpdateInboundPlanningDto) {
-    const item = await this.findOne(id);
+    const item = await this.find_one(id);
     const data: any = { ...dto };
     if (dto.estimasi_datang) {
       data.estimasi_datang = new Date(dto.estimasi_datang);
     }
     await this.repo.update(id, data);
-    return this.findOne(id);
+    return this.find_one(id);
   }
 
-  async processInbound(
+  async process_inbound(
     id: number,
     dto: ProcessInboundDto,
-    userRole: string,
-    userId?: number,
+    user_role: string,
+    user_id?: number,
   ) {
-    return this.dataSource.transaction(async (manager) => {
+    return this.data_source.transaction(async (manager) => {
       // 1. Lock planning row (pessimistic_write)
       const plan = await manager.findOne(InboundPlanning, {
         where: { id },
@@ -105,33 +105,33 @@ export class InboundPlanningService {
 
       // Load shift if provided
       let shift: Shift | null = null;
-      if (dto.shiftId) {
-        shift = await manager.findOneBy(Shift, { id: dto.shiftId });
+      if (dto.shift_id) {
+        shift = await manager.findOneBy(Shift, { id: dto.shift_id });
       }
 
-      let totalReceived = 0;
+      let total_received = 0;
 
       for (const item of dto.items) {
         // 3. Validate barang & gudang exist
-        const barang = await manager.findOneBy(Barang, { id: item.barangId });
+        const barang = await manager.findOneBy(Barang, { id: item.barang_id });
         if (!barang) {
-          throw new BadRequestException(`Barang ID ${item.barangId} not found`);
+          throw new BadRequestException(`Barang ID ${item.barang_id} not found`);
         }
 
-        const gudang = await manager.findOneBy(Gudang, { id: item.gudangId });
+        const gudang = await manager.findOneBy(Gudang, { id: item.gudang_id });
         if (!gudang) {
-          throw new BadRequestException(`Gudang ID ${item.gudangId} not found`);
+          throw new BadRequestException(`Gudang ID ${item.gudang_id} not found`);
         }
 
-        totalReceived += item.qty;
+        total_received += item.qty;
 
         // 4. Upsert stock (Barang+Gudang+batch_no)
-        const batchKey = item.batch_no || '';
+        const batch_key = item.batch_no || '';
         let stock = await manager.findOne(Stock, {
           where: {
             barang: { id: barang.id },
             gudang: { id: gudang.id },
-            batch_no: batchKey,
+            batch_no: batch_key,
           },
         });
 
@@ -143,7 +143,7 @@ export class InboundPlanningService {
           stock = manager.create(Stock, {
             barang,
             gudang,
-            batch_no: batchKey,
+            batch_no: batch_key,
             qty: item.qty,
             satuan: item.satuan || barang.satuan,
             expiry_date: item.expiry_date
@@ -170,27 +170,27 @@ export class InboundPlanningService {
           tanggal_income: item.tanggal_aktual,
           jam_datang: item.jam_datang,
           jam_bongkar: item.jam_bongkar,
-          user: userId ? ({ id: userId } as any) : undefined,
+          user: user_id ? ({ id: user_id } as any) : undefined,
         });
         await manager.save(StockLog, log);
       }
 
       // 6. Validate and use actual date from DTO
       for (const item of dto.items) {
-        const inputDate = new Date(item.tanggal_aktual);
+        const input_date = new Date(item.tanggal_aktual);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const todayEnd = new Date();
-        todayEnd.setHours(23, 59, 59, 999);
+        const today_end = new Date();
+        today_end.setHours(23, 59, 59, 999);
 
         // No future dates
-        if (inputDate > todayEnd) {
+        if (input_date > today_end) {
           throw new BadRequestException('Tanggal tidak boleh di masa depan');
         }
 
         // Past dates: admin/koordinator only
-        if (inputDate < today) {
-          if (!['ADMIN', 'KOORDINATOR'].includes(userRole)) {
+        if (input_date < today) {
+          if (!['ADMIN', 'KOORDINATOR'].includes(user_role)) {
             throw new BadRequestException(
               'Hanya Admin/Koordinator yang bisa input tanggal lampau',
             );
@@ -199,19 +199,19 @@ export class InboundPlanningService {
       }
 
       // Use actual date for arrival
-      const arrivalDate = new Date(
+      const arrival_date = new Date(
         `${dto.items[0].tanggal_aktual}T${dto.items[0].jam_datang || '00:00'}`,
       );
-      plan.tanggal_realisasi = arrivalDate;
+      plan.tanggal_realisasi = arrival_date;
       if (plan.estimasi_datang) {
         plan.selisih_menit = Math.round(
-          (arrivalDate.getTime() - new Date(plan.estimasi_datang).getTime()) /
+          (arrival_date.getTime() - new Date(plan.estimasi_datang).getTime()) /
             60000,
         );
       }
       plan.status = 'DONE';
-      plan.received_quantity = totalReceived;
-      plan.qty_diterima = totalReceived;
+      plan.received_quantity = total_received;
+      plan.qty_diterima = total_received;
       plan.published_at = new Date();
       if (dto.note) {
         plan.note = dto.note;
@@ -222,11 +222,11 @@ export class InboundPlanningService {
     });
   }
 
-  async remove(id: number, userId?: number) {
-    const item = await this.findOne(id);
+  async remove(id: number, user_id?: number) {
+    const item = await this.find_one(id);
     await this.repo.update(id, {
       deleted_at: new Date(),
-      deleted_by: userId || 0,
+      deleted_by: user_id || 0,
     });
     return { deleted: true };
   }

@@ -39,8 +39,8 @@ export class PlanningOutbound {
   // Planned items
   @Column({ type: 'simple-json', nullable: true })
   items: {
-    barangId: number;
-    gudangId: number;
+    barang_id: number;
+    gudang_id: number;
     qty: number;
     batch_no?: string;
     satuan?: string;
@@ -50,10 +50,10 @@ export class PlanningOutbound {
   @Column({ type: 'simple-json', nullable: true })
   process_data: {
     items: {
-      barangId: number;
+      barang_id: number;
       qty: number;
       tujuan: string; // destination OR: 'WASTE' | 'REJECT' | 'RETURN_TO_WH' | 'MISSING'
-      gudangId?: number;
+      gudang_id?: number;
       batch_no?: string;
     }[];
     shift_id?: number;

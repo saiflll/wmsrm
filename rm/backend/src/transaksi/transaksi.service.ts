@@ -7,17 +7,17 @@ import { Transaksi } from './transaksi.entity';
 export class TransaksiService {
   constructor(
     @InjectRepository(Transaksi)
-    private readonly transaksiRepo: Repository<Transaksi>,
+    private readonly transaksi_repo: Repository<Transaksi>,
   ) {}
 
-  findAll() {
-    return this.transaksiRepo.find({
+  find_all() {
+    return this.transaksi_repo.find({
       relations: ['barang', 'suplayer', 'gudang', 'user'],
     });
   }
 
   create(data: Partial<Transaksi>) {
-    const trx = this.transaksiRepo.create(data);
-    return this.transaksiRepo.save(trx);
+    const trx = this.transaksi_repo.create(data);
+    return this.transaksi_repo.save(trx);
   }
 }

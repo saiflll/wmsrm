@@ -88,5 +88,5 @@ export class UpdateStatusDto {
 
   @IsOptional()
   @IsNumber()
-  userId?: number;
+  user_id?: number;
 }

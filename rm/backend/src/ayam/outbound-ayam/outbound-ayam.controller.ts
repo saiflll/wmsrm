@@ -35,8 +35,8 @@ export class OutboundAyamController {
     UserRole.SUPER_ADMIN,
     UserRole.CHECKER,
   )
-  findAll() {
-    return this.svc.findAll();
+  find_all() {
+    return this.svc.find_all();
   }
 
   @Get('filter')
@@ -46,12 +46,12 @@ export class OutboundAyamController {
     UserRole.SUPER_ADMIN,
     UserRole.CHECKER,
   )
-  findWithFilter(
+  find_with_filter(
     @Query('status') status?: string,
-    @Query('dateFrom') dateFrom?: string,
-    @Query('dateTo') dateTo?: string,
+    @Query('dateFrom') date_from?: string,
+    @Query('dateTo') date_to?: string,
   ) {
-    return this.svc.findWithFilter({ status, dateFrom, dateTo });
+    return this.svc.find_with_filter({ status, date_from, date_to });
   }
 
   @Get(':id')
@@ -61,8 +61,8 @@ export class OutboundAyamController {
     UserRole.SUPER_ADMIN,
     UserRole.CHECKER,
   )
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.svc.findOne(id);
+  find_one(@Param('id', ParseIntPipe) id: number) {
+    return this.svc.find_one(id);
   }
 
   @Post()
@@ -93,19 +93,19 @@ export class OutboundAyamController {
 
   @Post(':id/process')
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
-  processOutbound(
+  process_outbound(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ProcessOutboundAyamDto,
   ) {
-    return this.svc.processOutbound(id, dto);
+    return this.svc.process_outbound(id, dto);
   }
 
   @Post(':id/publish')
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
-  publishOutbound(
+  publish_outbound(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: PublishOutboundAyamDto,
   ) {
-    return this.svc.publishOutbound(id, dto);
+    return this.svc.publish_outbound(id, dto);
   }
 }

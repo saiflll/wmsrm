@@ -34,10 +34,10 @@ export class InboundPlanningController {
     UserRole.CHECKER,
     UserRole.ADMIN,
   )
-  findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+  find_all(@Query('page') page?: number, @Query('limit') limit?: number) {
     const p = page ? Number(page) : 1;
     const l = limit ? Number(limit) : 50;
-    return this.svc.findAll(p, l);
+    return this.svc.find_all(p, l);
   }
 
   @Get(':id')
@@ -47,8 +47,8 @@ export class InboundPlanningController {
     UserRole.CHECKER,
     UserRole.ADMIN,
   )
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.svc.findOne(id);
+  find_one(@Param('id', ParseIntPipe) id: number) {
+    return this.svc.find_one(id);
   }
 
   @Post()
@@ -74,12 +74,12 @@ export class InboundPlanningController {
 
   @Post(':id/process')
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.ADMIN)
-  processInbound(
+  process_inbound(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ProcessInboundDto,
     @Request() req,
   ) {
-    return this.svc.processInbound(
+    return this.svc.process_inbound(
       id,
       dto,
       req.user?.role || 'USER',

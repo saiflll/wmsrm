@@ -24,32 +24,32 @@ export class PlanningOutboundService {
   constructor(
     @InjectRepository(PlanningOutbound)
     private repo: Repository<PlanningOutbound>,
-    @InjectRepository(Customer) private customerRepo: Repository<Customer>,
-    @InjectRepository(Shift) private shiftRepo: Repository<Shift>,
-    private dataSource: DataSource,
+    @InjectRepository(Customer) private customer_repo: Repository<Customer>,
+    @InjectRepository(Shift) private shift_repo: Repository<Shift>,
+    private data_source: DataSource,
   ) {}
 
-  async findAll() {
+  async find_all() {
     return this.repo.find({ order: { created_at: 'DESC' } });
   }
 
-  async findWithFilter(filter: {
+  async find_with_filter(filter: {
     status?: string;
-    dateFrom?: string;
-    dateTo?: string;
+    date_from?: string;
+    date_to?: string;
   }) {
     const where: any = {};
     if (filter.status) where.status = filter.status;
-    if (filter.dateFrom && filter.dateTo) {
+    if (filter.date_from && filter.date_to) {
       where.created_at = Between(
-        new Date(filter.dateFrom),
-        new Date(filter.dateTo + 'T23:59:59'),
+        new Date(filter.date_from),
+        new Date(filter.date_to + 'T23:59:59'),
       );
     }
     return this.repo.find({ where, order: { created_at: 'DESC' } });
   }
 
-  async findOne(id: number) {
+  async find_one(id: number) {
     const item = await this.repo.findOneBy({ id });
     if (!item) throw new NotFoundException('Planning outbound tidak ditemukan');
     return item;
@@ -57,10 +57,10 @@ export class PlanningOutboundService {
 
   async create(dto: CreatePlanningOutboundDto) {
     const customer = dto.customer_id
-      ? await this.customerRepo.findOneBy({ id: dto.customer_id })
+      ? await this.customer_repo.findOneBy({ id: dto.customer_id })
       : null;
     const shift = dto.shift_id
-      ? await this.shiftRepo.findOneBy({ id: dto.shift_id })
+      ? await this.shift_repo.findOneBy({ id: dto.shift_id })
       : null;
 
     const item = this.repo.create({
@@ -73,18 +73,18 @@ export class PlanningOutboundService {
   }
 
   async update(id: number, dto: UpdatePlanningOutboundDto) {
-    const item = await this.findOne(id);
+    const item = await this.find_one(id);
     if (dto.customer_id !== undefined) {
       item.customer = (
         dto.customer_id
-          ? await this.customerRepo.findOneBy({ id: dto.customer_id })
+          ? await this.customer_repo.findOneBy({ id: dto.customer_id })
           : null
       ) as any;
     }
     if (dto.shift_id !== undefined) {
       item.shift = (
         dto.shift_id
-          ? await this.shiftRepo.findOneBy({ id: dto.shift_id })
+          ? await this.shift_repo.findOneBy({ id: dto.shift_id })
           : null
       ) as any;
     }
@@ -100,15 +100,15 @@ export class PlanningOutboundService {
   }
 
   async remove(id: number) {
-    const item = await this.findOne(id);
+    const item = await this.find_one(id);
     if (item.status === 'DONE') {
       throw new BadRequestException('Cannot remove a published planning');
     }
     return this.repo.remove(item);
   }
 
-  async processOutbound(id: number, dto: ProcessPlanningOutboundDto) {
-    const planning = await this.findOne(id);
+  async process_outbound(id: number, dto: ProcessPlanningOutboundDto) {
+    const planning = await this.find_one(id);
 
     if (planning.status !== 'WAIT') {
       throw new BadRequestException(
@@ -121,9 +121,9 @@ export class PlanningOutboundService {
     return this.repo.save(planning);
   }
 
-  async publishOutbound(id: number, dto: PublishPlanningOutboundDto) {
+  async publish_outbound(id: number, dto: PublishPlanningOutboundDto) {
     try {
-      return await this.dataSource.transaction(async (manager) => {
+      return await this.data_source.transaction(async (manager) => {
         const planning = await manager.findOne(PlanningOutbound, {
           where: { id },
           lock: { mode: 'pessimistic_write' },
@@ -133,13 +133,13 @@ export class PlanningOutboundService {
         if (!planning)
           throw new NotFoundException(`Planning with ID ${id} not found`);
 
-        const fullPlanning = await manager.findOne(PlanningOutbound, {
+        const full_planning = await manager.findOne(PlanningOutbound, {
           where: { id },
           relations: ['customer', 'shift'],
         });
-        if (fullPlanning) {
-          planning.customer = fullPlanning.customer;
-          planning.shift = fullPlanning.shift;
+        if (full_planning) {
+          planning.customer = full_planning.customer;
+          planning.shift = full_planning.shift;
         }
 
         if (!planning.process_data || !planning.process_data.items) {
@@ -154,10 +154,10 @@ export class PlanningOutboundService {
         }
 
         for (const item of planning.process_data.items) {
-          const barang = await manager.findOneBy(Barang, { id: item.barangId });
+          const barang = await manager.findOneBy(Barang, { id: item.barang_id });
           if (!barang)
             throw new BadRequestException(
-              `Barang ID ${item.barangId} not found`,
+              `Barang ID ${item.barang_id} not found`,
             );
 
           if (
@@ -167,9 +167,9 @@ export class PlanningOutboundService {
             item.tujuan === 'REJECT'
           ) {
             // Special categories deduct stock physically (unless we handle reserved, but since we didn't reserve physical stock yet, we just deduct what is lost/wasted)
-            if (item.gudangId) {
+            if (item.gudang_id) {
               const gudang = await manager.findOneBy(Gudang, {
-                id: item.gudangId,
+                id: item.gudang_id,
               });
               if (gudang) {
                 // Return to WH just adds back or ignores deduction. Since we didn't deduct yet, for RETURN_TO_WH we do NOT deduct physically, just log it.
@@ -206,8 +206,8 @@ export class PlanningOutboundService {
             }
           } else {
             // Normal category: deduct from physical stock
-            const gudang = item.gudangId
-              ? await manager.findOneBy(Gudang, { id: item.gudangId })
+            const gudang = item.gudang_id
+              ? await manager.findOneBy(Gudang, { id: item.gudang_id })
               : null;
             if (gudang) {
               const stock = await manager.findOne(Stock, {

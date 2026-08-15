@@ -9,7 +9,7 @@ import { Type } from 'class-transformer';
 
 export class ProcessItemDto {
   @IsNumber()
-  barangId: number;
+  barang_id: number;
 
   @IsNumber()
   qty: number;
@@ -19,7 +19,7 @@ export class ProcessItemDto {
 
   @IsOptional()
   @IsNumber()
-  gudangId?: number;
+  gudang_id?: number;
 
   @IsOptional()
   @IsString()

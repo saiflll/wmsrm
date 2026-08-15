@@ -14,7 +14,7 @@ export class LoginLog {
   id: number;
 
   @Column({ nullable: true })
-  userId: number | null;
+  user_id: number | null;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })
@@ -27,11 +27,11 @@ export class LoginLog {
   ip: string;
 
   @Column({ nullable: true })
-  userAgent: string;
+  user_agent: string;
 
   @Column({ default: true })
   success: boolean;
 
   @CreateDateColumn()
-  loginAt: Date;
+  login_at: Date;
 }

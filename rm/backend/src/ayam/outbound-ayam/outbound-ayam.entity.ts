@@ -42,10 +42,10 @@ export class OutboundAyam {
   @Column({ type: 'simple-json', nullable: true })
   process_data: {
     items: {
-      barangId: number;
+      barang_id: number;
       qty: number;
       tujuan: string;
-      gudangId?: number;
+      gudang_id?: number;
       batch_no?: string;
     }[];
     shift_id?: number;

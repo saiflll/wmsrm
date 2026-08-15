@@ -13,45 +13,45 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    private readonly user_repo: Repository<User>,
   ) {}
 
-  async findAll(): Promise<User[]> {
-    const users = await this.userRepo.find({ where: { deleted_at: IsNull() } });
+  async find_all(): Promise<User[]> {
+    const users = await this.user_repo.find({ where: { deleted_at: IsNull() } });
     return users.map((u) => {
       const { pass, ...rest } = u;
       return rest as User;
     });
   }
 
-  async findOne(id: number): Promise<User> {
-    const user = await this.userRepo.findOneBy({ id });
+  async find_one(id: number): Promise<User> {
+    const user = await this.user_repo.findOneBy({ id });
     if (!user) throw new NotFoundException('User not found');
     const { pass, ...rest } = user;
     return rest as User;
   }
 
   async create(dto: CreateUserDto): Promise<User> {
-    const existing = await this.userRepo.findOneBy({ username: dto.username });
+    const existing = await this.user_repo.findOneBy({ username: dto.username });
     if (existing) throw new ConflictException('Username already exists');
     const hashed = await bcrypt.hash(dto.password, 10);
-    const user = this.userRepo.create({
+    const user = this.user_repo.create({
       username: dto.username,
       pass: hashed,
       nama: dto.nama || '',
       role: dto.role,
       is_active: dto.is_active !== undefined ? dto.is_active : true,
     });
-    const saved = await this.userRepo.save(user);
+    const saved = await this.user_repo.save(user);
     const { pass, ...rest } = saved;
     return rest as User;
   }
 
   async update(id: number, dto: UpdateUserDto): Promise<User> {
-    const user = await this.userRepo.findOneBy({ id });
+    const user = await this.user_repo.findOneBy({ id });
     if (!user) throw new NotFoundException('User not found');
     if (dto.username && dto.username !== user.username) {
-      const existing = await this.userRepo.findOneBy({
+      const existing = await this.user_repo.findOneBy({
         username: dto.username,
       });
       if (existing) throw new ConflictException('Username already exists');
@@ -69,17 +69,17 @@ export class UsersService {
     if (dto.is_active !== undefined) {
       user.is_active = dto.is_active;
     }
-    const saved = await this.userRepo.save(user);
+    const saved = await this.user_repo.save(user);
     const { pass, ...rest } = saved;
     return rest as User;
   }
 
-  async remove(id: number, userId?: number): Promise<void> {
-    const user = await this.userRepo.findOneBy({ id });
+  async remove(id: number, user_id?: number): Promise<void> {
+    const user = await this.user_repo.findOneBy({ id });
     if (!user) throw new NotFoundException('User not found');
-    await this.userRepo.update(id, {
+    await this.user_repo.update(id, {
       deleted_at: new Date(),
-      deleted_by: userId || 0,
+      deleted_by: user_id || 0,
     });
   }
 }
