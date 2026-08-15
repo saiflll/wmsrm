@@ -521,7 +521,8 @@ export default function ReportOutboundPage() {
                           borderLeft: "1px solid #eee",
                         }}
                       >
-                        {fmt(r.created_at).split(" ")[0]}
+                        <div>{fmt(r.created_at)}</div>
+                        <div style={{ fontSize: 10, color: "#64748b" }}>oleh {r.user?.username || "sistem"}</div>
                       </Table.Td>
                     )}
                   </Table.Tr>

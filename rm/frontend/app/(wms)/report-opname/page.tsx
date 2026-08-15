@@ -472,7 +472,8 @@ export default function ReportOpnamePage() {
                     borderRight: "1px solid #eee",
                   }}
                 >
-                  {fmt(r.created_at)}
+                  <div>{fmt(r.created_at)}</div>
+                  <div style={{ fontSize: 10, color: "#64748b" }}>oleh {r.user?.username || "sistem"}</div>
                 </Table.Td>
                 <Table.Td
                   ta="center"

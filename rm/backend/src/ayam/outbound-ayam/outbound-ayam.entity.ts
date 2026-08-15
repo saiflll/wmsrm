@@ -55,6 +55,9 @@ export class OutboundAyam {
   @Column({ type: 'timestamp', nullable: true })
   published_at: Date;
 
+  @Column({ nullable: true })
+  executed_by_username: string;
+
   @CreateDateColumn()
   created_at: Date;
 

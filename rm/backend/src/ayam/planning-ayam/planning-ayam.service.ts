@@ -89,7 +89,7 @@ export class PlanningAyamService {
     });
   }
 
-  async create(dto: CreatePlanningAyamDto) {
+  async create(dto: CreatePlanningAyamDto, username?: string) {
     const barang = await this.barang_repo.findOneBy({ id: dto.barang_id });
     if (!barang) throw new NotFoundException('Barang tidak ditemukan');
 
@@ -112,6 +112,7 @@ export class PlanningAyamService {
         status: 'WAIT',
         keterangan: dto.keterangan,
         rak_asal: dto.rak_asal,
+        created_by_username: username,
       } as any);
       return manager.save(PlanningAyam, item);
     });
@@ -158,7 +159,7 @@ export class PlanningAyamService {
     });
   }
 
-  async update_status(id: number, new_status: string, user_id?: number) {
+  async update_status(id: number, new_status: string, user_id?: number, username?: string) {
     const planning = await this.find_one(id);
     const current_status = planning.status;
 
@@ -215,6 +216,10 @@ export class PlanningAyamService {
 
       // Update status
       locked.status = new_status;
+      if (new_status === 'DONE') {
+        locked.executed_by_username = username;
+        locked.executed_at = new Date();
+      }
       await txn_mgr.save(locked);
     });
   }
@@ -271,6 +276,10 @@ export class PlanningAyamService {
             p.qty > 0 ? Math.round((total_outbound / p.qty) * 10000) / 100 : 0,
           status: p.status,
           barang: (p as any).barang?.nama || '-',
+          created_by_username: p.created_by_username,
+          executed_by_username: p.executed_by_username,
+          created_at: p.created_at,
+          executed_at: p.executed_at,
         };
       }),
     );

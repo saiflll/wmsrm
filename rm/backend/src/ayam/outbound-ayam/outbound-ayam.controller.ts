@@ -72,8 +72,8 @@ export class OutboundAyamController {
     UserRole.SUPER_ADMIN,
     UserRole.CHECKER,
   )
-  create(@Body() dto: CreateOutboundAyamDto) {
-    return this.svc.create(dto);
+  create(@Body() dto: CreateOutboundAyamDto, @Request() req: any) {
+    return this.svc.create(dto, req.user?.id, req.user?.username);
   }
 
   @Put(':id')
@@ -105,7 +105,8 @@ export class OutboundAyamController {
   publish_outbound(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: PublishOutboundAyamDto,
+    @Request() req: any,
   ) {
-    return this.svc.publish_outbound(id, dto);
+    return this.svc.publish_outbound(id, dto, req.user?.id, req.user?.username);
   }
 }

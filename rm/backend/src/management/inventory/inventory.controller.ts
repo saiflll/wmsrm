@@ -188,14 +188,14 @@ export class InventoryController {
   // ========== RELOCATION ==========
   @Post('relocation')
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
-  create_relocation(@Body() dto: CreateRelocationDto) {
-    return this.relocation_service.create_relocation(dto);
+  create_relocation(@Body() dto: CreateRelocationDto, @Request() req: any) {
+    return this.relocation_service.create_relocation(dto, req.user?.username);
   }
 
   @Post('relocation/:id/execute')
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR)
-  execute_relocation(@Param('id') id: string) {
-    return this.relocation_service.execute_relocation(+id);
+  execute_relocation(@Param('id') id: string, @Request() req: any) {
+    return this.relocation_service.execute_relocation(+id, req.user?.id, req.user?.username);
   }
 
   // ========== OPNAME ==========

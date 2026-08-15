@@ -63,6 +63,12 @@ export class PlanningOutbound {
   @Column({ type: 'timestamp', nullable: true })
   published_at: Date;
 
+  @Column({ nullable: true })
+  created_by_username: string;
+
+  @Column({ nullable: true })
+  executed_by_username: string;
+
   @CreateDateColumn()
   created_at: Date;
 

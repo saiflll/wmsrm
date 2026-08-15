@@ -69,8 +69,8 @@ export class PlanningAyamController {
     UserRole.SUPERVISOR,
     UserRole.SUPER_ADMIN,
   )
-  create(@Body() dto: CreatePlanningAyamDto) {
-    return this.svc.create(dto);
+  create(@Body() dto: CreatePlanningAyamDto, @Request() req: any) {
+    return this.svc.create(dto, req.user?.username);
   }
 
   @Put(':id')
@@ -98,7 +98,7 @@ export class PlanningAyamController {
     @Body() dto: UpdateStatusDto,
     @Request() req: any,
   ) {
-    return this.svc.update_status(id, dto.status, dto.user_id || req.user?.id || 0);
+    return this.svc.update_status(id, dto.status, dto.user_id || req.user?.id || 0, req.user?.username);
   }
 
   @Delete(':id')

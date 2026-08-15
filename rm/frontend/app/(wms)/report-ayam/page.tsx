@@ -393,6 +393,8 @@ export default function ReportAyamPage() {
                       >
                         {r.status || "-"}
                       </Badge>
+                      <Text size="10px" c="dimmed">Dibuat {r.created_by_username || "sistem"} · {fmt(r.created_at)}</Text>
+                      {r.executed_at && <Text size="10px" c="dimmed">Eksekusi {r.executed_by_username || "sistem"} · {fmt(r.executed_at)}</Text>}
                     </Table.Td>
                   </Table.Tr>
                 );

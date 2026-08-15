@@ -34,6 +34,12 @@ export class Relocation {
   @Column({ type: 'timestamp', nullable: true })
   executed_at: Date;
 
+  @Column({ nullable: true })
+  created_by_username: string;
+
+  @Column({ nullable: true })
+  executed_by_username: string;
+
   @CreateDateColumn()
   created_at: Date;
 

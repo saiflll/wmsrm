@@ -31,7 +31,7 @@ export class RelocationService {
     });
   }
 
-  async create_relocation(dto: CreateRelocationDto): Promise<Relocation> {
+  async create_relocation(dto: CreateRelocationDto, username?: string): Promise<Relocation> {
     const stock = await this.stock_repo.findOne({
       where: { id: dto.stock_id },
       relations: ['barang', 'gudang'],
@@ -61,6 +61,7 @@ export class RelocationService {
       target_gudang: gudang,
       qty: dto.qty,
       status: RelocationStatus.DRAFT,
+      created_by_username: username,
     });
 
     return this.relocation_repo.save(relocation);
@@ -78,7 +79,7 @@ export class RelocationService {
     return { success: true };
   }
 
-  async execute_relocation(id: number): Promise<Relocation> {
+  async execute_relocation(id: number, user_id?: number, username?: string): Promise<Relocation> {
     return this.data_source.transaction(async (manager) => {
       const relocation = await manager.findOne(Relocation, {
         where: { id: Number(id) },
@@ -165,6 +166,7 @@ export class RelocationService {
         batch_no: stock.batch_no,
         expiry_date: stock.expiry_date,
         note: `Relokasi dari ${source_gudang_name} ke ${target_gudang_name}`,
+        user: user_id ? ({ id: user_id } as any) : undefined,
       } as any);
       await manager.save(StockLog, log);
 
@@ -176,6 +178,7 @@ export class RelocationService {
 
       relocation.status = RelocationStatus.EXECUTED;
       relocation.executed_at = new Date();
+      relocation.executed_by_username = username;
       await manager.save(Relocation, relocation);
 
       const total_stok_result = await manager

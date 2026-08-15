@@ -77,7 +77,7 @@ export class OutboundAyamService {
     return item;
   }
 
-  async create(dto: CreateOutboundAyamDto) {
+  async create(dto: CreateOutboundAyamDto, user_id?: number, username?: string) {
     const planning = await this.planning_repo.findOne({
       where: { id: dto.planning_ayam_id },
       relations: ['barang'],
@@ -184,6 +184,7 @@ export class OutboundAyamService {
             expiry_date: st.expiry_date,
             tujuan: alok.tujuan,
             keterangan: dto.keterangan || `Outbound ayam: ${alok.tujuan}`,
+            user: user_id ? ({ id: user_id } as any) : undefined,
           });
           await manager.save(StockLog, log);
         }
@@ -197,6 +198,10 @@ export class OutboundAyamService {
       // Track processed quantity for partial processing
       tx_planning.processed_qty = (tx_planning.processed_qty || 0) + dto.qty_aktual;
       tx_planning.status = tx_planning.processed_qty >= tx_planning.qty ? 'DONE' : 'PROGRESS';
+      if (tx_planning.status === 'DONE') {
+        tx_planning.executed_by_username = username;
+        tx_planning.executed_at = new Date();
+      }
       await manager.save(PlanningAyam, tx_planning);
 
       const stock_total = await manager
@@ -211,6 +216,7 @@ export class OutboundAyamService {
 
       // Mark outbound as published
       saved.published_at = new Date();
+      saved.executed_by_username = username;
       await manager.save(OutboundAyam, saved);
 
       return saved;
@@ -318,6 +324,8 @@ export class OutboundAyamService {
   async publish_outbound(
     id: number,
     dto: PublishOutboundAyamDto,
+    user_id?: number,
+    username?: string,
   ): Promise<OutboundAyam> {
     return this.data_source.transaction(async (manager) => {
       // 1. Lock outbound row
@@ -409,6 +417,7 @@ export class OutboundAyamService {
               expiry_date: stock?.expiry_date,
               tujuan: item.tujuan,
               keterangan: dto.keterangan || `Outbound: ${item.tujuan}`,
+              user: user_id ? ({ id: user_id } as any) : undefined,
             });
             await manager.save(StockLog, log);
           }
@@ -445,6 +454,7 @@ export class OutboundAyamService {
                 expiry_date: stock?.expiry_date,
                 tujuan: item.tujuan,
                 keterangan: dto.keterangan,
+                user: user_id ? ({ id: user_id } as any) : undefined,
               });
               await manager.save(StockLog, log);
             }
@@ -458,10 +468,15 @@ export class OutboundAyamService {
       );
       planning.processed_qty = (planning.processed_qty || 0) + total_processed;
       planning.status = planning.processed_qty >= planning.qty ? 'DONE' : 'PROGRESS';
+      if (planning.status === 'DONE') {
+        planning.executed_by_username = username;
+        planning.executed_at = new Date();
+      }
       await manager.save(PlanningAyam, planning);
 
       // 5. Mark outbound as published
       outbound.published_at = new Date();
+      outbound.executed_by_username = username;
       await manager.save(OutboundAyam, outbound);
 
       return outbound;

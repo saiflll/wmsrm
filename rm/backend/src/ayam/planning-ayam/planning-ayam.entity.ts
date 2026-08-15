@@ -44,6 +44,15 @@ export class PlanningAyam {
   @Column({ type: 'text', nullable: true })
   keterangan: string;
 
+  @Column({ nullable: true })
+  created_by_username: string;
+
+  @Column({ nullable: true })
+  executed_by_username: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  executed_at: Date;
+
   @CreateDateColumn()
   created_at: Date;
 

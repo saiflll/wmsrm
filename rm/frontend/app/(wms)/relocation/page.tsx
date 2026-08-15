@@ -791,7 +791,10 @@ export default function RelocationPage() {
 
                       return (
                         <Table.Tr key={row.id} style={rowStyle(index)}>
-                          <Table.Td>{fmt(row.created_at)}</Table.Td>
+                          <Table.Td>
+                            <Text size="xs">{fmt(row.created_at)}</Text>
+                            <Text size="10px" c="dimmed">oleh {row.user?.username || row.executed_by_username || "sistem"}</Text>
+                          </Table.Td>
                           <Table.Td fw={700}>
                             <Text size="xs" fw={700}>{item.nama || "-"}</Text>
                             {batchStr && <Text size="10px" c="dimmed">Batch: <b>{batchStr}</b></Text>}

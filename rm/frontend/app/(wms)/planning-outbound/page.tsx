@@ -569,6 +569,8 @@ export default function PlanningOutboundPage() {
                                                         </Table.Td>
                                                         <Table.Td>
                                                             <Badge size="xs" color={statusColor(plan.status)} variant="filled">{plan.status}</Badge>
+                                                            <Text size="10px" c="dimmed">Dibuat {plan.created_by_username || 'sistem'} · {fmt(plan.created_at)}</Text>
+                                                            {plan.published_at && <Text size="10px" c="dimmed">Eksekusi {plan.executed_by_username || 'sistem'} · {fmt(plan.published_at)}</Text>}
                                                         </Table.Td>
                                                         <Table.Td>
                                                             <Group gap={6} wrap="nowrap">
@@ -654,6 +656,8 @@ export default function PlanningOutboundPage() {
                                                         </Table.Td>
                                                         <Table.Td>
                                                             <Badge size="xs" color="green" variant="filled">{plan.status}</Badge>
+                                                            <Text size="10px" c="dimmed">Dibuat {plan.created_by_username || 'sistem'} · {fmt(plan.created_at)}</Text>
+                                                            <Text size="10px" c="dimmed">Eksekusi {plan.executed_by_username || 'sistem'} · {fmt(plan.published_at)}</Text>
                                                         </Table.Td>
                                                         <Table.Td>
                                                             <Group gap={6} wrap="nowrap">

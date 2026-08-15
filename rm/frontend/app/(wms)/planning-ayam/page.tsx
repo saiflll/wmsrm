@@ -203,6 +203,8 @@ export default function PlanningAyamPage() {
                                     <Badge size="xs" color={statusColor(p.status)} variant="filled" style={{ letterSpacing: "0.02em" }}>
                                         {p.status}
                                     </Badge>
+                                    <Text size="10px" c="dimmed" mt={2}>Dibuat: {p.created_by_username || 'sistem'} · {fmt(p.created_at)}</Text>
+                                    {p.executed_at && <Text size="10px" c="dimmed">Eksekusi: {p.executed_by_username || 'sistem'} · {fmt(p.executed_at)}</Text>}
                                 </Table.Td>
                                 <Table.Td>{p.keterangan || '-'}</Table.Td>
                                 {!history && (

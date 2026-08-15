@@ -53,8 +53,8 @@ export class InboundPlanningController {
 
   @Post()
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.ADMIN)
-  create(@Body() dto: CreateInboundPlanningDto) {
-    return this.svc.create(dto);
+  create(@Body() dto: CreateInboundPlanningDto, @Request() req: any) {
+    return this.svc.create(dto, req.user?.username);
   }
 
   @Put(':id')
@@ -84,6 +84,7 @@ export class InboundPlanningController {
       dto,
       req.user?.role || 'USER',
       req.user?.id,
+      req.user?.username,
     );
   }
 }

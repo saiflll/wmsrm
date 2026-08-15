@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { RelocationService } from './relocation.service';
 import { JwtAuthGuard } from '../../admin/auth/jwt-auth.guard';
 import { RolesGuard } from '../../admin/auth/roles.guard';
@@ -19,14 +19,14 @@ export class RelocationController {
 
   @Post()
   @Roles(UserRole.CHECKER, UserRole.ADMIN, UserRole.KOORDINATOR, UserRole.SUPERVISOR, UserRole.SUPER_ADMIN)
-  create_relocation(@Body() dto: CreateRelocationDto) {
-    return this.relocation_service.create_relocation(dto);
+  create_relocation(@Body() dto: CreateRelocationDto, @Request() req: any) {
+    return this.relocation_service.create_relocation(dto, req.user?.username);
   }
 
   @Post(':id/execute')
   @Roles(UserRole.CHECKER, UserRole.ADMIN, UserRole.KOORDINATOR, UserRole.SUPERVISOR, UserRole.SUPER_ADMIN)
-  execute_relocation(@Param('id') id: string) {
-    return this.relocation_service.execute_relocation(+id);
+  execute_relocation(@Param('id') id: string, @Request() req: any) {
+    return this.relocation_service.execute_relocation(+id, req.user?.id, req.user?.username);
   }
 
   @Delete(':id')

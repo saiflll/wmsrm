@@ -798,6 +798,8 @@ export default function PlanningInboundPage() {
                               <Badge color={badgeColor} variant="filled" size="xs">
                                 {p.status}
                               </Badge>
+                              <div style={{ fontSize: 9, color: '#64748b', marginTop: 3 }}>Dibuat {p.created_by_username || 'sistem'} · {fmt(p.created_at)}</div>
+                              {p.published_at && <div style={{ fontSize: 9, color: '#64748b' }}>Eksekusi {p.executed_by_username || 'sistem'} · {fmt(p.published_at)}</div>}
                             </Table.Td>
                             <Table.Td>{p.note || "-"}</Table.Td>
                             <Table.Td>

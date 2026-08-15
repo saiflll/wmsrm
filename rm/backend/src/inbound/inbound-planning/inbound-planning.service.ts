@@ -61,12 +61,13 @@ export class InboundPlanningService {
     return item;
   }
 
-  create(dto: CreateInboundPlanningDto) {
+  create(dto: CreateInboundPlanningDto, username?: string) {
     const item = this.repo.create({
       ...dto,
       estimasi_datang: dto.estimasi_datang
         ? new Date(dto.estimasi_datang)
         : undefined,
+      created_by_username: username,
     });
     return this.repo.save(item);
   }
@@ -86,6 +87,7 @@ export class InboundPlanningService {
     dto: ProcessInboundDto,
     user_role: string,
     user_id?: number,
+    username?: string,
   ) {
     return this.data_source.transaction(async (manager) => {
       // 1. Lock planning row (pessimistic_write)
@@ -226,6 +228,7 @@ export class InboundPlanningService {
       plan.received_quantity = total_received;
       plan.qty_diterima = total_received;
       plan.published_at = new Date();
+      plan.executed_by_username = username;
       if (dto.note) {
         plan.note = dto.note;
       }

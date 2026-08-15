@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  Request,
 } from '@nestjs/common';
 import { PlanningOutboundService } from './planning-outbound.service';
 import {
@@ -69,8 +70,8 @@ export class PlanningOutboundController {
 
   @Post()
   @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  create(@Body() dto: CreatePlanningOutboundDto) {
-    return this.svc.create(dto);
+  create(@Body() dto: CreatePlanningOutboundDto, @Request() req: any) {
+    return this.svc.create(dto, req.user?.username);
   }
 
   @Put(':id')
@@ -102,7 +103,8 @@ export class PlanningOutboundController {
   publish_outbound(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: PublishPlanningOutboundDto,
+    @Request() req: any,
   ) {
-    return this.svc.publish_outbound(id, dto);
+    return this.svc.publish_outbound(id, dto, req.user?.id, req.user?.username);
   }
 }

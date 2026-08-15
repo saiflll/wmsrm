@@ -94,7 +94,7 @@ export class PlanningOutboundService {
     return item;
   }
 
-  async create(dto: CreatePlanningOutboundDto) {
+  async create(dto: CreatePlanningOutboundDto, username?: string) {
     const customer = dto.customer_id
       ? await this.customer_repo.findOneBy({ id: dto.customer_id })
       : null;
@@ -110,6 +110,7 @@ export class PlanningOutboundService {
         customer,
         shift,
         status: 'WAIT',
+        created_by_username: username,
       } as any);
       return manager.save(PlanningOutbound, item);
     });
@@ -215,7 +216,7 @@ export class PlanningOutboundService {
     return this.repo.save(planning);
   }
 
-  async publish_outbound(id: number, dto: PublishPlanningOutboundDto) {
+  async publish_outbound(id: number, dto: PublishPlanningOutboundDto, user_id?: number, username?: string) {
     try {
       return await this.data_source.transaction(async (manager) => {
         const planning = await manager.findOne(PlanningOutbound, {
@@ -298,6 +299,7 @@ export class PlanningOutboundService {
                   keterangan:
                     dto.keterangan || `Outbound Split: ${item.tujuan}`,
                   shift: planning.shift,
+                  user: user_id ? ({ id: user_id } as any) : undefined,
                 } as any);
                 await manager.save(StockLog, log);
               }
@@ -333,6 +335,7 @@ export class PlanningOutboundService {
                 tujuan: item.tujuan,
                 keterangan: dto.keterangan || planning.keterangan,
                 shift: planning.shift,
+                user: user_id ? ({ id: user_id } as any) : undefined,
               } as any);
               await manager.save(StockLog, log);
             }
@@ -355,6 +358,7 @@ export class PlanningOutboundService {
 
         planning.status = 'DONE';
         planning.published_at = new Date();
+        planning.executed_by_username = username;
         return manager.save(PlanningOutbound, planning);
       });
     } catch (error) {
