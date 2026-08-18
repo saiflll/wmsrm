@@ -238,13 +238,13 @@ export default function StockOpnamePage() {
   }, []);
 
   useEffect(() => {
-    load();
+    load(false);
     loadHistory();
   }, [zone]);
 
   useEffect(() => {
     const refresh = () => {
-      load();
+      load(true);
       loadHistory();
     };
     const onVisibility = () => {
@@ -260,11 +260,13 @@ export default function StockOpnamePage() {
     };
   }, [zone]);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    // Background refresh must not replace the existing rack view with a loader.
+    if (!silent) setLoading(true);
     try {
       const res = await api().get(`/inventory/opname/summary?zone=${zone}`);
-      const rows = unwrap(res) || [];
+      const payload = unwrap(res);
+      const rows = Array.isArray(payload) ? payload : [];
       setSummary(rows.map((row: any) => ({
         ...row,
         totalQty: Number(row.totalQty ?? row.total_qty ?? 0),
@@ -272,8 +274,9 @@ export default function StockOpnamePage() {
       })));
     } catch (e) {
       console.error(e);
+    } finally {
+      if (!silent) setLoading(false);
     }
-    setLoading(false);
   };
 
   const loadHistory = async () => {
@@ -309,7 +312,7 @@ export default function StockOpnamePage() {
         color: "green",
       });
       close();
-      load();
+      load(true);
       loadHistory();
     } catch (e: any) {
       notifications.show({
@@ -737,6 +740,14 @@ export default function StockOpnamePage() {
         <Group justify="center" py={50}>
           <Loader color="orange" size="md" />
         </Group>
+      ) : summary.length === 0 ? (
+        <Paper withBorder p="xl" radius="md">
+          <Stack align="center" gap={6}>
+            <IconLayoutGrid size={30} color="#94a3b8" />
+            <Text fw={700} c="dimmed">Tidak ada data rak di zone {zone}</Text>
+            <Text size="xs" c="dimmed">Pilih zone lain atau tambahkan lokasi rak pada master lokasi.</Text>
+          </Stack>
+        </Paper>
       ) : viewMode === "3d" ? (
         /* VISUAL RAK GRID VIEW */
         <Box>
