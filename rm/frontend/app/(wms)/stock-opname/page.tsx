@@ -519,6 +519,8 @@ export default function StockOpnamePage() {
         isAllReserved: false,
         isAllExpired: false,
         isAllAging: false,
+        hasExpired: false,
+        hasNearExpired: false,
         reservedRatio: 0,
         expiredRatio: 0,
         nearExpRatio: 0,
@@ -552,6 +554,8 @@ export default function StockOpnamePage() {
     const isAllReserved = totalQty > 0 && reservedQty >= totalQty;
     const isAllExpired = totalQty > 0 && expiredQty >= totalQty;
     const isAllAging = totalQty > 0 && agingQty >= totalQty;
+    const hasExpired = expiredQty > 0;
+    const hasNearExpired = nearExpQty > 0;
 
     const reservedRatio = totalQty > 0 ? Math.min(1, reservedQty / totalQty) : 0;
     const expiredRatio = totalQty > 0 ? Math.min(1, expiredQty / totalQty) : 0;
@@ -564,6 +568,8 @@ export default function StockOpnamePage() {
       isAllReserved,
       isAllExpired,
       isAllAging,
+      hasExpired,
+      hasNearExpired,
       reservedRatio,
       expiredRatio,
       nearExpRatio,
@@ -827,10 +833,14 @@ export default function StockOpnamePage() {
 
                             let fillGradient = "linear-gradient(180deg, #38bdf8 0%, #0284c7 100%)";
 
-                            if (fillInfo.isAllReserved) {
-                              fillGradient = "linear-gradient(180deg, #a855f7 0%, #6d28d9 100%)";
-                            } else if (fillInfo.isAllExpired) {
+                            // Expiry risk has the highest visual priority, even
+                            // when only one batch in the rack is affected.
+                            if (fillInfo.hasExpired) {
                               fillGradient = "linear-gradient(180deg, #f87171 0%, #dc2626 100%)";
+                            } else if (fillInfo.hasNearExpired) {
+                              fillGradient = "linear-gradient(180deg, #fb923c 0%, #ea580c 100%)";
+                            } else if (fillInfo.isAllReserved) {
+                              fillGradient = "linear-gradient(180deg, #a855f7 0%, #6d28d9 100%)";
                             } else if (fillInfo.isAllAging) {
                               fillGradient = "linear-gradient(180deg, #facc15 0%, #ca8a04 100%)";
                             }
@@ -898,7 +908,7 @@ export default function StockOpnamePage() {
                                           overflow: "hidden",
                                         }}
                                       >
-                                        {fillInfo.isAllReserved || fillInfo.isAllExpired || fillInfo.isAllAging ? (
+                                        {fillInfo.hasExpired || fillInfo.hasNearExpired || fillInfo.isAllReserved || fillInfo.isAllAging ? (
                                           <Box
                                             style={{
                                               width: "100%",
