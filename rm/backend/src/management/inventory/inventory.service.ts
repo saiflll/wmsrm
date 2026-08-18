@@ -66,6 +66,11 @@ export class InventoryService {
       const executed_at = new Date();
 
       for (const item of items) {
+        if (!Number.isFinite(item.qty) || item.qty <= 0) {
+          throw new BadRequestException(
+            `Qty inbound untuk barang ID ${item.barang_id} harus lebih besar dari 0`,
+          );
+        }
         const barang = await manager.findOneBy(Barang, { id: item.barang_id });
         if (!barang)
           throw new BadRequestException(
@@ -183,6 +188,11 @@ export class InventoryService {
       const executed_at = new Date();
 
       for (const item of items) {
+        if (!Number.isFinite(item.qty) || item.qty <= 0) {
+          throw new BadRequestException(
+            `Qty outbound untuk barang ID ${item.barang_id} harus lebih besar dari 0`,
+          );
+        }
         const barang = await manager.findOneBy(Barang, { id: item.barang_id });
         if (!barang)
           throw new BadRequestException(

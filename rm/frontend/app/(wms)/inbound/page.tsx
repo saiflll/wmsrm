@@ -337,6 +337,14 @@ function InboundContent() {
 
   const postAll = async () => {
     if (!drafts.length) return;
+    const invalidDrafts = drafts.filter((d: any) => !Number.isFinite(Number(d.qty)) || Number(d.qty) <= 0);
+    if (invalidDrafts.length > 0) {
+      return notifications.show({
+        title: "Qty tidak valid",
+        message: `${invalidDrafts.length} draft memiliki qty 0/kosong. Isi qty lebih dari 0 sebelum posting.`,
+        color: "red",
+      });
+    }
     try {
       // Then, submit inbound drafts to POST /inventory/inbound
       if (drafts.length > 0) {
@@ -378,6 +386,13 @@ function InboundContent() {
   const postAllFromDraft = async (idx: number) => {
     const draft = drafts[idx];
     if (!draft) return;
+    if (!Number.isFinite(Number(draft.qty)) || Number(draft.qty) <= 0) {
+      return notifications.show({
+        title: "Qty tidak valid",
+        message: "Qty inbound harus lebih besar dari 0.",
+        color: "red",
+      });
+    }
     try {
       await api().post("/inventory/inbound", {
         items: [{

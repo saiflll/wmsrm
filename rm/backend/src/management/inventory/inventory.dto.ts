@@ -6,6 +6,7 @@ import {
   IsArray,
   ValidateNested,
   IsDateString,
+  IsPositive,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -32,6 +33,7 @@ export class InboundItemDto {
 
   @IsNotEmpty()
   @IsNumber()
+  @IsPositive()
   qty: number;
 
   @IsOptional()
@@ -105,6 +107,7 @@ export class OutboundItemDto {
 
   @IsNotEmpty()
   @IsNumber()
+  @IsPositive()
   qty: number;
 
   @IsOptional()
