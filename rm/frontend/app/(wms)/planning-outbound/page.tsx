@@ -455,6 +455,9 @@ export default function PlanningOutboundPage() {
                                 <NumberInput
                                     label="Qty"
                                     size="xs"
+                                    allowedDecimalSeparators={[".", ","]}
+                                    decimalScale={3}
+                                    step={0.1}
                                     value={form.qty}
                                     onChange={v => setForm(p => ({ ...p, qty: Number(v) }))}
                                     min={1}

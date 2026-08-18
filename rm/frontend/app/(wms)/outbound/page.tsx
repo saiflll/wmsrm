@@ -575,9 +575,12 @@ export default function OutboundPage() {
                         <NumberInput
                           label="Qty Diambil"
                           size="xs"
+                          allowedDecimalSeparators={[".", ","]}
+                          decimalScale={3}
+                          step={0.1}
                           value={item.qty}
                           onChange={(v) => updateProcessItem(item.id, "qty", Number(v || 0))}
-                          min={0}
+                          min={0.001}
                           required
                         />
 
@@ -711,6 +714,9 @@ export default function OutboundPage() {
                     <NumberInput
                       label="Qty"
                       size="xs"
+                      allowedDecimalSeparators={[".", ","]}
+                      decimalScale={3}
+                      step={0.1}
                       value={form.qty}
                       onChange={(v: any) => f("qty", v)}
                       style={{ flex: 1 }}

@@ -240,7 +240,7 @@ export default function PlanningAyamPage() {
             <Grid.Col span={{ base: 12, md: 4, lg: 3 }}><Paper withBorder p="md" radius="md"><Stack gap="xs">
                 <Group justify="space-between"><Text fw={800} size="sm" c="grape">{editId ? 'EDIT PLANNING AYAM' : 'BUAT PLANNING AYAM'}</Text>{editId && <ActionIcon size="sm" variant="subtle" color="gray" onClick={resetForm}><IconX size={14} /></ActionIcon>}</Group>
                 <Select label="Item Ayam" size="xs" searchable data={barangOpts} value={form.barang_id} onChange={v => setForm((p: any) => ({ ...p, barang_id: v || '', rak_asal: '' }))} required />
-                <NumberInput label="Qty Planning" size="xs" min={1} value={form.qty} onChange={v => setForm((p: any) => ({ ...p, qty: Number(v) }))} required />
+                <NumberInput label="Qty Planning" size="xs" min={0.001} step={0.1} decimalScale={3} allowedDecimalSeparators={[".", ","]} value={form.qty} onChange={v => setForm((p: any) => ({ ...p, qty: Number(v) }))} required />
                 <TextInput label="Tanggal Planning" type="date" size="xs" value={form.tanggal_planning} onChange={e => setForm((p: any) => ({ ...p, tanggal_planning: e.target.value }))} required />
                 <Select label="Shift" size="xs" data={shiftOpts} value={form.shift_id} onChange={v => setForm((p: any) => ({ ...p, shift_id: v || '' }))} searchable clearable />
                 <Autocomplete label="Tujuan" size="xs" data={customerOpts} value={form.tujuan} onChange={v => setForm((p: any) => ({ ...p, tujuan: v }))} />

@@ -501,6 +501,9 @@ export default function PlanningInboundPage() {
                     <NumberInput
                       label="Qty"
                       size="xs"
+                      allowedDecimalSeparators={[".", ","]}
+                      decimalScale={3}
+                      step={0.1}
                       value={itemQty}
                       onChange={(v) => setItemQty(Number(v || 1))}
                       min={1}

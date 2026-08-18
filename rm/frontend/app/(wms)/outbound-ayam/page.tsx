@@ -128,15 +128,15 @@ export default function OutboundAyamPage() {
                         <Text size="xs">Qty Planning: <b>{selectedPlan.qty} {selectedPlan.satuan}</b></Text>
                         <Text size="xs">Tanggal: <b>{fmt(selectedPlan.tanggal_planning)}</b></Text>
                     </Box>
-                    <NumberInput label="Qty Aktual" size="xs" min={1} value={form.qty_aktual} onChange={v => setForm((p: any) => ({ ...p, qty_aktual: Number(v) }))} required />
+                    <NumberInput label="Qty Aktual" size="xs" min={0.001} step={0.1} decimalScale={3} allowedDecimalSeparators={[".", ","]} value={form.qty_aktual} onChange={v => setForm((p: any) => ({ ...p, qty_aktual: Number(v) }))} required />
                     <Text size="xs" c="dimmed">Serapan: <b style={{ color: selectedPlan.qty ? (Math.round((form.qty_terserap / selectedPlan.qty) * 100) >= 50 ? 'green' : 'red') : '#999' }}>{selectedPlan.qty ? Math.round((form.qty_terserap / selectedPlan.qty) * 100) : 0}%</b> (Terserap/{selectedPlan.qty})</Text>
                     <Select label="Shift" size="xs" searchable clearable data={dedup(shifts.map((s: any) => ({ value: String(s.id), label: s.name })))} value={form.shift_id} onChange={v => setForm((p: any) => ({ ...p, shift_id: v || '' }))} />
                     <TextInput label="Tujuan Utama" size="xs" value={form.tujuan} onChange={e => setForm((p: any) => ({ ...p, tujuan: e.target.value }))} />
                     <Textarea label="Keterangan" size="xs" value={form.keterangan} onChange={e => setForm((p: any) => ({ ...p, keterangan: e.target.value }))} />
                     <Divider label="Alokasi" labelPosition="center" />
                     <Group gap="xs" grow>
-                        <NumberInput label="Terserap" size="xs" min={0} value={form.qty_terserap} onChange={v => setForm((p: any) => ({ ...p, qty_terserap: Number(v) || 0 }))} />
-                        <NumberInput label="Waste" size="xs" min={0} value={form.qty_waste} onChange={v => setForm((p: any) => ({ ...p, qty_waste: Number(v) || 0 }))} />
+                        <NumberInput label="Terserap" size="xs" min={0} step={0.1} decimalScale={3} allowedDecimalSeparators={[".", ","]} value={form.qty_terserap} onChange={v => setForm((p: any) => ({ ...p, qty_terserap: Number(v) || 0 }))} />
+                        <NumberInput label="Waste" size="xs" min={0} step={0.1} decimalScale={3} allowedDecimalSeparators={[".", ","]} value={form.qty_waste} onChange={v => setForm((p: any) => ({ ...p, qty_waste: Number(v) || 0 }))} />
                     </Group>
                     {(() => {
                         const qtyReject = Math.max(0, Number(form.qty_aktual || 0) - Number(form.qty_terserap || 0) - Number(form.qty_waste || 0));
