@@ -28,6 +28,21 @@ export class BarangController {
     @InjectRepository(Barang) private readonly repo: Repository<Barang>,
   ) {}
 
+  /** Always expose stock from the rack-level source of truth. */
+  private async with_current_stock<T extends Barang>(items: T[]): Promise<T[]> {
+    if (!items.length) return items;
+    const rows = await this.repo.manager
+      .createQueryBuilder()
+      .select('s."barangId"', 'barang_id')
+      .addSelect('COALESCE(SUM(s.qty), 0)', 'total')
+      .from('stock', 's')
+      .where('s."barangId" IN (:...ids)', { ids: items.map((item) => item.id) })
+      .groupBy('s."barangId"')
+      .getRawMany();
+    const totals = new Map(rows.map((row) => [Number(row.barang_id), Number(row.total || 0)]));
+    return items.map((item) => Object.assign(item, { stok: totals.get(item.id) || 0 }));
+  }
+
   @Get('paged')
   async find_paged(
     @Query('page') page = '1',
@@ -48,7 +63,7 @@ export class BarangController {
       skip: (currentPage - 1) * pageSize,
       take: pageSize,
     });
-    return { data, total, page: currentPage, limit: pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
+    return { data: await this.with_current_stock(data), total, page: currentPage, limit: pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
   }
 
   @Get()
@@ -62,7 +77,8 @@ export class BarangController {
     if (side === 'false') where.side = false;
     if (kategori) where.kategori = kategori;
     if (search) where.nama = ILike(`%${search}%`);
-    return this.repo.find({ where, order: { id: 'ASC' } });
+    const items = await this.repo.find({ where, order: { id: 'ASC' } });
+    return this.with_current_stock(items);
   }
 
   @Get(':id')

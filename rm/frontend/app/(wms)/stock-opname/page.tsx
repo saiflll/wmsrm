@@ -242,6 +242,24 @@ export default function StockOpnamePage() {
     loadHistory();
   }, [zone]);
 
+  useEffect(() => {
+    const refresh = () => {
+      load();
+      loadHistory();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    const timer = window.setInterval(refresh, 30_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [zone]);
+
   const load = async () => {
     setLoading(true);
     try {

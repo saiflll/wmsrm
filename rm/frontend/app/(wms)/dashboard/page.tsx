@@ -103,12 +103,14 @@ const normalizeStats = (raw: { totalSku: any; skuCount: any; totalStock: any; in
 const normalizeOccupancy = (raw: { gauges: any; dailySeries: any; items: any; weeks: any; series: any; } | null) => ({
   ...(raw || {}),
   gauges: asArray(raw?.gauges).map((g) => {
-    const occupiedRacks = toNumber(g.occupiedRacks);
-    const totalRacks = toNumber(g.totalRacks);
+    // The API historically returned snake_case while this page consumed
+    // camelCase. Accept both so existing and newer backends render correctly.
+    const occupiedRacks = toNumber(g.occupiedRacks ?? g.occupied_racks);
+    const totalRacks = toNumber(g.totalRacks ?? g.total_racks);
     const pct = totalRacks > 0 ? percentage(occupiedRacks, totalRacks) : clamp(toNumber(g.pct), 0, 100);
     return { ...g, occupiedRacks, totalRacks, pct };
   }),
-  dailySeries: asArray(raw?.dailySeries).map((d) => ({ ...d, value: toNumber(d.value) })),
+  dailySeries: asArray(raw?.dailySeries ?? raw?.daily_series).map((d) => ({ ...d, value: toNumber(d.value) })),
   items: asArray(raw?.items).map((item) => ({ ...item, qty: toNumber(item.qty) })),
   weeks: asArray(raw?.weeks),
   series: asArray(raw?.series).map((s) => ({ ...s, data: asArray(s.data).map(toNumber) })),
@@ -881,6 +883,23 @@ export default function DashboardPage() {
     if (activeTab === "report" && !reportData) loadReport();
   }, [activeTab]);
 
+  // Keep occupancy in sync when transactions are executed from another tab.
+  useEffect(() => {
+    if (activeTab !== "occupancy") return;
+    const refresh = () => loadOccupancy(selectedZone || undefined);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    const timer = window.setInterval(refresh, 30_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [activeTab, selectedZone]);
+
   const loadBaseData = async () => {
     try {
       const [dashRes, logRes] = await Promise.all([
@@ -1568,7 +1587,5 @@ export default function DashboardPage() {
     </Box>
   );
 }
-
-
 
 

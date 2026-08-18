@@ -1204,6 +1204,8 @@ export class InventoryService {
         zone: z,
         total_racks: data.total_racks,
         occupied_racks: data.occupied_racks,
+        totalRacks: data.total_racks,
+        occupiedRacks: data.occupied_racks,
         pct,
         color,
       };
@@ -1211,8 +1213,8 @@ export class InventoryService {
 
     // Date range: default 1 year if not specified
     const start_date = from ? new Date(from) : new Date();
-    start_date.setFullYear(start_date.getFullYear() - 1);
-    const end_date = to ? new Date(to) : new Date();
+    if (!from) start_date.setFullYear(start_date.getFullYear() - 1);
+    const end_date = to ? new Date(`${to}T23:59:59.999`) : new Date();
 
     // Daily data for the selected range
     const daily_data: Record<string, number> = {};
@@ -1271,6 +1273,7 @@ export class InventoryService {
         gauges,
         selectedZone: zone,
         daily_series,
+        dailySeries: daily_series,
         items,
         range: {
           from: start_date.toISOString().split('T')[0],

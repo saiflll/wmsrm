@@ -37,6 +37,21 @@ export default function MasterProdukPage() {
         return () => window.clearTimeout(timer);
     }, [page, search]);
 
+    useEffect(() => {
+        const refresh = () => load();
+        const onVisibility = () => {
+            if (document.visibilityState === 'visible') refresh();
+        };
+        const timer = window.setInterval(refresh, 30_000);
+        window.addEventListener('focus', refresh);
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => {
+            window.clearInterval(timer);
+            window.removeEventListener('focus', refresh);
+            document.removeEventListener('visibilitychange', onVisibility);
+        };
+    }, [page, search]);
+
     const load = async () => {
         setLoading(true);
         try {
