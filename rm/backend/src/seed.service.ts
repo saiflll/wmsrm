@@ -37,22 +37,15 @@ export class SeedService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     await this.seed_users();
-    const shifts = await this.seed_shifts();
+    await this.seed_shifts();
     const barangs = await this.seed_barang();
-    const gudangs = await this.seed_gudang(barangs);
-    const suplayers = await this.seed_suplayer();
+    await this.seed_gudang(barangs);
+    await this.seed_suplayer();
     await this.seed_customer();
-    const users = await this.user_repo.find();
-    await this.seed_transaksi(barangs, suplayers, gudangs, shifts, users);
-    await this.seed_stock(barangs, gudangs);
-    await this.seed_stock_log(barangs, gudangs, shifts, users);
-    await this.seed_planning_ayam(barangs, shifts);
-    const plannings = await this.planning_ayam_repo.find({
-      relations: ['barang', 'shift'],
-    });
-    await this.seed_outbound_ayam(plannings, shifts);
-    await this.seed_inbound_planning();
-    console.log('🌱 All seed data inserted successfully!');
+    // Operational data must only come from real user activity. Seeding stock,
+    // logs, plans, and executions here made deleted/history data reappear on
+    // every fresh deployment and caused screens to disagree with each other.
+    console.log('🌱 User and master seed data are ready');
   }
 
   // ── Helpers ──────────────────────────────────────────
