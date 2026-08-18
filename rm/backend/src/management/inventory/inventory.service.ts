@@ -833,10 +833,18 @@ export class InventoryService {
     const total_stock = Number(total_stock_result?.total || 0);
 
     // inboundHariIni: count inbound logs created today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Operational day follows Asia/Jakarta (UTC+7), while the container and
+    // database may run in UTC. Build explicit UTC boundaries for the WIB day.
+    const jakarta_offset_ms = 7 * 60 * 60 * 1000;
+    const jakarta_now = new Date(Date.now() + jakarta_offset_ms);
+    const today = new Date(
+      Date.UTC(
+        jakarta_now.getUTCFullYear(),
+        jakarta_now.getUTCMonth(),
+        jakarta_now.getUTCDate(),
+      ) - jakarta_offset_ms,
+    );
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
     const inbound_hari_ini_result = await this.log_repo
       .createQueryBuilder('l')
@@ -986,11 +994,16 @@ export class InventoryService {
     return {
       total_sku,
       total_stock,
+      totalSku: total_sku,
+      totalStock: total_stock,
       inboundCount: inbound_hari_ini,
       outboundCount: outbound_hari_ini,
       inbound_hari_ini,
       outbound_hari_ini,
+      inboundHariIni: inbound_hari_ini,
+      outboundHariIni: outbound_hari_ini,
       picking_pending_count,
+      pickingPendingCount: picking_pending_count,
       total_slots,
       filled_slots: Number(filled_slots?.cnt || 0),
       utilization:
@@ -1000,6 +1013,9 @@ export class InventoryService {
       expired_count,
       near_expired_count,
       waste_count,
+      expiredCount: expired_count,
+      nearExpiredCount: near_expired_count,
+      wasteCount: waste_count,
       avg_waiting_time,
       avg_unloading_time,
       plan_wait_count,

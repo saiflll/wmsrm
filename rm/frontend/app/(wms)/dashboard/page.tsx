@@ -89,16 +89,22 @@ const toNullableNumber = (value: string | null | undefined) => value === null ||
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const percentage = (part: number, total: number) => total > 0 ? clamp(Math.round((part / total) * 100), 0, 100) : 0;
 
-const normalizeStats = (raw: { totalSku: any; skuCount: any; totalStock: any; inboundHariIni: any; outboundHariIni: any; expiredCount: any; nearExpiredCount: any; wasteCount: any; }) => ({
+const normalizeStats = (raw: any) => ({
   ...(raw || {}),
-  totalSku: toNullableNumber(raw?.totalSku ?? raw?.skuCount),
-  totalStock: toNullableNumber(raw?.totalStock),
-  inboundHariIni: toNullableNumber(raw?.inboundHariIni),
-  outboundHariIni: toNullableNumber(raw?.outboundHariIni),
-  expiredCount: toNullableNumber(raw?.expiredCount),
-  nearExpiredCount: toNullableNumber(raw?.nearExpiredCount),
-  wasteCount: toNullableNumber(raw?.wasteCount),
+  totalSku: toNullableNumber(raw?.totalSku ?? raw?.total_sku ?? raw?.skuCount),
+  totalStock: toNullableNumber(raw?.totalStock ?? raw?.total_stock),
+  inboundHariIni: toNullableNumber(raw?.inboundHariIni ?? raw?.inbound_hari_ini ?? raw?.inboundCount),
+  outboundHariIni: toNullableNumber(raw?.outboundHariIni ?? raw?.outbound_hari_ini ?? raw?.outboundCount),
+  pickingPendingCount: toNullableNumber(raw?.pickingPendingCount ?? raw?.picking_pending_count),
+  expiredCount: toNullableNumber(raw?.expiredCount ?? raw?.expired_count),
+  nearExpiredCount: toNullableNumber(raw?.nearExpiredCount ?? raw?.near_expired_count),
+  wasteCount: toNullableNumber(raw?.wasteCount ?? raw?.waste_count),
 });
+
+const normalizeLogs = (raw: any) => asArray(raw).map((log) => ({
+  ...log,
+  qty: toNumber(log?.qty),
+}));
 
 const normalizeOccupancy = (raw: { gauges: any; dailySeries: any; items: any; weeks: any; series: any; } | null) => ({
   ...(raw || {}),
@@ -877,6 +883,21 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    const refresh = () => loadBaseData(true);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    const timer = window.setInterval(refresh, 30_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
     if (activeTab === "occupancy" && !occupancyData) loadOccupancy();
     if (activeTab === "ofti" && !oftiData) loadOFTI();
     if (activeTab === "serapan" && !serapanData) loadSerapan();
@@ -900,18 +921,23 @@ export default function DashboardPage() {
     };
   }, [activeTab, selectedZone]);
 
-  const loadBaseData = async () => {
-    try {
-      const [dashRes, logRes] = await Promise.all([
-        api().get("/inventory/dashboard"),
-        api().get("/inventory/logs"),
-      ]);
-      setStats(normalizeStats(unwrap(dashRes)));
-      setLogs(asArray(unwrap(logRes)));
-    } catch (e) {
-      console.error("Dashboard load error", e);
+  const loadBaseData = async (silent = false) => {
+    if (!silent && !stats) setLoading(true);
+    const [dashResult, logResult] = await Promise.allSettled([
+      api().get("/inventory/dashboard"),
+      api().get("/inventory/logs"),
+    ]);
+    if (dashResult.status === "fulfilled") {
+      setStats(normalizeStats(unwrap(dashResult.value)));
+    } else {
+      console.error("Dashboard stats load error", dashResult.reason);
     }
-    setLoading(false);
+    if (logResult.status === "fulfilled") {
+      setLogs(normalizeLogs(unwrap(logResult.value)));
+    } else {
+      console.error("Dashboard logs load error", logResult.reason);
+    }
+    if (!silent) setLoading(false);
   };
 
   const loadOccupancy = async (zone?: string) => {
@@ -1587,5 +1613,4 @@ export default function DashboardPage() {
     </Box>
   );
 }
-
 
