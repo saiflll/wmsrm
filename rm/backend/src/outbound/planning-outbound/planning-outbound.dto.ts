@@ -33,6 +33,10 @@ export class CreatePlanningOutboundDto {
   no_ref?: string;
 
   @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
   @IsNumber()
   customer_id?: number;
 
