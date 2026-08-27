@@ -109,7 +109,7 @@ export class PlanningOutboundService {
         tanggal_planning: new Date(dto.tanggal_planning),
         customer,
         shift,
-        status: 'WAIT',
+        status: dto.status ?? 'DRAFT',
         created_by_username: username,
       } as any);
       return manager.save(PlanningOutbound, item);
@@ -118,8 +118,8 @@ export class PlanningOutboundService {
 
   async update(id: number, dto: UpdatePlanningOutboundDto) {
     const item = await this.find_one(id);
-    if (item.status !== 'WAIT') {
-      throw new BadRequestException('Hanya planning berstatus WAIT yang bisa diubah');
+    if (item.status !== 'WAIT' && item.status !== 'DRAFT') {
+      throw new BadRequestException('Hanya planning berstatus WAIT atau DRAFT yang bisa diubah');
     }
     if (dto.status !== undefined && dto.status !== 'WAIT') {
       throw new BadRequestException('Status planning tidak dapat diubah lewat form edit');
@@ -143,8 +143,8 @@ export class PlanningOutboundService {
           lock: { mode: 'pessimistic_write' },
           loadEagerRelations: false,
         });
-        if (!locked || locked.status !== 'WAIT') {
-          throw new BadRequestException('Planning tidak ditemukan atau bukan WAIT');
+        if (!locked || (locked.status !== 'WAIT' && locked.status !== 'DRAFT')) {
+          throw new BadRequestException('Planning tidak ditemukan atau bukan WAIT/DRAFT');
         }
         await this.adjust_reservations(manager, locked.items, -1);
         await this.adjust_reservations(manager, dto.items, 1);
@@ -155,7 +155,7 @@ export class PlanningOutboundService {
             : locked.tanggal_planning,
           customer: next_customer,
           shift: next_shift,
-          status: 'WAIT',
+          status: locked.status,
         });
         return manager.save(PlanningOutbound, locked);
       });
@@ -183,6 +183,64 @@ export class PlanningOutboundService {
     if (dto.items !== undefined) item.items = dto.items;
 
     return this.repo.save(item);
+  }
+
+  async promote(id: number, itemIndices?: number[]) {
+    const plan = await this.find_one(id);
+    if (plan.status !== 'DRAFT') {
+      throw new BadRequestException(
+        `Planning dengan status '${plan.status}' tidak bisa dipromote. Hanya DRAFT yang bisa dipublish.`,
+      );
+    }
+
+    const items: any[] = Array.isArray(plan.items) ? plan.items : [];
+    const haveSelection = Array.isArray(itemIndices) && itemIndices.length > 0;
+
+    if (!haveSelection) {
+      plan.status = 'WAIT';
+      plan.published_at = new Date();
+      return this.repo.save(plan);
+    }
+
+    const idxSet = new Set(
+      itemIndices!.filter(
+        (i) => Number.isInteger(i) && i >= 0 && i < items.length,
+      ),
+    );
+    if (idxSet.size === 0) {
+      throw new BadRequestException('Index item tidak valid');
+    }
+
+    const selected = items.filter((_, i) => idxSet.has(i));
+    const remaining = items.filter((_, i) => !idxSet.has(i));
+
+    if (remaining.length === 0) {
+      plan.status = 'WAIT';
+      plan.published_at = new Date();
+      return this.repo.save(plan);
+    }
+
+    const newPlan = this.repo.create({
+      no_ref: plan.no_ref,
+      customer: plan.customer,
+      shift: plan.shift,
+      tanggal_planning: plan.tanggal_planning,
+      tujuan: plan.tujuan,
+      keterangan: plan.keterangan,
+      items: selected,
+      status: 'WAIT',
+      published_at: new Date(),
+      created_by_username: plan.created_by_username,
+    } as any);
+
+    plan.items = remaining;
+
+    const [savedNew] = await Promise.all([
+      this.repo.save(newPlan),
+      this.repo.save(plan),
+    ]);
+
+    return { plan, created: savedNew };
   }
 
   async remove(id: number) {

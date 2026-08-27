@@ -131,6 +131,13 @@ export class CreateInboundPlanningDto {
   note?: string;
 }
 
+export class PromoteInboundPlanningDto {
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  itemIndices?: number[];
+}
+
 export class UpdateInboundPlanningDto {
   @IsOptional()
   @IsString()

@@ -16,6 +16,7 @@ import {
   CreateInboundPlanningDto,
   UpdateInboundPlanningDto,
   ProcessInboundDto,
+  PromoteInboundPlanningDto,
 } from './inbound-planning.dto';
 import { JwtAuthGuard } from '../../admin/auth/jwt-auth.guard';
 import { RolesGuard } from '../../admin/auth/roles.guard';
@@ -34,10 +35,10 @@ export class InboundPlanningController {
     UserRole.CHECKER,
     UserRole.ADMIN,
   )
-  find_all(@Query('page') page?: number, @Query('limit') limit?: number) {
+  find_all(@Query('page') page?: number, @Query('limit') limit?: number, @Query('status') status?: string) {
     const p = page ? Number(page) : 1;
     const l = limit ? Number(limit) : 50;
-    return this.svc.find_all(p, l);
+    return this.svc.find_all(p, l, status);
   }
 
   @Get(':id')
@@ -97,5 +98,19 @@ export class InboundPlanningController {
       req.user?.id,
       req.user?.username,
     );
+  }
+
+  @Post(':id/promote')
+  @Roles(
+    UserRole.SUPERVISOR,
+    UserRole.KOORDINATOR,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
+  promote(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: PromoteInboundPlanningDto,
+  ) {
+    return this.svc.promote(id, dto.itemIndices);
   }
 }

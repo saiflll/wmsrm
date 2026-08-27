@@ -1,7 +1,7 @@
 "use client";
 // @ts-nocheck
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, MultiSelect, Autocomplete, Grid, ActionIcon, NumberInput, Tooltip } from "@mantine/core";
+import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, MultiSelect, Autocomplete, Grid, ActionIcon, NumberInput, Tooltip, Checkbox } from "@mantine/core";
 import { Table } from '../components/Table';
 import Pagination from '../components/Pagination';
 import {
@@ -31,20 +31,31 @@ export default function PlanningInboundPage() {
   const [totalPages, setTotalPages] = useState(0);
 
   const [editPlanId, setEditPlanId] = useState<number | null>(null);
-  const [planningDrafts, setPlanningDrafts] = useState<any[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("wms_driver_planning_drafts");
-        if (saved) return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return [];
-  });
-  const [editDraftIndex, setEditDraftIndex] = useState<number | null>(null);
+  const [draftPlans, setDraftPlans] = useState<any[]>([]);
+  const [selected, setSelected] = useState<Record<number, number[]>>({});
+  const [offlineQueue, setOfflineQueue] = useState<any[]>([]);
 
   useEffect(() => {
-    localStorage.setItem("wms_driver_planning_drafts", JSON.stringify(planningDrafts));
-  }, [planningDrafts]);
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("wms_inbound_offline_queue");
+        if (saved) setOfflineQueue(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("wms_inbound_offline_queue", JSON.stringify(offlineQueue));
+    }
+  }, [offlineQueue]);
+
+  useEffect(() => {
+    const onOnline = () => { if (offlineQueue.length) flushOfflineQueue(); };
+    if (typeof window !== "undefined") window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offlineQueue]);
 
   const pf = (k: string, v: any) => setForm((p: any) => ({ ...p, [k]: v }));
 
@@ -68,13 +79,14 @@ export default function PlanningInboundPage() {
 
   const load = async () => {
     try {
-      const [pRes, cRes, lRes, bRes, gRes, sRes] = await Promise.all([
+      const [pRes, cRes, lRes, bRes, gRes, sRes, dRes] = await Promise.all([
         api().get(`/inbound-planning?page=${page}&limit=${limit}`),
         api().get("/customers"),
         api().get("/inventory/logs/inbound"),
         api().get("/barang"),
         api().get("/gudang"),
         api().get("/inventory/stock"),
+        api().get("/inbound-planning?status=DRAFT&limit=1000"),
       ]);
       const planData = unwrap(pRes);
       if (planData && planData.data) {
@@ -84,6 +96,8 @@ export default function PlanningInboundPage() {
       } else {
         setPlans(planData);
       }
+      const draftData = unwrap(dRes);
+      setDraftPlans(Array.isArray(draftData) ? draftData : draftData?.data || []);
       setCustomers(unwrap(cRes));
       setLogs(unwrap(lRes));
       setBarangs(unwrap(bRes));
@@ -93,6 +107,28 @@ export default function PlanningInboundPage() {
       setStocks(Array.isArray(stockData) ? stockData : stockData?.data || []);
     } catch (e) {
       console.error("Load planning inbound data failed:", e);
+    }
+  };
+
+  const flushOfflineQueue = async () => {
+    if (!offlineQueue.length) return;
+    const queue = [...offlineQueue];
+    let remaining = [...offlineQueue];
+    for (const payload of queue) {
+      try {
+        await api().post("/inbound-planning", payload);
+        remaining = remaining.filter((p) => p !== payload);
+      } catch (e) {
+        // keep in queue, stop retrying this batch on first failure
+        break;
+      }
+    }
+    if (remaining.length !== offlineQueue.length) {
+      setOfflineQueue(remaining);
+      if (!remaining.length) {
+        notifications.show({ title: "Sukses", message: "Draft offline berhasil dikirim ke server", color: "green" });
+      }
+      load();
     }
   };
 
@@ -109,24 +145,9 @@ export default function PlanningInboundPage() {
       const editVal = params.get("edit");
       if (editVal) {
         try {
-          if (editVal.startsWith("{")) {
-            const draftObj = JSON.parse(decodeURIComponent(editVal));
-            setForm({
-              no_po: draftObj.no_po || "",
-              supplier: draftObj.supplier || "",
-              estimasi_datang: draftObj.estimasi_datang || "",
-              note: draftObj.note || "",
-              items: draftObj.items || [],
-            });
-            const idx = planningDrafts.findIndex((d) => d.no_po === draftObj.no_po);
-            if (idx !== -1) {
-              setEditDraftIndex(idx);
-            }
-          } else {
-            const dbId = Number(editVal);
-            if (!isNaN(dbId)) {
-              setEditPlanId(dbId);
-            }
+          const dbId = Number(editVal);
+          if (!isNaN(dbId)) {
+            setEditPlanId(dbId);
           }
         } catch (e) {
           console.error(e);
@@ -256,7 +277,7 @@ export default function PlanningInboundPage() {
       return notifications.show({ title: "Error", message: "Tambahkan minimal 1 item ke planning", color: "red" });
     }
 
-    const payload = {
+    const payload: any = {
       no_po: form.no_po,
       supplier: form.supplier,
       estimasi_datang: form.estimasi_datang || undefined,
@@ -274,15 +295,21 @@ export default function PlanningInboundPage() {
       if (editPlanId !== null) {
         await api().put(`/inbound-planning/${editPlanId}`, payload);
         notifications.show({ title: "Sukses", message: "Planning Inbound berhasil diupdate", color: "green" });
-      } else if (editDraftIndex !== null) {
-        setPlanningDrafts((p) => p.map((d, i) => (i === editDraftIndex ? { ...payload, items: form.items } : d)));
-        notifications.show({ title: "Sukses", message: "Draft Planning Inbound berhasil diupdate", color: "green" });
       } else {
-        setPlanningDrafts((p) => [...p, { ...payload, items: form.items }]);
-        notifications.show({ title: "Sukses", message: "Planning Inbound ditambahkan ke draft", color: "green" });
+        payload.status = "DRAFT";
+        try {
+          await api().post("/inbound-planning", payload);
+          notifications.show({ title: "Sukses", message: "Planning Inbound tersimpan sebagai DRAFT", color: "green" });
+        } catch (netErr: any) {
+          if (netErr?.code === "ERR_NETWORK" || netErr?.message === "Network Error" || !navigator.onLine) {
+            setOfflineQueue((p) => [...p, payload]);
+            notifications.show({ title: "Mode Offline", message: "Tersimpan di antrean lokal, otomatis dikirim saat online", color: "orange" });
+          } else {
+            throw netErr;
+          }
+        }
       }
       setEditPlanId(null);
-      setEditDraftIndex(null);
       setForm({
         no_po: "",
         supplier: "",
@@ -304,7 +331,6 @@ export default function PlanningInboundPage() {
 
   const cancelEdit = () => {
     setEditPlanId(null);
-    setEditDraftIndex(null);
     setForm({
       no_po: "",
       supplier: "",
@@ -330,37 +356,73 @@ export default function PlanningInboundPage() {
       });
     }
   };
-  const publishDrafts = async () => {
-    if (!planningDrafts.length) return;
-    try {
-      for (const draft of planningDrafts) {
-        await api().post("/inbound-planning", {
-          no_po: draft.no_po,
-          supplier: draft.supplier,
-          estimasi_datang: draft.estimasi_datang || undefined,
-          note: draft.note,
-          items: draft.items.map((it: any) => ({
-            barang_id: Number(it.barangId),
-            qty: Number(it.qty),
-            satuan: it.satuan || undefined,
-            zone: it.zone || undefined,
-            rack_allocations: it.rackAllocations?.map((a: any) => ({ gudang_id: Number(a.gudangId), qty: Number(a.qty) })),
-          })),
+  const publishSelected = async () => {
+    const planIds = Object.keys(selected).map(Number).filter((id) => selected[id]?.length);
+    if (!planIds.length) return;
+    let ok = 0;
+    let fail = 0;
+    for (const id of planIds) {
+      try {
+        await api().post(`/inbound-planning/${id}/promote`, { itemIndices: selected[id] });
+        ok++;
+      } catch (e: any) {
+        fail++;
+        notifications.show({
+          title: "Error",
+          message: `Gagal publish planning #${id}: ${unwrap(e.response)?.message || e.message}`,
+          color: "red",
         });
       }
-      notifications.show({ title: "Sukses", message: "Semua draft planning inbound berhasil diposting", color: "green" });
-      setPlanningDrafts([]);
-      load();
-    } catch (e: any) {
-      notifications.show({
-        title: "Error",
-        message: unwrap(e.response)?.message || "Gagal memposting draft planning",
-        color: "red",
-      });
     }
+    setSelected({});
+    load();
+    if (ok) notifications.show({ title: "Sukses", message: `${ok} draft planning inbound dipublish`, color: "green" });
+    if (fail) notifications.show({ title: "Peringatan", message: `${fail} draft gagal dipublish`, color: "orange" });
   };
 
+  const toggleItem = (planId: number, idx: number) => {
+    setSelected((prev) => {
+      const cur = new Set(prev[planId] || []);
+      if (cur.has(idx)) cur.delete(idx);
+      else cur.add(idx);
+      return { ...prev, [planId]: Array.from(cur) };
+    });
+  };
 
+  const togglePlanAll = (planId: number, total: number) => {
+    setSelected((prev) => {
+      const cur = new Set(prev[planId] || []);
+      const allSelected = cur.size === total;
+      if (allSelected) {
+        const next = { ...prev };
+        delete next[planId];
+        return next;
+      }
+      return { ...prev, [planId]: Array.from({ length: total }, (_, i) => i) };
+    });
+  };
+
+  const allDraftSelectedCount = draftPlans.reduce(
+    (acc, d) => acc + (selected[d.id]?.length || 0),
+    0,
+  );
+  const totalDraftItems = draftPlans.reduce(
+    (acc, d) => acc + (Array.isArray(d.items) ? d.items.length : 0),
+    0,
+  );
+  const allDraftItemsSelected = totalDraftItems > 0 && allDraftSelectedCount === totalDraftItems;
+
+  const toggleSelectAllDrafts = () => {
+    if (allDraftItemsSelected) {
+      setSelected({});
+    } else {
+      const next: Record<number, number[]> = {};
+      for (const d of draftPlans) {
+        next[d.id] = Array.from({ length: Array.isArray(d.items) ? d.items.length : 0 }, (_, i) => i);
+      }
+      setSelected(next);
+    }
+  };
 
   // Option lists
   const poOpts = Array.from(new Set(logs.map((l: any) => l.no_po).filter(Boolean)));
@@ -409,7 +471,7 @@ export default function PlanningInboundPage() {
 
     const matchesStatus = statusFilter === "ALL" || p.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && p.status !== "DRAFT";
   });
 
   return (
@@ -566,9 +628,9 @@ export default function PlanningInboundPage() {
 
                 <Group gap="xs" mt="xs">
                   <Button size="xs" color="indigo" style={{ flex: 1 }} onClick={submitPlanning} leftSection={<IconPlus size={14} />}>
-                    {editPlanId !== null || editDraftIndex !== null ? "Update Planning Inbound" : "Simpan Planning Inbound"}
+                    {editPlanId !== null ? "Update Planning Inbound" : "Simpan Planning Inbound"}
                   </Button>
-                  {(editPlanId !== null || editDraftIndex !== null) && (
+                  {(editPlanId !== null) && (
                     <Button
                       size="xs"
                       color="gray"
@@ -586,61 +648,104 @@ export default function PlanningInboundPage() {
           {/* Right: Riwayat */}
           <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
             <Stack gap="md">
-              {/* Draft planning lokal */}
-              {planningDrafts.length > 0 && (
-                <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
-                  <Group justify="space-between" mb="xs">
+              {/* Draft planning (status DRAFT di DB) */}
+              <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
+                <Group justify="space-between" mb="xs">
+                  <Group gap="xs">
                     <Text fw={850} size="sm" c="indigo">
-                      DRAFT ANTRIAN PLANNING INBOUND ({planningDrafts.length})
+                      DRAFT PLANNING INBOUND ({draftPlans.length})
                     </Text>
-                    <Tooltip label={`Publish All Drafts (${planningDrafts.length})`}>
-                      <ActionIcon
-                        size="md"
-                        color="green"
-                        variant="filled"
-                        onClick={publishDrafts}
-                        radius="md"
-                      >
-                        <IconSend size={16} />
-                      </ActionIcon>
-                    </Tooltip>
+                    <Checkbox
+                      size="xs"
+                      checked={allDraftItemsSelected}
+                      indeterminate={allDraftSelectedCount > 0 && !allDraftItemsSelected}
+                      onChange={toggleSelectAllDrafts}
+                      label="Pilih Semua"
+                    />
                   </Group>
+                  <Tooltip label={allDraftSelectedCount ? `Publish ${allDraftSelectedCount} item terpilih` : "Pilih item yang mau dipublish"}>
+                    <ActionIcon
+                      size="md"
+                      color="green"
+                      variant="filled"
+                      disabled={allDraftSelectedCount === 0}
+                      onClick={publishSelected}
+                      radius="md"
+                    >
+                      <IconSend size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
 
+                {draftPlans.length === 0 ? (
+                  <Text size="xs" c="dimmed">Belum ada draft planning inbound. Buat planning dan simpan, maka akan muncul di sini sebagai DRAFT.</Text>
+                ) : (
                   <Box style={{ overflowX: "auto" }}>
                     <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
                       <Table.Thead style={{ background: "#eef2ff", borderBottom: "2px solid #c7d2fe" }}>
                         <Table.Tr>
+                          <Table.Th style={{ color: "#3730a3", fontSize: 11, width: 40 }}>
+                            <Checkbox
+                              size="xs"
+                              checked={allDraftItemsSelected}
+                              indeterminate={allDraftSelectedCount > 0 && !allDraftItemsSelected}
+                              onChange={toggleSelectAllDrafts}
+                            />
+                          </Table.Th>
                           <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>No PO</Table.Th>
                           <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>Supplier</Table.Th>
-                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>Items</Table.Th>
+                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>Items (pilih per item)</Table.Th>
                           <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>ETA</Table.Th>
                           <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>Status</Table.Th>
                           <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>Aksi</Table.Th>
                         </Table.Tr>
                       </Table.Thead>
                       <Table.Tbody>
-                        {planningDrafts.map((d: any, i: number) => {
+                        {draftPlans.map((d: any) => {
+                          const items: any[] = Array.isArray(d.items) ? d.items : [];
+                          const planSel = selected[d.id] || [];
+                          const planAll = planSel.length === items.length && items.length > 0;
                           let etaStr = "-";
                           if (d.estimasi_datang) {
                             const dt = new Date(d.estimasi_datang);
                             etaStr = `${dt.toLocaleDateString("id-ID")} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
                           }
                           return (
-                            <Table.Tr key={`draft-${i}`}>
+                            <Table.Tr key={`draft-${d.id}`}>
+                              <Table.Td>
+                                <Checkbox
+                                  size="xs"
+                                  checked={planAll}
+                                  indeterminate={planSel.length > 0 && !planAll}
+                                  onChange={() => togglePlanAll(d.id, items.length)}
+                                />
+                              </Table.Td>
                               <Table.Td fw={700}>{d.no_po}</Table.Td>
                               <Table.Td>{d.supplier || "-"}</Table.Td>
                               <Table.Td style={{ padding: '4px 6px' }}>
-                                <div style={{ maxHeight: 80, overflowY: 'auto' }}>
-                                  {d.items?.map((item: any, idx: number) => {
-                                    const name = item._name || `Barang #${item.barangId}`;
+                                <div style={{ maxHeight: 120, overflowY: 'auto' }}>
+                                  {items.map((item: any, idx: number) => {
+                                    const barangId = item.barang_id ?? item.barangId;
+                                    const name = barangs.find((b: any) => b.id === barangId)?.nama || `Barang #${barangId}`;
+                                    const allocations = item.rack_allocations ?? item.rackAllocations ?? [];
+                                    const checked = planSel.includes(idx);
                                     return (
-                                      <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '1px 0', lineHeight: '1.3' }}>
-                                        <span style={{ fontWeight: 600 }}>{name}</span> x{item.qty} {item.satuan || ''}
-                                        {item.rackAllocations?.map((a: any) => (
-                                          <span key={a.gudangId} style={{ color: "#64748b", fontSize: 9, display: 'block', paddingLeft: 8 }}>
-                                            {a.gudangName || `Rak #${a.gudangId}`}: {a.qty}
-                                          </span>
-                                        ))}
+                                      <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '2px 0', lineHeight: '1.3' }}>
+                                        <Group gap={4} wrap="nowrap">
+                                          <Checkbox
+                                            size="xs"
+                                            checked={checked}
+                                            onChange={() => toggleItem(d.id, idx)}
+                                          />
+                                          <div>
+                                            <span style={{ fontWeight: 600 }}>{name}</span> x{item.qty} {item.satuan || ''}
+                                            {allocations.map((a: any) => (
+                                              <span key={a.gudang_id ?? a.gudangId} style={{ color: "#64748b", fontSize: 9, display: 'block', paddingLeft: 4 }}>
+                                                {a.gudangName || `Rak #${a.gudang_id ?? a.gudangId}`}: {a.qty}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        </Group>
                                       </div>
                                     );
                                   })}
@@ -652,23 +757,37 @@ export default function PlanningInboundPage() {
                                 <Group gap={2} wrap="nowrap">
                                   <Tooltip label="Edit">
                                     <ActionIcon size="sm" color="blue" variant="light" onClick={() => {
+                                      const mappedItems = items.map((it: any) => {
+                                        const barangId = it.barang_id ?? it.barangId;
+                                        const allocations = it.rack_allocations ?? it.rackAllocations ?? [];
+                                        const bObj = barangs.find((b: any) => b.id === barangId);
+                                        return {
+                                          barangId,
+                                          qty: it.qty,
+                                          _name: bObj ? bObj.nama : '-',
+                                          satuan: it.satuan || bObj?.satuan || '',
+                                          zone: it.zone || '',
+                                          rackAllocations: allocations.map((a: any) => ({
+                                            gudangId: a.gudang_id ?? a.gudangId,
+                                            gudangName: a.gudangName,
+                                            qty: a.qty,
+                                          })),
+                                        };
+                                      });
                                       setForm({
                                         no_po: d.no_po || "",
                                         supplier: d.supplier || "",
                                         estimasi_datang: d.estimasi_datang ? new Date(d.estimasi_datang).toISOString().slice(0, 16) : "",
                                         note: d.note || "",
-                                        items: d.items || [],
+                                        items: mappedItems,
                                       });
-                                      setEditDraftIndex(i);
-                                      setEditPlanId(null);
+                                      setEditPlanId(d.id);
                                     }}>
                                       <IconEdit size={13} />
                                     </ActionIcon>
                                   </Tooltip>
                                   <Tooltip label="Hapus">
-                                    <ActionIcon size="sm" color="red" variant="light" onClick={() => {
-                                      setPlanningDrafts((p) => p.filter((_, j) => j !== i));
-                                    }}>
+                                    <ActionIcon size="sm" color="red" variant="light" onClick={() => deletePlan(d.id)}>
                                       <IconTrash size={13} />
                                     </ActionIcon>
                                   </Tooltip>
@@ -680,8 +799,13 @@ export default function PlanningInboundPage() {
                       </Table.Tbody>
                     </Table>
                   </Box>
-                </Paper>
-              )}
+                )}
+                {offlineQueue.length > 0 && (
+                  <Text size="xs" c="orange" mt="xs">
+                    {offlineQueue.length} draft tertahan di antrean offline (belum terkirim ke server).
+                  </Text>
+                )}
+              </Paper>
 
               {/* Riwayat Planning Table */}
               <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
@@ -832,9 +956,8 @@ export default function PlanningInboundPage() {
                                           note: p.note || "",
                                           items: mappedItems,
                                         });
-                                        setEditPlanId(p.id);
-                                        setEditDraftIndex(null);
-                                      }}
+                                         setEditPlanId(p.id);
+                                       }}
                                     >
                                       <IconEdit size={13} />
                                     </ActionIcon>

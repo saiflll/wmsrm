@@ -132,3 +132,10 @@ export class PublishPlanningOutboundDto {
   @IsString()
   keterangan?: string;
 }
+
+export class PromotePlanningOutboundDto {
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  itemIndices?: number[];
+}

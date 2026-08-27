@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Box, Group, Button, Title, Text, Table, Badge, Paper, Stack,
-    TextInput, Select, Loader, NumberInput, Autocomplete, ActionIcon, Tooltip, Grid, Divider
+    TextInput, Select, Loader, NumberInput, Autocomplete, ActionIcon, Tooltip, Grid, Divider, Checkbox
 } from '@mantine/core';
 import {
     IconEdit, IconTrash, IconFileTypePdf, IconPlus, IconBuildingWarehouse, IconSend
@@ -40,6 +40,30 @@ export default function PlanningOutboundPage() {
     const [plans, setPlans] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [editPlanId, setEditPlanId] = useState<number | null>(null);
+    const [selected, setSelected] = useState<Record<number, number[]>>({});
+    const [offlineQueue, setOfflineQueue] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('wms_outbound_offline_queue');
+                if (saved) setOfflineQueue(JSON.parse(saved));
+            } catch (e) { }
+        }
+    }, []);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('wms_outbound_offline_queue', JSON.stringify(offlineQueue));
+        }
+    }, [offlineQueue]);
+
+    useEffect(() => {
+        const onOnline = () => { if (offlineQueue.length) flushOfflineQueue(); };
+        if (typeof window !== 'undefined') window.addEventListener('online', onOnline);
+        return () => window.removeEventListener('online', onOnline);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [offlineQueue]);
 
     // Zone & Product filter for Rak Selector
     const [selectedZone, setSelectedZone] = useState('');
@@ -192,6 +216,96 @@ export default function PlanningOutboundPage() {
         setLoading(false);
     };
 
+    const flushOfflineQueue = async () => {
+        if (!offlineQueue.length) return;
+        const queue = [...offlineQueue];
+        let remaining = [...offlineQueue];
+        for (const payload of queue) {
+            try {
+                await api().post('/planning-outbound', payload);
+                remaining = remaining.filter((p) => p !== payload);
+            } catch (e) {
+                break;
+            }
+        }
+        if (remaining.length !== offlineQueue.length) {
+            setOfflineQueue(remaining);
+            if (!remaining.length) {
+                notifications.show({ title: 'Sukses', message: 'Draft offline berhasil dikirim ke server', color: 'green' });
+            }
+            load();
+        }
+    };
+
+    const publishSelected = async () => {
+        const planIds = Object.keys(selected).map(Number).filter((id) => selected[id]?.length);
+        if (!planIds.length) return;
+        let ok = 0;
+        let fail = 0;
+        for (const id of planIds) {
+            try {
+                await api().post(`/planning-outbound/${id}/promote`, { itemIndices: selected[id] });
+                ok++;
+            } catch (e: any) {
+                fail++;
+                notifications.show({
+                    title: 'Error',
+                    message: `Gagal publish planning #${id}: ${unwrap(e.response)?.message || e.message}`,
+                    color: 'red',
+                });
+            }
+        }
+        setSelected({});
+        load();
+        if (ok) notifications.show({ title: 'Sukses', message: `${ok} draft planning outbound dipublish`, color: 'green' });
+        if (fail) notifications.show({ title: 'Peringatan', message: `${fail} draft gagal dipublish`, color: 'orange' });
+    };
+
+    const toggleItem = (planId: number, idx: number) => {
+        setSelected((prev) => {
+            const cur = new Set(prev[planId] || []);
+            if (cur.has(idx)) cur.delete(idx);
+            else cur.add(idx);
+            return { ...prev, [planId]: Array.from(cur) };
+        });
+    };
+
+    const togglePlanAll = (planId: number, total: number) => {
+        setSelected((prev) => {
+            const cur = new Set(prev[planId] || []);
+            const allSelected = cur.size === total;
+            if (allSelected) {
+                const next = { ...prev };
+                delete next[planId];
+                return next;
+            }
+            return { ...prev, [planId]: Array.from({ length: total }, (_, i) => i) };
+        });
+    };
+
+    const draftPlans = plans.filter((p: any) => p.status === 'DRAFT');
+    const allDraftSelectedCount = draftPlans.reduce(
+        (acc: number, d: any) => acc + (selected[d.id]?.length || 0),
+        0,
+    );
+    const totalDraftItems = draftPlans.reduce(
+        (acc: number, d: any) => acc + (Array.isArray(d.items) ? d.items.length : 0),
+        0,
+    );
+    const allDraftItemsSelected = totalDraftItems > 0 && allDraftSelectedCount === totalDraftItems;
+
+    const toggleSelectAllDrafts = () => {
+        if (allDraftItemsSelected) {
+            setSelected({});
+        } else {
+            const next: Record<number, number[]> = {};
+            for (const d of draftPlans) {
+                next[d.id] = Array.from({ length: Array.isArray(d.items) ? d.items.length : 0 }, (_, i) => i);
+            }
+            setSelected(next);
+        }
+    };
+
     // Stocks with available qty > 0
     const availableStocks = stocks.filter((s: any) => (s.qty - (s.reserved_qty || 0)) > 0);
 
@@ -285,7 +399,7 @@ export default function PlanningOutboundPage() {
         const custName = form.tujuan;
         const cust = customers.find((c: any) => (c.nama || c.name) === custName);
 
-        const payload = {
+        const payload: any = {
             no_ref: form.no_ref || `PLAN-OUT-${Date.now()}`,
             customer_id: cust ? cust.id : undefined,
             shift_id: form.shift_id ? Number(form.shift_id) : undefined,
@@ -305,8 +419,18 @@ export default function PlanningOutboundPage() {
                 await api().put(`/planning-outbound/${editPlanId}`, payload);
                 notifications.show({ title: 'Sukses', message: 'Planning Outbound berhasil diupdate', color: 'green' });
             } else {
-                await api().post('/planning-outbound', payload);
-                notifications.show({ title: 'Sukses', message: 'Planning Outbound berhasil disimpan', color: 'green' });
+                payload.status = 'DRAFT';
+                try {
+                    await api().post('/planning-outbound', payload);
+                    notifications.show({ title: 'Sukses', message: 'Planning Outbound tersimpan sebagai DRAFT', color: 'green' });
+                } catch (netErr: any) {
+                    if (netErr?.code === 'ERR_NETWORK' || netErr?.message === 'Network Error' || !navigator.onLine) {
+                        setOfflineQueue((p) => [...p, payload]);
+                        notifications.show({ title: 'Mode Offline', message: 'Tersimpan di antrean lokal, otomatis dikirim saat online', color: 'orange' });
+                    } else {
+                        throw netErr;
+                    }
+                }
             }
             setEditPlanId(null);
             setForm({
@@ -380,7 +504,7 @@ export default function PlanningOutboundPage() {
         }
     };
 
-    const activePlans = plans.filter((p: any) => p.status !== 'DONE');
+    const activePlans = plans.filter((p: any) => p.status !== 'DONE' && p.status !== 'DRAFT');
     const donePlans = plans.filter((p: any) => p.status === 'DONE');
 
     const sortFn = (a: any, b: any) => {
@@ -516,6 +640,123 @@ export default function PlanningOutboundPage() {
                     {/* Right Tables Panel */}
                     <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
                         <Stack gap="md">
+                            {/* Table for DRAFT plans */}
+                            <Paper withBorder p="md" radius="md" style={{ background: '#fff' }}>
+                                <Group justify="space-between" mb="sm">
+                                    <Group gap="xs">
+                                        <Text fw={850} size="sm" c="orange">
+                                            DRAFT PLANNING OUTBOUND ({draftPlans.length})
+                                        </Text>
+                                        <Checkbox
+                                            size="xs"
+                                            checked={allDraftItemsSelected}
+                                            indeterminate={allDraftSelectedCount > 0 && !allDraftItemsSelected}
+                                            onChange={toggleSelectAllDrafts}
+                                            label="Pilih Semua"
+                                        />
+                                    </Group>
+                                    <Tooltip label={allDraftSelectedCount ? `Publish ${allDraftSelectedCount} item terpilih` : "Pilih item yang mau dipublish"}>
+                                        <ActionIcon
+                                            size="md"
+                                            color="green"
+                                            variant="filled"
+                                            disabled={allDraftSelectedCount === 0}
+                                            onClick={publishSelected}
+                                            radius="md"
+                                        >
+                                            <IconSend size={16} />
+                                        </ActionIcon>
+                                    </Tooltip>
+                                </Group>
+
+                                {draftPlans.length === 0 ? (
+                                    <Text size="xs" c="dimmed">Belum ada draft planning outbound. Buat planning dan simpan, maka akan muncul di sini sebagai DRAFT.</Text>
+                                ) : (
+                                    <Box style={{ overflowX: 'auto' }}>
+                                        <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
+                                            <Table.Thead style={{ background: "#fff4e6", borderBottom: "2px solid #ffd8a8" }}>
+                                                <Table.Tr>
+                                                    <Table.Th style={{ color: "#d9480f", width: 40 }}>
+                                                        <Checkbox
+                                                            size="xs"
+                                                            checked={allDraftItemsSelected}
+                                                            indeterminate={allDraftSelectedCount > 0 && !allDraftItemsSelected}
+                                                            onChange={toggleSelectAllDrafts}
+                                                        />
+                                                    </Table.Th>
+                                                    <Table.Th style={{ color: "#d9480f" }}>ID / Ref</Table.Th>
+                                                    <Table.Th style={{ color: "#d9480f" }}>Tujuan</Table.Th>
+                                                    <Table.Th style={{ color: "#d9480f" }}>Tanggal</Table.Th>
+                                                    <Table.Th style={{ color: "#d9480f" }}>Items (pilih per item)</Table.Th>
+                                                    <Table.Th style={{ color: "#d9480f" }}>Aksi</Table.Th>
+                                                </Table.Tr>
+                                            </Table.Thead>
+                                            <Table.Tbody>
+                                                {draftPlans.map((plan: any) => {
+                                                    const items: any[] = Array.isArray(plan.items) ? plan.items : [];
+                                                    const planSel = selected[plan.id] || [];
+                                                    const planAll = planSel.length === items.length && items.length > 0;
+                                                    return (
+                                                        <Table.Tr key={plan.id}>
+                                                            <Table.Td>
+                                                                <Checkbox
+                                                                    size="xs"
+                                                                    checked={planAll}
+                                                                    indeterminate={planSel.length > 0 && !planAll}
+                                                                    onChange={() => togglePlanAll(plan.id, items.length)}
+                                                                />
+                                                            </Table.Td>
+                                                            <Table.Td fw={700} style={{ color: '#1565c0' }}>{plan.no_ref || `#${plan.id}`}</Table.Td>
+                                                            <Table.Td>{plan.customer?.nama || plan.tujuan || '-'}</Table.Td>
+                                                            <Table.Td>{fmt(plan.tanggal_planning)}</Table.Td>
+                                                            <Table.Td>
+                                                                <div style={{ maxHeight: 120, overflowY: 'auto' }}>
+                                                                    {items.map((item: any, idx: number) => {
+                                                                        const bName = barangs.find((b: any) => b.id === item.barangId)?.nama || '-';
+                                                                        const checked = planSel.includes(idx);
+                                                                        return (
+                                                                            <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '2px 0' }}>
+                                                                                <Group gap={4} wrap="nowrap">
+                                                                                    <Checkbox
+                                                                                        size="xs"
+                                                                                        checked={checked}
+                                                                                        onChange={() => toggleItem(plan.id, idx)}
+                                                                                    />
+                                                                                    <span>{bName} <b>x{item.qty}</b> {item.satuan || ''}</span>
+                                                                                </Group>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </Table.Td>
+                                                            <Table.Td>
+                                                                <Group gap={6} wrap="nowrap">
+                                                                    <Tooltip label="Edit">
+                                                                        <ActionIcon size="sm" color="green" variant="light" onClick={() => editTrans(plan)}>
+                                                                            <IconEdit size={13} />
+                                                                        </ActionIcon>
+                                                                    </Tooltip>
+                                                                    <Tooltip label="Hapus">
+                                                                        <ActionIcon size="sm" color="red" variant="light" onClick={() => deleteTrans(plan.id)}>
+                                                                            <IconTrash size={13} />
+                                                                        </ActionIcon>
+                                                                    </Tooltip>
+                                                                </Group>
+                                                            </Table.Td>
+                                                        </Table.Tr>
+                                                    );
+                                                })}
+                                            </Table.Tbody>
+                                        </Table>
+                                    </Box>
+                                )}
+                                {offlineQueue.length > 0 && (
+                                    <Text size="xs" c="orange" mt="xs">
+                                        {offlineQueue.length} draft tertahan di antrean offline (belum terkirim ke server).
+                                    </Text>
+                                )}
+                            </Paper>
+
                             {/* Table for active plans */}
                             <Paper withBorder p="md" radius="md" style={{ background: '#fff' }}>
                                 <Group justify="space-between" mb="sm">

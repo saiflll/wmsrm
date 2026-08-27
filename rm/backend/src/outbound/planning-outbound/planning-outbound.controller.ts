@@ -17,6 +17,7 @@ import {
   UpdatePlanningOutboundDto,
   ProcessPlanningOutboundDto,
   PublishPlanningOutboundDto,
+  PromotePlanningOutboundDto,
 } from './planning-outbound.dto';
 import { JwtAuthGuard } from '../../admin/auth/jwt-auth.guard';
 import { RolesGuard } from '../../admin/auth/roles.guard';
@@ -106,5 +107,14 @@ export class PlanningOutboundController {
     @Request() req: any,
   ) {
     return this.svc.publish_outbound(id, dto, req.user?.id, req.user?.username);
+  }
+
+  @Post(':id/promote')
+  @Roles(UserRole.SUPERVISOR, UserRole.KOORDINATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  promote(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: PromotePlanningOutboundDto,
+  ) {
+    return this.svc.promote(id, dto.itemIndices);
   }
 }

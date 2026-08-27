@@ -35,10 +35,12 @@ export class InboundPlanningService {
     private data_source: DataSource,
   ) {}
 
-  async find_all(page: number = 1, limit: number = 50) {
+  async find_all(page: number = 1, limit: number = 50, status?: string) {
     const now = new Date();
+    const where: any = { deleted_at: IsNull() };
+    if (status) where.status = status;
     const [plans, total] = await this.repo.findAndCount({
-      where: { deleted_at: IsNull() },
+      where,
       order: { estimasi_datang: 'ASC', created_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -67,9 +69,73 @@ export class InboundPlanningService {
       estimasi_datang: dto.estimasi_datang
         ? new Date(dto.estimasi_datang)
         : undefined,
+      status: dto.status ?? 'DRAFT',
       created_by_username: username,
     });
     return this.repo.save(item);
+  }
+
+  async promote(id: number, itemIndices?: number[]) {
+    const plan = await this.find_one(id);
+    if (plan.status !== 'DRAFT') {
+      throw new BadRequestException(
+        `Planning dengan status '${plan.status}' tidak bisa dipromote. Hanya DRAFT yang bisa dipublish.`,
+      );
+    }
+
+    const items: any[] = Array.isArray(plan.items) ? plan.items : [];
+    const haveSelection = Array.isArray(itemIndices) && itemIndices.length > 0;
+
+    // No specific items selected => promote the whole draft to WAIT.
+    if (!haveSelection) {
+      plan.status = 'WAIT';
+      plan.published_at = new Date();
+      return this.repo.save(plan);
+    }
+
+    const idxSet = new Set(itemIndices!.filter((i) => Number.isInteger(i) && i >= 0 && i < items.length));
+    if (idxSet.size === 0) {
+      throw new BadRequestException('Index item tidak valid');
+    }
+
+    const selected = items.filter((_, i) => idxSet.has(i));
+    const remaining = items.filter((_, i) => !idxSet.has(i));
+
+    // All items selected => just promote the existing draft.
+    if (remaining.length === 0) {
+      plan.status = 'WAIT';
+      plan.published_at = new Date();
+      return this.repo.save(plan);
+    }
+
+    // Split: selected items become a new WAIT plan, the rest stay in the DRAFT.
+    const sumQty = (list: any[]) =>
+      list.reduce((acc, it) => acc + Number(it.qty || 0), 0);
+
+    const newPlan = this.repo.create({
+      no_po: plan.no_po,
+      supplier: plan.supplier,
+      estimasi_datang: plan.estimasi_datang,
+      note: plan.note,
+      zone: plan.zone,
+      alokasi: plan.alokasi,
+      rack_allocations: plan.rack_allocations,
+      items: selected,
+      qty: sumQty(selected),
+      status: 'WAIT',
+      published_at: new Date(),
+      created_by_username: plan.created_by_username,
+    } as any);
+
+    plan.items = remaining;
+    plan.qty = sumQty(remaining);
+
+    const [savedNew] = await Promise.all([
+      this.repo.save(newPlan),
+      this.repo.save(plan),
+    ]);
+
+    return { plan, created: savedNew };
   }
 
   async update(id: number, dto: UpdateInboundPlanningDto) {
