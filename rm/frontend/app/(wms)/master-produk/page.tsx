@@ -166,7 +166,7 @@ export default function MasterProdukPage() {
 
     const f = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
     const filtered = items;
-    const pageSize = 20;
+    const pageSize = 11;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const paginatedItems = filtered;
 

@@ -23,7 +23,7 @@ const FLOATERS = [
 ];
 
 export default function AboutPage() {
-  const version = process.env.NEXT_PUBLIC_APP_VERSION || "1.1.9";
+  const version = process.env.NEXT_PUBLIC_APP_VERSION || "1.2.0";
   const supportEmail = "lezztb@gmail.com";
   const mailtoHref = `mailto:${supportEmail}?subject=${encodeURIComponent(
     "DW (Digitalisation Warehouse) – Masukan & Dukungan"

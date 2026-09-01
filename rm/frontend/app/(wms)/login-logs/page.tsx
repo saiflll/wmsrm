@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Box, Button, Group, Paper, Table, Text, Title, Badge, Loader, Pagination, TextInput, ActionIcon, Tooltip
 } from '@mantine/core';
@@ -14,18 +14,21 @@ export default function LoginLogsPage() {
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const limit = 50;
+    const hasLoadedRef = useRef(false);
 
     const loadLogs = async (p: number) => {
-        setLoading(true);
+        const showLoading = !hasLoadedRef.current;
+        if (showLoading) setLoading(true);
         try {
             const data = await fetchLoginLogs(p, limit);
             setLogs(Array.isArray(data.logs) ? data.logs : []);
             setTotal(data.total || 0);
+            hasLoadedRef.current = true;
         } catch (e: any) {
             notifications.show({ title: 'Error', message: 'Gagal memuat login logs', color: 'red' });
-            setLogs([]);
+            if (!hasLoadedRef.current) setLogs([]);
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
     };
 

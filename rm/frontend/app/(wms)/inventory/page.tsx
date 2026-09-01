@@ -1,6 +1,6 @@
 // @ts-nocheck
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Group,
@@ -45,6 +45,7 @@ export default function InventoryPage() {
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     load();
@@ -70,16 +71,19 @@ export default function InventoryPage() {
   };
 
   const load = async () => {
-    setLoading(true);
+    const showLoading = !hasLoadedRef.current;
+    if (showLoading) setLoading(true);
     try {
       const res = await api().get(`/inventory/matrix?side=${side}`);
       const raw = unwrap(res);
       setData(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : []);
+      hasLoadedRef.current = true;
     } catch (e) {
       console.error(e);
-      setData([]);
+      if (!hasLoadedRef.current) setData([]);
+    } finally {
+      if (showLoading) setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleReset = () => {

@@ -1,10 +1,8 @@
 services:
-  wms-test-db:
+  wms-db:
     image: postgres:15-alpine
-    container_name: wms-test-db
+    container_name: wms-db
     restart: unless-stopped
-    mem_limit: 512m
-    cpus: 0.50
     ports:
       - "3013:5432"
     environment:
@@ -13,27 +11,43 @@ services:
       - POSTGRES_DB=wms_db
     volumes:
       - wms_db_data:/var/lib/postgresql/data
-      - ./wms-test/postgresql.conf:/etc/postgresql/postgresql.conf:ro
-      - ./wms-test/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
-    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wms_user -d wms_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  wms-test:
-    image: ghcr.io/${GHCR_OWNER:-saiflll}/wms-test:latest
+  wms-backend:
     build:
-      context: .
-      dockerfile: wms-test/Dockerfile
-    container_name: wms-test
+      context: ./rm/backend
+      dockerfile: Dockerfile
+    container_name: wms-backend
     restart: unless-stopped
-    mem_limit: 1200m
-    cpus: 1.00
     ports:
-      - "3014:3011"
-      - "3015:3000"
+      - "3011:3011"
     environment:
-      - DATABASE_URL=postgresql://wms_user:wms_password@wms-test-db:5432/wms_db
-      - JWT_SECRET=rm_super_secret_key_change_me
+      - DATABASE_URL=postgresql://wms_user:wms_password@wms-db:5432/wms_db
+      - JWT_SECRET=dev_secret
+      - PORT=3011
     depends_on:
-      - wms-test-db
+      wms-db:
+        condition: service_healthy
+
+  wms-frontend:
+    build:
+      context: ./rm/frontend
+      dockerfile: Dockerfile
+      args:
+        - BACKEND_API_URL=http://wms-backend:3011
+        - NEXT_PUBLIC_APP_VERSION=1.2.0
+    container_name: wms-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - BACKEND_API_URL=http://wms-backend:3011
+    depends_on:
+      - wms-backend
 
 volumes:
   wms_db_data:

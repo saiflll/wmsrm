@@ -133,7 +133,7 @@ export default function MasterCustomerPage() {
     };
 
     const filtered = list;
-    const pageSize = 20;
+    const pageSize = 11;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const paginatedItems = filtered;
     useEffect(() => { setPage(1); }, [search]);

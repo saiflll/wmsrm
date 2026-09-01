@@ -35,21 +35,24 @@ export class PlanningOutboundService {
     direction: 1 | -1,
   ) {
     for (const item of items || []) {
-      const stock = await manager.findOne(Stock, {
+      // Samakan dengan inbound: findOne tanpa lock/pessimistic_write, hindari FOR UPDATE di outer join
+      let stock = await manager.findOne(Stock, {
         where: {
           barang: { id: item.barang_id },
           gudang: { id: item.gudang_id },
           ...(item.batch_no ? { batch_no: item.batch_no } : {}),
         },
-        lock: { mode: 'pessimistic_write' },
-        loadEagerRelations: false,
       });
+      if (!stock && item.batch_no) {
+        stock = await manager.findOne(Stock, {
+          where: { barang: { id: item.barang_id }, gudang: { id: item.gudang_id } },
+        });
+      }
       if (!stock) {
         throw new BadRequestException(
           `Stock barang ${item.barang_id} di gudang ${item.gudang_id} tidak ditemukan`,
         );
       }
-
       const qty = Number(item.qty || 0);
       if (qty <= 0) throw new BadRequestException('Qty planning harus lebih dari 0');
 

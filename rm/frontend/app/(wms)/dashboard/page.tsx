@@ -859,6 +859,8 @@ export default function DashboardPage() {
   const [exportTo, setExportTo] = useState<Date | null>(null);
   const [showExportFilter, setShowExportFilter] = useState(false);
   const [reportData, setReportData] = useState(null);
+  const baseDataLoadedRef = useRef(false);
+  const baseDataLoadingRef = useRef(false);
 
   // Sorting for Mutasi Terbaru table
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -883,7 +885,10 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    const refresh = () => loadBaseData(true);
+    const refresh = () => {
+      if (baseDataLoadedRef.current || baseDataLoadingRef.current) return;
+      loadBaseData(true);
+    };
     const onVisibility = () => {
       if (document.visibilityState === "visible") refresh();
     };
@@ -922,22 +927,31 @@ export default function DashboardPage() {
   }, [activeTab, selectedZone]);
 
   const loadBaseData = async (silent = false) => {
-    if (!silent && !stats) setLoading(true);
-    const [dashResult, logResult] = await Promise.allSettled([
-      api().get("/inventory/dashboard"),
-      api().get("/inventory/logs"),
-    ]);
-    if (dashResult.status === "fulfilled") {
-      setStats(normalizeStats(unwrap(dashResult.value)));
-    } else {
-      console.error("Dashboard stats load error", dashResult.reason);
+    if (baseDataLoadingRef.current) return;
+    const showLoading = !silent && !baseDataLoadedRef.current;
+    if (showLoading) setLoading(true);
+    baseDataLoadingRef.current = true;
+    try {
+      const [dashResult, logResult] = await Promise.allSettled([
+        api().get("/inventory/dashboard"),
+        api().get("/inventory/logs"),
+      ]);
+      if (dashResult.status === "fulfilled") {
+        setStats(normalizeStats(unwrap(dashResult.value)));
+      } else {
+        console.error("Dashboard stats load error", dashResult.reason);
+      }
+      if (logResult.status === "fulfilled") {
+        setLogs(normalizeLogs(unwrap(logResult.value)));
+      } else {
+        console.error("Dashboard logs load error", logResult.reason);
+      }
+      baseDataLoadedRef.current =
+        dashResult.status === "fulfilled" && logResult.status === "fulfilled";
+    } finally {
+      baseDataLoadingRef.current = false;
+      if (showLoading) setLoading(false);
     }
-    if (logResult.status === "fulfilled") {
-      setLogs(normalizeLogs(unwrap(logResult.value)));
-    } else {
-      console.error("Dashboard logs load error", logResult.reason);
-    }
-    if (!silent) setLoading(false);
   };
 
   const loadOccupancy = async (zone?: string) => {

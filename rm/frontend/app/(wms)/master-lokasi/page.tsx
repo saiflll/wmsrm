@@ -135,7 +135,7 @@ export default function MasterLokasiPage() {
 
     const f = (k: any, v: any) => setForm(p => ({ ...p, [k]: v }));
     const filtered = locs;
-    const pageSize = 20;
+    const pageSize = 11;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const displayedItems = filtered;
 

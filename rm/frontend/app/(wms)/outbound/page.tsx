@@ -140,31 +140,11 @@ export default function OutboundPage() {
       const allBarangs = unwrap(bRes) || [];
       const allPlans = unwrap(pRes) || [];
 
-      // Filter out all chicken items (handled separately in Planning & Outbound Ayam)
-      const nonAyamBarangs = allBarangs.filter((x: any) =>
-        !x.nama?.toLowerCase().includes('ayam') && !x.kategori?.toLowerCase().includes('ayam')
-      );
-      const nonAyamStocks = allStocks.filter((st: any) =>
-        !st.barang?.nama?.toLowerCase().includes('ayam') && !st.barang?.kategori?.toLowerCase().includes('ayam')
-      );
-      const nonAyamPlans = allPlans.filter((plan: any) => {
-        return !plan.items?.some((item: any) => {
-          const brg = allBarangs.find((br: any) => String(br.id) === String(item.barangId));
-          return brg?.nama?.toLowerCase().includes('ayam') || brg?.kategori?.toLowerCase().includes('ayam');
-        });
-      });
-
-      setStocks(nonAyamStocks);
-      setBarangs(nonAyamBarangs);
-      setPlannings(nonAyamPlans);
+      setStocks(allStocks);
+      setBarangs(allBarangs);
+      setPlannings(allPlans);
       setCustomers(unwrap(cRes));
-      const allLogs = unwrap(lRes) || [];
-      const nonAyamLogs = allLogs.filter((log: any) =>
-        !log.barang?.nama?.toLowerCase().includes('ayam') &&
-        !log.barang?.kategori?.toLowerCase().includes('ayam') &&
-        !log.keterangan?.toLowerCase().includes('outbound ayam')
-      );
-      setLogs(nonAyamLogs);
+      setLogs(unwrap(lRes) || []);
     } catch (e) {
       console.error("Load outbound data failed", e);
     }
@@ -917,28 +897,24 @@ export default function OutboundPage() {
                   <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
                     <Table.Thead style={{ background: "#fef2f2", borderBottom: "2px solid #fecaca" }}>
                       <Table.Tr>
-                        <Table.Th style={{ color: "#b91c1c", cursor: "pointer" }} onClick={() => handleSort("no_ref")}>NoPO/Ref{sortIcon("no_ref")}</Table.Th>
+                        <Table.Th style={{ color: "#b91c1c", cursor: "pointer", whiteSpace: "nowrap" }} onClick={() => handleSort("no_ref")}>NoPO/Ref{sortIcon("no_ref")}</Table.Th>
                         <Table.Th style={{ color: "#b91c1c", cursor: "pointer" }} onClick={() => handleSort("barang.nama")}>Item{sortIcon("barang.nama")}</Table.Th>
-                        <Table.Th style={{ color: "#b91c1c", cursor: "pointer" }} onClick={() => handleSort("created_at")}>Tgl Keluar{sortIcon("created_at")}</Table.Th>
-                        <Table.Th style={{ color: "#b91c1c", cursor: "pointer" }} onClick={() => handleSort("gudang.zone")}>Zone{sortIcon("gudang.zone")}</Table.Th>
-                        <Table.Th style={{ color: "#b91c1c", cursor: "pointer" }} onClick={() => handleSort("gudang.name")}>Rak{sortIcon("gudang.name")}</Table.Th>
-                        <Table.Th style={{ color: "#b91c1c", cursor: "pointer" }} onClick={() => handleSort("qty")}>Qty{sortIcon("qty")}</Table.Th>
-                        <Table.Th style={{ color: "#b91c1c", cursor: "pointer" }} onClick={() => handleSort("tujuan")}>Tujuan{sortIcon("tujuan")}</Table.Th>
-                        <Table.Th style={{ color: "#b91c1c", cursor: "pointer" }} onClick={() => handleSort("shift.name")}>Shift{sortIcon("shift.name")}</Table.Th>
+                        <Table.Th style={{ color: "#b91c1c", whiteSpace: "nowrap" }}>Lokasi</Table.Th>
+                        <Table.Th style={{ color: "#b91c1c", cursor: "pointer", whiteSpace: "nowrap" }} onClick={() => handleSort("qty")}>Qty{sortIcon("qty")}</Table.Th>
+                        <Table.Th style={{ color: "#b91c1c", whiteSpace: "nowrap" }}>Tgl Keluar</Table.Th>
+                        <Table.Th style={{ color: "#b91c1c" }}>Tujuan / Shift</Table.Th>
                         <Table.Th style={{ color: "#b91c1c" }}>Audit Planning / ACC</Table.Th>
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
                       {filteredLogs.slice(0, 100).map((r: any, index: number) => (
-                        <Table.Tr key={r.id} style={{ backgroundColor: index % 2 === 0 ? "#fff" : "#f8f9fa" }}>
-                          <Table.Td fw={600}>{r.no_ref || "-"}</Table.Td>
-                          <Table.Td fw={700}>{r.barang?.nama}</Table.Td>
-                          <Table.Td>{new Date(r.created_at).toLocaleDateString()}</Table.Td>
-                          <Table.Td><Badge size="xs" color="teal">{r.gudang?.zone || "-"}</Badge></Table.Td>
-                          <Table.Td><Badge size="xs" color="blue">{r.gudang?.name || "-"}</Badge></Table.Td>
-                          <Table.Td ta="right" fw={700}>{r.qty} {r.satuan}</Table.Td>
-                          <Table.Td>{r.tujuan || "-"}</Table.Td>
-                          <Table.Td>{r.shift?.name || "-"}</Table.Td>
+                        <Table.Tr key={r.id} style={{ backgroundColor: index % 2 === 0 ? "#fff" : "#f8f9fa", wordBreak: "break-word" }}>
+                          <Table.Td fw={600} style={{ maxWidth: 120, whiteSpace: "normal", wordBreak: "break-word" }}>{r.no_ref || "-"}</Table.Td>
+                          <Table.Td fw={700} style={{ maxWidth: 140, whiteSpace: "normal", wordBreak: "break-word" }}>{r.barang?.nama}</Table.Td>
+                          <Table.Td style={{ whiteSpace: "nowrap" }}><Badge size="xs" color="teal">{r.gudang?.zone || "-"}</Badge> <Badge size="xs" color="blue">{r.gudang?.name || "-"}</Badge></Table.Td>
+                          <Table.Td ta="right" fw={700} style={{ whiteSpace: "nowrap" }}>{r.qty} {r.satuan}</Table.Td>
+                          <Table.Td style={{ fontSize: 10, whiteSpace: "normal" }}>{new Date(r.created_at).toLocaleDateString()}<div style={{ color: "#64748b" }}>Exp: {r.expiry_date ? new Date(r.expiry_date).toISOString().split("T")[0] : "-"}</div></Table.Td>
+                          <Table.Td style={{ fontSize: 10, maxWidth: 120, whiteSpace: "normal", wordBreak: "break-word" }}><div>{r.tujuan || "-"}</div><div style={{ color: "#64748b" }}>{r.shift?.name || "-"}</div></Table.Td>
                           <Table.Td style={{ minWidth: 220 }}>
                             <div><b>Dibuat:</b> {r.planned_by_username || "Manual / tanpa planning"}</div>
                             <div style={{ color: "#64748b" }}>{fmtDateTime(r.planned_at)}</div>
