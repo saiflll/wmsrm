@@ -333,6 +333,27 @@ export class InventoryController {
     });
   }
 
+  @Get('logs/relocation')
+  @Roles(
+    UserRole.SUPERVISOR,
+    UserRole.KOORDINATOR,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.SUPER_ADMIN,
+  )
+  get_relocation_logs(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('shift_id') shift_id?: string,
+  ) {
+    return this.svc.find_logs({
+      type: LogType.RELOCATION,
+      from,
+      to,
+      shift_id: shift_id ? +shift_id : undefined,
+    });
+  }
+
   // ========== DASHBOARD ==========
   @Get('dashboard')
   @Roles(

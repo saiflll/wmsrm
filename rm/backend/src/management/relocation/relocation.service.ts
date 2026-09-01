@@ -165,8 +165,11 @@ export class RelocationService {
         satuan: stock.satuan,
         batch_no: stock.batch_no,
         expiry_date: stock.expiry_date,
+        lot_no: stock.lot_no,
         note: `Relokasi dari ${source_gudang_name} ke ${target_gudang_name}`,
         user: user_id ? ({ id: user_id } as any) : undefined,
+        executed_by_username: username || 'system',
+        executed_at: new Date(),
       } as any);
       await manager.save(StockLog, log);
 

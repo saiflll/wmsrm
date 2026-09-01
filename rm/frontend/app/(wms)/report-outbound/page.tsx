@@ -45,21 +45,16 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     [`Periode: ${periodeStr}`],
     filterBarangNama ? [`Filter Produk: ${filterBarangNama}`] : [],
     [],
-    [
+      [
       "No.Outbound/Ref",
       "Item / Produk",
-      "Tanggal Outbound",
-      "Jam Process / Eksekusi",
-      "Shift",
-      "Tanggal Expired",
+      "Tanggal / Shift / Jam",
+      "Batch / Expired",
       "Qty",
       "Satuan",
       "Status",
-      "Zone",
-      "Lokasi Rak",
+      "Lokasi (Zone/Rak)",
       "Tujuan / Peminta",
-      "Batch No",
-      "Keterangan",
       "Dibuat Oleh",
       "Waktu Dibuat",
       "Di-ACC Oleh",
@@ -70,8 +65,6 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     r.no_ref || r.no_po || `OUT-${r.id}`,
     r.barang?.nama || "",
     r.created_at ? fmt(r.created_at) : "-",
-    r.created_at ? fmtDateTime(r.created_at).split(" ")[1] : "-",
-    r.shift?.name || "-",
     r.expiry_date ? fmt(r.expiry_date) : "-",
     r.qty,
     r.satuan || "",
@@ -81,37 +74,18 @@ function exportExcel(data: any[], from: string, to: string, filterBarangNama?: s
     r.tujuan || r.customer || "-",
     r.batch_no || "-",
     r.keterangan || r.note || "-",
-    r.planned_by_username || "Manual / tanpa planning",
-    fmtDateTime(r.planned_at),
-    r.executed_by_username || r.user?.username || "sistem",
-    fmtDateTime(r.executed_at || r.created_at),
   ]);
   const ws = XLSX.utils.aoa_to_sheet([...headerRows, ...rows]);
   ws["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 17 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 17 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: 17 } },
-    ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 17 } }] : []),
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 11 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 11 } },
+    ...(filterBarangNama ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: 11 } }] : []),
   ];
   ws["!cols"] = [
-    { wch: 16 },
-    { wch: 28 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 12 },
-    { wch: 14 },
-    { wch: 8 },
-    { wch: 8 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 14 },
-    { wch: 20 },
-    { wch: 18 },
-    { wch: 20 },
-    { wch: 18 },
-    { wch: 20 },
-    { wch: 16 },
-    { wch: 20 },
+    { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 14 },
+    { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 12 },
+    { wch: 14 }, { wch: 20 }, { wch: 18 }, { wch: 28 },
   ];
   const wb = XLSX.utils.book_new();
   const sheetName = filterBarangNama
@@ -161,10 +135,7 @@ export default function ReportOutboundPage() {
     setLoading(false);
   };
 
-  const filtered = logs
-    .filter((r: any) => !r.keterangan?.toLowerCase().includes('outbound ayam'))
-    .filter((r: any) => !r.barang?.nama?.toLowerCase().includes('ayam') && !r.barang?.kategori?.toLowerCase().includes('ayam'))
-    .filter(
+  const filtered = logs.filter(
       (r: any) =>
         !search ||
         r.barang?.nama?.toLowerCase().includes(search.toLowerCase()) ||
@@ -386,41 +357,11 @@ export default function ReportOutboundPage() {
               </Table.Th>
               <Table.Th style={{ color: "#b91c1c", fontSize: 11 }}>Item</Table.Th>
               <Table.Th style={{ color: "#b91c1c", fontSize: 11 }}>Tujuan</Table.Th>
-              <Table.Th
-                style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}
-              >
-                Shift
-              </Table.Th>
-              <Table.Th
-                style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}
-              >
-                Batch
-              </Table.Th>
-              <Table.Th
-                style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}
-              >
-                Tgl.Expired
-              </Table.Th>
-              <Table.Th
-                style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}
-              >
-                Qty
-              </Table.Th>
-              <Table.Th
-                style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}
-              >
-                Status
-              </Table.Th>
-              <Table.Th
-                style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}
-              >
-                Location
-              </Table.Th>
-              <Table.Th
-                style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}
-              >
-                Jam Operasional
-              </Table.Th>
+              <Table.Th style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}>Batch / Expired</Table.Th>
+              <Table.Th style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}>Qty</Table.Th>
+              <Table.Th style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}>Status</Table.Th>
+              <Table.Th style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}>Lokasi (Zone/Rak)</Table.Th>
+              <Table.Th style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}>Tanggal / Shift / Jam</Table.Th>
               <Table.Th
                 style={{ color: "#b91c1c", fontSize: 11, textAlign: "center" }}
               >
@@ -478,53 +419,11 @@ export default function ReportOutboundPage() {
                         {r.tujuan || "-"}
                       </Table.Td>
                     )}
-                    {idx === 0 && (
-                      <Table.Td
-                        ta="center"
-                        rowSpan={items.length}
-                        style={{
-                          verticalAlign: "middle",
-                          borderRight: "1px solid #eee",
-                        }}
-                      >
-                        {r.shift?.name || "-"}
-                      </Table.Td>
-                    )}
-
-                    <Table.Td ta="center">{r.batch_no || "-"}</Table.Td>
-                    <Table.Td ta="center">
-                      {r.expiry_date ? fmt(r.expiry_date) : "-"}
-                    </Table.Td>
-                    <Table.Td ta="center">
-                      {r.qty} {r.satuan}
-                    </Table.Td>
-
-                    <Table.Td
-                      ta="center"
-                      fw={700}
-                      c={statusColor(r.expiry_date)}
-                      style={{ textTransform: "uppercase" }}
-                    >
-                      {statusLabel(r.expiry_date)}
-                    </Table.Td>
-                    <Table.Td ta="center" fw={700} c="#111827">
-                      {r.gudang?.zone || "-"}
-                    </Table.Td>
-
-                    {idx === 0 && (
-                      <Table.Td
-                        ta="center"
-                        rowSpan={items.length}
-                        style={{
-                          verticalAlign: "middle",
-                          borderLeft: "1px solid #eee",
-                        }}
-                      >
-                        <div style={{ fontSize: "10px" }}>
-                          Jam Process: {fmtDateTime(r.executed_at || r.created_at).split(" ")[1] || "-"}
-                        </div>
-                      </Table.Td>
-                    )}
+                    <Table.Td ta="center"><div>{r.batch_no || "-"}</div><div style={{ fontSize: 9, color: "#64748b" }}>Exp: {r.expiry_date ? fmt(r.expiry_date) : "-"}</div></Table.Td>
+                    <Table.Td ta="center">{r.qty} {r.satuan}</Table.Td>
+                    <Table.Td ta="center" fw={700} c={statusColor(r.expiry_date)} style={{ textTransform: "uppercase" }}>{statusLabel(r.expiry_date)}</Table.Td>
+                    <Table.Td ta="center" fw={700} c="#111827"><Badge size="xs" color="teal">{r.gudang?.zone || "-"}</Badge> <Badge size="xs" color="blue">{r.gudang?.name || "-"}</Badge></Table.Td>
+                    <Table.Td ta="center" style={{ fontSize: 10 }}><div>{r.created_at ? fmt(r.created_at) : "-"}</div><div style={{ color: "#64748b" }}>{r.shift?.name || "-"} · {fmtDateTime(r.executed_at || r.created_at).split(" ")[1] || "-"}</div></Table.Td>
                     <Table.Td ta="center">
                       {r.keterangan || r.note || "-"}
                     </Table.Td>
