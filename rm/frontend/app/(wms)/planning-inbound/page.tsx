@@ -1,9 +1,27 @@
 "use client";
 // @ts-nocheck
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Group, Button, Title, Text, Badge, Paper, Stack, TextInput, Select, MultiSelect, Autocomplete, Grid, ActionIcon, NumberInput, Tooltip, Checkbox } from "@mantine/core";
-import { Table } from '../components/Table';
-import Pagination from '../components/Pagination';
+import {
+  Box,
+  Group,
+  Button,
+  Title,
+  Text,
+  Badge,
+  Paper,
+  Stack,
+  TextInput,
+  Select,
+  MultiSelect,
+  Autocomplete,
+  Grid,
+  ActionIcon,
+  NumberInput,
+  Tooltip,
+  Checkbox,
+} from "@mantine/core";
+import { Table } from "../components/Table";
+import Pagination from "../components/Pagination";
 import {
   IconPlus,
   IconEdit,
@@ -26,9 +44,10 @@ export default function PlanningInboundPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(11);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [showDone, setShowDone] = useState(true);
 
   const [editPlanId, setEditPlanId] = useState<number | null>(null);
   const [draftPlans, setDraftPlans] = useState<any[]>([]);
@@ -46,13 +65,19 @@ export default function PlanningInboundPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("wms_inbound_offline_queue", JSON.stringify(offlineQueue));
+      localStorage.setItem(
+        "wms_inbound_offline_queue",
+        JSON.stringify(offlineQueue),
+      );
     }
   }, [offlineQueue]);
 
   useEffect(() => {
-    const onOnline = () => { if (offlineQueue.length) flushOfflineQueue(); };
-    if (typeof window !== "undefined") window.addEventListener("online", onOnline);
+    const onOnline = () => {
+      if (offlineQueue.length) flushOfflineQueue();
+    };
+    if (typeof window !== "undefined")
+      window.addEventListener("online", onOnline);
     return () => window.removeEventListener("online", onOnline);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offlineQueue]);
@@ -79,15 +104,16 @@ export default function PlanningInboundPage() {
 
   const load = async () => {
     try {
-      const [pRes, cRes, lRes, bRes, gRes, sRes, dRes] = await Promise.all([
+      const [pRes, cRes, bRes, gRes, dRes] = await Promise.all([
         api().get(`/inbound-planning?page=${page}&limit=${limit}`),
         api().get("/customers"),
-        api().get("/inventory/logs/inbound"),
         api().get("/barang"),
         api().get("/gudang"),
-        api().get("/inventory/stock"),
         api().get("/inbound-planning?status=DRAFT&limit=1000"),
       ]);
+      // non-blocking heavy data
+      api().get("/inventory/stock?limit=1000").then(r=>{ const sd=unwrap(r); setStocks(Array.isArray(sd)?sd:sd?.data||[]); }).catch(()=>{});
+      api().get("/inventory/logs/inbound").then(r=>setLogs(unwrap(r))).catch(()=>{});
       const planData = unwrap(pRes);
       if (planData && planData.data) {
         setPlans(planData.data);
@@ -97,14 +123,15 @@ export default function PlanningInboundPage() {
         setPlans(planData);
       }
       const draftData = unwrap(dRes);
-      setDraftPlans(Array.isArray(draftData) ? draftData : draftData?.data || []);
+      setDraftPlans(
+        Array.isArray(draftData) ? draftData : draftData?.data || [],
+      );
       setCustomers(unwrap(cRes));
-      setLogs(unwrap(lRes));
       setBarangs(unwrap(bRes));
       const gudangData = unwrap(gRes);
-      setGudangs(Array.isArray(gudangData) ? gudangData : gudangData?.data || []);
-      const stockData = unwrap(sRes);
-      setStocks(Array.isArray(stockData) ? stockData : stockData?.data || []);
+      setGudangs(
+        Array.isArray(gudangData) ? gudangData : gudangData?.data || [],
+      );
     } catch (e) {
       console.error("Load planning inbound data failed:", e);
     }
@@ -126,7 +153,11 @@ export default function PlanningInboundPage() {
     if (remaining.length !== offlineQueue.length) {
       setOfflineQueue(remaining);
       if (!remaining.length) {
-        notifications.show({ title: "Sukses", message: "Draft offline berhasil dikirim ke server", color: "green" });
+        notifications.show({
+          title: "Sukses",
+          message: "Draft offline berhasil dikirim ke server",
+          color: "green",
+        });
       }
       load();
     }
@@ -167,9 +198,9 @@ export default function PlanningInboundPage() {
           return {
             barangId,
             qty: it.qty,
-            _name: bObj ? bObj.nama : '-',
-            satuan: it.satuan || bObj?.satuan || '',
-            zone: it.zone || '',
+            _name: bObj ? bObj.nama : "-",
+            satuan: it.satuan || bObj?.satuan || "",
+            zone: it.zone || "",
             rackAllocations: allocations.map((a: any) => ({
               gudangId: a.gudang_id ?? a.gudangId,
               gudangName: a.gudangName,
@@ -180,7 +211,9 @@ export default function PlanningInboundPage() {
         setForm({
           no_po: p.no_po,
           supplier: p.supplier || "",
-          estimasi_datang: p.estimasi_datang ? new Date(p.estimasi_datang).toISOString().slice(0, 16) : "",
+          estimasi_datang: p.estimasi_datang
+            ? new Date(p.estimasi_datang).toISOString().slice(0, 16)
+            : "",
           note: p.note || "",
           items: mappedItems,
         });
@@ -190,25 +223,49 @@ export default function PlanningInboundPage() {
 
   if (!mounted) return null;
 
-  const zones = Array.from(new Set(gudangs.map((g: any) => g.zone).filter(Boolean))).sort();
-  const rackCapacity = (rack: any) => Number(rack?.capacity ?? rack?.kapasitas ?? rack?.max_capacity ?? rack?.maxCapacity ?? 1000);
-  const rackUsedQty = (rackId: any) => stocks
-    .filter((s: any) => String(s.gudang?.id) === String(rackId))
-    .reduce((sum: number, s: any) => sum + Number(s.qty || 0), 0);
-  const rackPlannedQty = (rackId: any) => form.items
-    .flatMap((it: any) => it.rackAllocations || [])
-    .filter((a: any) => String(a.gudangId) === String(rackId))
-    .reduce((sum: number, a: any) => sum + Number(a.qty || 0), 0);
-  const rackAcceptsItem = (rackId: any, barangId: any) => !stocks
-    .filter((s: any) => String(s.gudang?.id) === String(rackId))
-    .some((s: any) => s.barang && String(s.barang.id) !== String(barangId));
+  const zones = Array.from(
+    new Set(gudangs.map((g: any) => g.zone).filter(Boolean)),
+  ).sort();
+  const rackCapacity = (rack: any) =>
+    Number(
+      rack?.capacity ??
+        rack?.kapasitas ??
+        rack?.max_capacity ??
+        rack?.maxCapacity ??
+        1000,
+    );
+  const rackUsedQty = (rackId: any) =>
+    stocks
+      .filter((s: any) => String(s.gudang?.id) === String(rackId))
+      .reduce((sum: number, s: any) => sum + Number(s.qty || 0), 0);
+  const rackPlannedQty = (rackId: any) =>
+    form.items
+      .flatMap((it: any) => it.rackAllocations || [])
+      .filter((a: any) => String(a.gudangId) === String(rackId))
+      .reduce((sum: number, a: any) => sum + Number(a.qty || 0), 0);
+  const rackAcceptsItem = (rackId: any, barangId: any) =>
+    !stocks
+      .filter((s: any) => String(s.gudang?.id) === String(rackId))
+      .some((s: any) => s.barang && String(s.barang.id) !== String(barangId));
 
   const rackOptions = gudangs
-    .filter((g: any) => g.status !== false && g.zone?.toUpperCase() === selectedZone.toUpperCase() && rackAcceptsItem(g.id, selectedBarangId))
+    .filter(
+      (g: any) =>
+        g.status !== false &&
+        g.zone?.toUpperCase() === selectedZone.toUpperCase() &&
+        rackAcceptsItem(g.id, selectedBarangId),
+    )
     .map((g: any) => {
       const capacity = rackCapacity(g);
-      const available = Math.max(0, capacity - rackUsedQty(g.id) - rackPlannedQty(g.id));
-      return { value: String(g.id), label: `${g.name} — sisa ${available}/${capacity}`, disabled: available <= 0 };
+      const available = Math.max(
+        0,
+        capacity - rackUsedQty(g.id) - rackPlannedQty(g.id),
+      );
+      return {
+        value: String(g.id),
+        label: `${g.name} — sisa ${available}/${capacity}`,
+        disabled: available <= 0,
+      };
     });
 
   const buildRackAllocations = () => {
@@ -218,10 +275,17 @@ export default function PlanningInboundPage() {
       if (remaining <= 0) break;
       const rack = gudangs.find((g: any) => String(g.id) === String(rackId));
       if (!rack) continue;
-      const available = Math.max(0, rackCapacity(rack) - rackUsedQty(rack.id) - rackPlannedQty(rack.id));
+      const available = Math.max(
+        0,
+        rackCapacity(rack) - rackUsedQty(rack.id) - rackPlannedQty(rack.id),
+      );
       const qty = Math.min(remaining, available);
       if (qty > 0) {
-        allocations.push({ gudangId: Number(rack.id), gudangName: rack.name, qty });
+        allocations.push({
+          gudangId: Number(rack.id),
+          gudangName: rack.name,
+          qty,
+        });
         remaining -= qty;
       }
     }
@@ -230,13 +294,25 @@ export default function PlanningInboundPage() {
 
   const addItemToForm = () => {
     if (!selectedBarangId) {
-      return notifications.show({ title: "Error", message: "Pilih barang terlebih dahulu", color: "red" });
+      return notifications.show({
+        title: "Error",
+        message: "Pilih barang terlebih dahulu",
+        color: "red",
+      });
     }
     if (itemQty <= 0) {
-      return notifications.show({ title: "Error", message: "Qty harus lebih dari 0", color: "red" });
+      return notifications.show({
+        title: "Error",
+        message: "Qty harus lebih dari 0",
+        color: "red",
+      });
     }
     if (!selectedZone || !selectedRackIds.length) {
-      return notifications.show({ title: "Error", message: "Pilih zone dan minimal satu rak", color: "red" });
+      return notifications.show({
+        title: "Error",
+        message: "Pilih zone dan minimal satu rak",
+        color: "red",
+      });
     }
     const bObj = barangs.find((b: any) => String(b.id) === selectedBarangId);
     if (!bObj) return;
@@ -251,10 +327,17 @@ export default function PlanningInboundPage() {
     }
     setForm((p: any) => ({
       ...p,
-      items: [...p.items, {
-        barangId: Number(selectedBarangId), qty: itemQty, _name: bObj.nama,
-        satuan: bObj.satuan || 'Pcs', zone: selectedZone, rackAllocations: allocations,
-      }],
+      items: [
+        ...p.items,
+        {
+          barangId: Number(selectedBarangId),
+          qty: itemQty,
+          _name: bObj.nama,
+          satuan: bObj.satuan || "Pcs",
+          zone: selectedZone,
+          rackAllocations: allocations,
+        },
+      ],
     }));
     setSelectedBarangId("");
     setItemQty(1);
@@ -271,10 +354,18 @@ export default function PlanningInboundPage() {
 
   const submitPlanning = async () => {
     if (!form.no_po) {
-      return notifications.show({ title: "Error", message: "No PO/SJ wajib diisi", color: "red" });
+      return notifications.show({
+        title: "Error",
+        message: "No PO/SJ wajib diisi",
+        color: "red",
+      });
     }
     if (!form.items.length) {
-      return notifications.show({ title: "Error", message: "Tambahkan minimal 1 item ke planning", color: "red" });
+      return notifications.show({
+        title: "Error",
+        message: "Tambahkan minimal 1 item ke planning",
+        color: "red",
+      });
     }
 
     const payload: any = {
@@ -287,23 +378,43 @@ export default function PlanningInboundPage() {
         qty: Number(it.qty),
         satuan: it.satuan || undefined,
         zone: it.zone || undefined,
-        rack_allocations: it.rackAllocations?.map((a: any) => ({ gudang_id: Number(a.gudangId), qty: Number(a.qty) })),
+        rack_allocations: it.rackAllocations?.map((a: any) => ({
+          gudang_id: Number(a.gudangId),
+          qty: Number(a.qty),
+        })),
       })),
     };
 
     try {
       if (editPlanId !== null) {
         await api().put(`/inbound-planning/${editPlanId}`, payload);
-        notifications.show({ title: "Sukses", message: "Planning Inbound berhasil diupdate", color: "green" });
+        notifications.show({
+          title: "Sukses",
+          message: "Planning Inbound berhasil diupdate",
+          color: "green",
+        });
       } else {
         payload.status = "DRAFT";
         try {
           await api().post("/inbound-planning", payload);
-          notifications.show({ title: "Sukses", message: "Planning Inbound tersimpan sebagai DRAFT", color: "green" });
+          notifications.show({
+            title: "Sukses",
+            message: "Planning Inbound tersimpan sebagai DRAFT",
+            color: "green",
+          });
         } catch (netErr: any) {
-          if (netErr?.code === "ERR_NETWORK" || netErr?.message === "Network Error" || !navigator.onLine) {
+          if (
+            netErr?.code === "ERR_NETWORK" ||
+            netErr?.message === "Network Error" ||
+            !navigator.onLine
+          ) {
             setOfflineQueue((p) => [...p, payload]);
-            notifications.show({ title: "Mode Offline", message: "Tersimpan di antrean lokal, otomatis dikirim saat online", color: "orange" });
+            notifications.show({
+              title: "Mode Offline",
+              message:
+                "Tersimpan di antrean lokal, otomatis dikirim saat online",
+              color: "orange",
+            });
           } else {
             throw netErr;
           }
@@ -346,7 +457,11 @@ export default function PlanningInboundPage() {
     if (!confirm("Yakin ingin menghapus planning inbound ini?")) return;
     try {
       await api().delete(`/inbound-planning/${id}`);
-      notifications.show({ title: "Sukses", message: "Planning Inbound berhasil dihapus", color: "green" });
+      notifications.show({
+        title: "Sukses",
+        message: "Planning Inbound berhasil dihapus",
+        color: "green",
+      });
       load();
     } catch (e: any) {
       notifications.show({
@@ -357,13 +472,17 @@ export default function PlanningInboundPage() {
     }
   };
   const publishSelected = async () => {
-    const planIds = Object.keys(selected).map(Number).filter((id) => selected[id]?.length);
+    const planIds = Object.keys(selected)
+      .map(Number)
+      .filter((id) => selected[id]?.length);
     if (!planIds.length) return;
     let ok = 0;
     let fail = 0;
     for (const id of planIds) {
       try {
-        await api().post(`/inbound-planning/${id}/promote`, { itemIndices: selected[id] });
+        await api().post(`/inbound-planning/${id}/promote`, {
+          itemIndices: selected[id],
+        });
         ok++;
       } catch (e: any) {
         fail++;
@@ -376,8 +495,18 @@ export default function PlanningInboundPage() {
     }
     setSelected({});
     load();
-    if (ok) notifications.show({ title: "Sukses", message: `${ok} draft planning inbound dipublish`, color: "green" });
-    if (fail) notifications.show({ title: "Peringatan", message: `${fail} draft gagal dipublish`, color: "orange" });
+    if (ok)
+      notifications.show({
+        title: "Sukses",
+        message: `${ok} draft planning inbound dipublish`,
+        color: "green",
+      });
+    if (fail)
+      notifications.show({
+        title: "Peringatan",
+        message: `${fail} draft gagal dipublish`,
+        color: "orange",
+      });
   };
 
   const toggleItem = (planId: number, idx: number) => {
@@ -410,7 +539,8 @@ export default function PlanningInboundPage() {
     (acc, d) => acc + (Array.isArray(d.items) ? d.items.length : 0),
     0,
   );
-  const allDraftItemsSelected = totalDraftItems > 0 && allDraftSelectedCount === totalDraftItems;
+  const allDraftItemsSelected =
+    totalDraftItems > 0 && allDraftSelectedCount === totalDraftItems;
 
   const toggleSelectAllDrafts = () => {
     if (allDraftItemsSelected) {
@@ -418,19 +548,30 @@ export default function PlanningInboundPage() {
     } else {
       const next: Record<number, number[]> = {};
       for (const d of draftPlans) {
-        next[d.id] = Array.from({ length: Array.isArray(d.items) ? d.items.length : 0 }, (_, i) => i);
+        next[d.id] = Array.from(
+          { length: Array.isArray(d.items) ? d.items.length : 0 },
+          (_, i) => i,
+        );
       }
       setSelected(next);
     }
   };
 
   // Option lists
-  const poOpts = Array.from(new Set(logs.map((l: any) => l.no_po).filter(Boolean)));
-  const supplierOpts = Array.from(new Set(customers.map((c: any) => c.nama || c.name).filter(Boolean)));
-  const barangOpts = dedup(barangs.map((b: any) => ({
-    value: String(b.id),
-    label: b.sku ? `[${b.kategori}] ${b.sku} - ${b.nama}` : `[${b.kategori}] ${b.nama}`,
-  })));
+  const poOpts = Array.from(
+    new Set(logs.map((l: any) => l.no_po).filter(Boolean)),
+  );
+  const supplierOpts = Array.from(
+    new Set(customers.map((c: any) => c.nama || c.name).filter(Boolean)),
+  );
+  const barangOpts = dedup(
+    barangs.map((b: any) => ({
+      value: String(b.id),
+      label: b.sku
+        ? `[${b.kategori}] ${b.sku} - ${b.nama}`
+        : `[${b.kategori}] ${b.nama}`,
+    })),
+  );
 
   // Sort function
   const handleSort = (key: string) => {
@@ -455,11 +596,13 @@ export default function PlanningInboundPage() {
     if (aVal == null) aVal = "";
     if (bVal == null) bVal = "";
 
-    if (typeof aVal === 'number' && typeof bVal === 'number') {
-      return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    if (typeof aVal === "number" && typeof bVal === "number") {
+      return sortDir === "asc" ? aVal - bVal : bVal - aVal;
     }
-    const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
-    return sortDir === 'asc' ? cmp : -cmp;
+    const cmp = String(aVal).localeCompare(String(bVal), undefined, {
+      numeric: true,
+    });
+    return sortDir === "asc" ? cmp : -cmp;
   });
 
   const filtered = sortedPlans.filter((p: any) => {
@@ -485,7 +628,16 @@ export default function PlanningInboundPage() {
           boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
         }}
       >
-        <Title order={4} style={{ color: "#111827", fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
+        <Title
+          order={4}
+          style={{
+            color: "#111827",
+            fontWeight: 800,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
           <IconBuildingWarehouse size={20} style={{ color: "#4f46e5" }} />
           PLANNING INBOUND
         </Title>
@@ -497,8 +649,19 @@ export default function PlanningInboundPage() {
           <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>
             <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
               <Stack gap="xs">
-                <Text fw={800} size="sm" c="indigo" mb={4} style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: 4 }}>
-                  {editPlanId !== null ? "EDIT PLANNING INBOUND" : "BUAT PLANNING INBOUND"}
+                <Text
+                  fw={800}
+                  size="sm"
+                  c="indigo"
+                  mb={4}
+                  style={{
+                    borderBottom: "1px solid #f1f5f9",
+                    paddingBottom: 4,
+                  }}
+                >
+                  {editPlanId !== null
+                    ? "EDIT PLANNING INBOUND"
+                    : "BUAT PLANNING INBOUND"}
                 </Text>
 
                 <Autocomplete
@@ -520,8 +683,17 @@ export default function PlanningInboundPage() {
                   onChange={(v) => pf("supplier", v)}
                 />
 
-                <Box style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginTop: 4 }}>
-                  <Text fw={700} size="xs" c="indigo" mb={4}>Sub-Draft Items</Text>
+                <Box
+                  style={{
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 6,
+                    padding: 8,
+                    marginTop: 4,
+                  }}
+                >
+                  <Text fw={700} size="xs" c="indigo" mb={4}>
+                    Sub-Draft Items
+                  </Text>
 
                   <Select
                     label="Pilih Barang"
@@ -541,7 +713,10 @@ export default function PlanningInboundPage() {
                     searchable
                     data={zones}
                     value={selectedZone}
-                    onChange={(v) => { setSelectedZone(v || ""); setSelectedRackIds([]); }}
+                    onChange={(v) => {
+                      setSelectedZone(v || "");
+                      setSelectedRackIds([]);
+                    }}
                   />
 
                   {selectedZone && selectedBarangId && (
@@ -559,6 +734,7 @@ export default function PlanningInboundPage() {
                     />
                   )}
 
+                  {/* Qty + tombol Tambah tetap satu Group, saling menempel */}
                   <Group gap="xs" mt="xs" align="flex-end">
                     <NumberInput
                       label="Qty"
@@ -571,33 +747,78 @@ export default function PlanningInboundPage() {
                       min={1}
                       style={{ flex: 1 }}
                     />
-                    <Button size="xs" color="indigo" onClick={addItemToForm}>+ Tambah</Button>
+                    <Button size="xs" color="indigo" onClick={addItemToForm}>
+                      + Tambah
+                    </Button>
                   </Group>
 
                   {form.items.length > 0 && (
                     <Box style={{ overflowX: "auto", marginTop: 8 }}>
-                      <table style={{ width: "100%", fontSize: 10, borderCollapse: "collapse" }}>
+                      <table
+                        style={{
+                          width: "100%",
+                          fontSize: 10,
+                          borderCollapse: "collapse",
+                        }}
+                      >
                         <thead>
-                          <tr style={{ background: "#f8f9fa", borderBottom: "1px solid #e2e8f0" }}>
-                            <th style={{ textAlign: "left", padding: 4 }}>Barang</th>
-                            <th style={{ textAlign: "right", padding: 4 }}>Qty</th>
-                            <th style={{ textAlign: "center", padding: 4 }}>Aksi</th>
+                          <tr
+                            style={{
+                              background: "#f8f9fa",
+                              borderBottom: "1px solid #e2e8f0",
+                            }}
+                          >
+                            <th style={{ textAlign: "left", padding: 4 }}>
+                              Barang
+                            </th>
+                            <th style={{ textAlign: "right", padding: 4 }}>
+                              Qty
+                            </th>
+                            <th
+                              style={{
+                                textAlign: "center",
+                                padding: 4,
+                                width: 44,
+                              }}
+                            >
+                              Aksi
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
                           {form.items.map((it: any, idx: number) => (
-                            <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                            <tr
+                              key={idx}
+                              style={{ borderBottom: "1px solid #f1f5f9" }}
+                            >
                               <td style={{ padding: 4 }}>
                                 <div>{it._name}</div>
                                 {it.rackAllocations?.map((a: any) => (
-                                  <div key={a.gudangId} style={{ color: "#64748b", fontSize: 9 }}>
-                                    {a.gudangName || `Rak #${a.gudangId}`}: {a.qty}
+                                  <div
+                                    key={a.gudangId}
+                                    style={{ color: "#64748b", fontSize: 9 }}
+                                  >
+                                    {a.gudangName || `Rak #${a.gudangId}`}:{" "}
+                                    {a.qty}
                                   </div>
                                 ))}
                               </td>
-                              <td style={{ padding: 4, textAlign: "right", fontWeight: 700 }}>{it.qty} {it.satuan}</td>
+                              <td
+                                style={{
+                                  padding: 4,
+                                  textAlign: "right",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {it.qty} {it.satuan}
+                              </td>
                               <td style={{ padding: 4, textAlign: "center" }}>
-                                <ActionIcon size="xs" color="red" variant="subtle" onClick={() => removeItemFromForm(idx)}>
+                                <ActionIcon
+                                  size="xs"
+                                  color="red"
+                                  variant="subtle"
+                                  onClick={() => removeItemFromForm(idx)}
+                                >
                                   <IconTrash size={12} />
                                 </ActionIcon>
                               </td>
@@ -626,11 +847,21 @@ export default function PlanningInboundPage() {
                   onChange={(e) => pf("note", e.target.value)}
                 />
 
-                <Group gap="xs" mt="xs">
-                  <Button size="xs" color="indigo" style={{ flex: 1 }} onClick={submitPlanning} leftSection={<IconPlus size={14} />}>
-                    {editPlanId !== null ? "Update Planning Inbound" : "Simpan Planning Inbound"}
+                {/* FIX: pakai `grow` supaya tombol Simpan/Update & Batal
+                    selalu bagi rata lebar secara simetris, tidak lagi
+                    memakai flex manual di satu tombol saja. */}
+                <Group gap="xs" mt="xs" grow>
+                  <Button
+                    size="xs"
+                    color="indigo"
+                    onClick={submitPlanning}
+                    leftSection={<IconPlus size={14} />}
+                  >
+                    {editPlanId !== null
+                      ? "Update Planning Inbound"
+                      : "Simpan Planning Inbound"}
                   </Button>
-                  {(editPlanId !== null) && (
+                  {editPlanId !== null && (
                     <Button
                       size="xs"
                       color="gray"
@@ -649,62 +880,91 @@ export default function PlanningInboundPage() {
           <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
             <Stack gap="md">
               {/* Draft planning (status DRAFT di DB) */}
-              <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
+              <Paper
+                withBorder
+                p="md"
+                radius="md"
+                style={{ background: "#fff" }}
+              >
                 <Group justify="space-between" mb="xs">
-                  <Group gap="xs">
-                    <Text fw={850} size="sm" c="indigo">
-                      DRAFT PLANNING INBOUND ({draftPlans.length})
-                    </Text>
-                    <Checkbox
-                      size="xs"
-                      checked={allDraftItemsSelected}
-                      indeterminate={allDraftSelectedCount > 0 && !allDraftItemsSelected}
-                      onChange={toggleSelectAllDrafts}
-                      label="Pilih Semua"
-                    />
-                  </Group>
-                  <Tooltip label={allDraftSelectedCount ? `Publish ${allDraftSelectedCount} item terpilih` : "Pilih item yang mau dipublish"}>
-                    <ActionIcon
-                      size="md"
-                      color="green"
-                      variant="filled"
-                      disabled={allDraftSelectedCount === 0}
-                      onClick={publishSelected}
-                      radius="md"
-                    >
-                      <IconSend size={16} />
-                    </ActionIcon>
-                  </Tooltip>
+                  <Text fw={850} size="sm" c="indigo">
+                    DRAFT PLANNING INBOUND ({draftPlans.length})
+                  </Text>
+                  <Button
+                    size="xs"
+                    color="green"
+                    leftSection={<IconSend size={14} />}
+                    disabled={Object.keys(selected).length === 0}
+                    onClick={publishSelected}
+                  >
+                    Publish{" "}
+                    {Object.keys(selected).length
+                      ? `(${Object.keys(selected).length})`
+                      : ""}
+                  </Button>
                 </Group>
 
                 {draftPlans.length === 0 ? (
-                  <Text size="xs" c="dimmed">Belum ada draft planning inbound. Buat planning dan simpan, maka akan muncul di sini sebagai DRAFT.</Text>
+                  <Text size="xs" c="dimmed">
+                    Belum ada draft planning inbound. Buat planning dan simpan.
+                  </Text>
                 ) : (
                   <Box style={{ overflowX: "auto" }}>
-                    <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
-                      <Table.Thead style={{ background: "#eef2ff", borderBottom: "2px solid #c7d2fe" }}>
+                    <Table
+                      withTableBorder
+                      withColumnBorders
+                      style={{ fontSize: 11 }}
+                    >
+                      <Table.Thead
+                        style={{
+                          background: "#eef2ff",
+                          borderBottom: "2px solid #c7d2fe",
+                        }}
+                      >
                         <Table.Tr>
-                          <Table.Th style={{ color: "#3730a3", fontSize: 11, width: 40 }}>
-                            <Checkbox
-                              size="xs"
-                              checked={allDraftItemsSelected}
-                              indeterminate={allDraftSelectedCount > 0 && !allDraftItemsSelected}
-                              onChange={toggleSelectAllDrafts}
-                            />
+                          <Table.Th
+                            style={{
+                              color: "#3730a3",
+                              fontSize: 11,
+                              width: 40,
+                            }}
+                          >
+                            #
                           </Table.Th>
-                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>No PO</Table.Th>
-                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>Supplier</Table.Th>
-                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>Items (pilih per item)</Table.Th>
-                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>ETA</Table.Th>
-                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>Status</Table.Th>
-                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>Aksi</Table.Th>
+                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>
+                            No PO
+                          </Table.Th>
+                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>
+                            Supplier
+                          </Table.Th>
+                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>
+                            Items (pilih per item)
+                          </Table.Th>
+                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>
+                            ETA
+                          </Table.Th>
+                          <Table.Th style={{ color: "#3730a3", fontSize: 11 }}>
+                            Status
+                          </Table.Th>
+                          <Table.Th
+                            style={{
+                              color: "#3730a3",
+                              fontSize: 11,
+                              width: 70,
+                            }}
+                          >
+                            Aksi
+                          </Table.Th>
                         </Table.Tr>
                       </Table.Thead>
                       <Table.Tbody>
                         {draftPlans.map((d: any) => {
-                          const items: any[] = Array.isArray(d.items) ? d.items : [];
+                          const items: any[] = Array.isArray(d.items)
+                            ? d.items
+                            : [];
                           const planSel = selected[d.id] || [];
-                          const planAll = planSel.length === items.length && items.length > 0;
+                          const planAll =
+                            planSel.length === items.length && items.length > 0;
                           let etaStr = "-";
                           if (d.estimasi_datang) {
                             const dt = new Date(d.estimasi_datang);
@@ -717,31 +977,65 @@ export default function PlanningInboundPage() {
                                   size="xs"
                                   checked={planAll}
                                   indeterminate={planSel.length > 0 && !planAll}
-                                  onChange={() => togglePlanAll(d.id, items.length)}
+                                  onChange={() =>
+                                    togglePlanAll(d.id, items.length)
+                                  }
                                 />
                               </Table.Td>
                               <Table.Td fw={700}>{d.no_po}</Table.Td>
                               <Table.Td>{d.supplier || "-"}</Table.Td>
-                              <Table.Td style={{ padding: '4px 6px' }}>
-                                <div style={{ maxHeight: 120, overflowY: 'auto' }}>
+                              <Table.Td style={{ padding: "4px 6px" }}>
+                                <div
+                                  style={{ maxHeight: 120, overflowY: "auto" }}
+                                >
                                   {items.map((item: any, idx: number) => {
-                                    const barangId = item.barang_id ?? item.barangId;
-                                    const name = barangs.find((b: any) => b.id === barangId)?.nama || `Barang #${barangId}`;
-                                    const allocations = item.rack_allocations ?? item.rackAllocations ?? [];
+                                    const barangId =
+                                      item.barang_id ?? item.barangId;
+                                    const name =
+                                      barangs.find(
+                                        (b: any) => b.id === barangId,
+                                      )?.nama || `Barang #${barangId}`;
+                                    const allocations =
+                                      item.rack_allocations ??
+                                      item.rackAllocations ??
+                                      [];
                                     const checked = planSel.includes(idx);
                                     return (
-                                      <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '2px 0', lineHeight: '1.3' }}>
+                                      <div
+                                        key={idx}
+                                        style={{
+                                          fontSize: 10,
+                                          borderBottom: "1px solid #f1f5f9",
+                                          padding: "2px 0",
+                                          lineHeight: "1.3",
+                                        }}
+                                      >
                                         <Group gap={4} wrap="nowrap">
                                           <Checkbox
                                             size="xs"
                                             checked={checked}
-                                            onChange={() => toggleItem(d.id, idx)}
+                                            onChange={() =>
+                                              toggleItem(d.id, idx)
+                                            }
                                           />
                                           <div>
-                                            <span style={{ fontWeight: 600 }}>{name}</span> x{item.qty} {item.satuan || ''}
+                                            <span style={{ fontWeight: 600 }}>
+                                              {name}
+                                            </span>{" "}
+                                            x{item.qty} {item.satuan || ""}
                                             {allocations.map((a: any) => (
-                                              <span key={a.gudang_id ?? a.gudangId} style={{ color: "#64748b", fontSize: 9, display: 'block', paddingLeft: 4 }}>
-                                                {a.gudangName || `Rak #${a.gudang_id ?? a.gudangId}`}: {a.qty}
+                                              <span
+                                                key={a.gudang_id ?? a.gudangId}
+                                                style={{
+                                                  color: "#64748b",
+                                                  fontSize: 9,
+                                                  display: "block",
+                                                  paddingLeft: 4,
+                                                }}
+                                              >
+                                                {a.gudangName ||
+                                                  `Rak #${a.gudang_id ?? a.gudangId}`}
+                                                : {a.qty}
                                               </span>
                                             ))}
                                           </div>
@@ -751,43 +1045,75 @@ export default function PlanningInboundPage() {
                                   })}
                                 </div>
                               </Table.Td>
-                              <Table.Td style={{ fontSize: 10 }}>{etaStr}</Table.Td>
-                              <Table.Td><Badge color="gray" variant="filled" size="xs">DRAFT</Badge></Table.Td>
+                              <Table.Td style={{ fontSize: 10 }}>
+                                {etaStr}
+                              </Table.Td>
+                              <Table.Td>
+                                <Badge color="gray" variant="filled" size="xs">
+                                  DRAFT
+                                </Badge>
+                              </Table.Td>
                               <Table.Td>
                                 <Group gap={2} wrap="nowrap">
                                   <Tooltip label="Edit">
-                                    <ActionIcon size="sm" color="blue" variant="light" onClick={() => {
-                                      const mappedItems = items.map((it: any) => {
-                                        const barangId = it.barang_id ?? it.barangId;
-                                        const allocations = it.rack_allocations ?? it.rackAllocations ?? [];
-                                        const bObj = barangs.find((b: any) => b.id === barangId);
-                                        return {
-                                          barangId,
-                                          qty: it.qty,
-                                          _name: bObj ? bObj.nama : '-',
-                                          satuan: it.satuan || bObj?.satuan || '',
-                                          zone: it.zone || '',
-                                          rackAllocations: allocations.map((a: any) => ({
-                                            gudangId: a.gudang_id ?? a.gudangId,
-                                            gudangName: a.gudangName,
-                                            qty: a.qty,
-                                          })),
-                                        };
-                                      });
-                                      setForm({
-                                        no_po: d.no_po || "",
-                                        supplier: d.supplier || "",
-                                        estimasi_datang: d.estimasi_datang ? new Date(d.estimasi_datang).toISOString().slice(0, 16) : "",
-                                        note: d.note || "",
-                                        items: mappedItems,
-                                      });
-                                      setEditPlanId(d.id);
-                                    }}>
+                                    <ActionIcon
+                                      size="sm"
+                                      color="blue"
+                                      variant="light"
+                                      onClick={() => {
+                                        const mappedItems = items.map(
+                                          (it: any) => {
+                                            const barangId =
+                                              it.barang_id ?? it.barangId;
+                                            const allocations =
+                                              it.rack_allocations ??
+                                              it.rackAllocations ??
+                                              [];
+                                            const bObj = barangs.find(
+                                              (b: any) => b.id === barangId,
+                                            );
+                                            return {
+                                              barangId,
+                                              qty: it.qty,
+                                              _name: bObj ? bObj.nama : "-",
+                                              satuan:
+                                                it.satuan || bObj?.satuan || "",
+                                              zone: it.zone || "",
+                                              rackAllocations: allocations.map(
+                                                (a: any) => ({
+                                                  gudangId:
+                                                    a.gudang_id ?? a.gudangId,
+                                                  gudangName: a.gudangName,
+                                                  qty: a.qty,
+                                                }),
+                                              ),
+                                            };
+                                          },
+                                        );
+                                        setForm({
+                                          no_po: d.no_po || "",
+                                          supplier: d.supplier || "",
+                                          estimasi_datang: d.estimasi_datang
+                                            ? new Date(d.estimasi_datang)
+                                                .toISOString()
+                                                .slice(0, 16)
+                                            : "",
+                                          note: d.note || "",
+                                          items: mappedItems,
+                                        });
+                                        setEditPlanId(d.id);
+                                      }}
+                                    >
                                       <IconEdit size={13} />
                                     </ActionIcon>
                                   </Tooltip>
                                   <Tooltip label="Hapus">
-                                    <ActionIcon size="sm" color="red" variant="light" onClick={() => deletePlan(d.id)}>
+                                    <ActionIcon
+                                      size="sm"
+                                      color="red"
+                                      variant="light"
+                                      onClick={() => deletePlan(d.id)}
+                                    >
                                       <IconTrash size={13} />
                                     </ActionIcon>
                                   </Tooltip>
@@ -802,13 +1128,19 @@ export default function PlanningInboundPage() {
                 )}
                 {offlineQueue.length > 0 && (
                   <Text size="xs" c="orange" mt="xs">
-                    {offlineQueue.length} draft tertahan di antrean offline (belum terkirim ke server).
+                    {offlineQueue.length} draft tertahan di antrean offline
+                    (belum terkirim ke server).
                   </Text>
                 )}
               </Paper>
 
               {/* Riwayat Planning Table */}
-              <Paper withBorder p="md" radius="md" style={{ background: "#fff" }}>
+              <Paper
+                withBorder
+                p="md"
+                radius="md"
+                style={{ background: "#fff" }}
+              >
                 <Group justify="space-between" mb="xs">
                   <Group gap="xs">
                     <TextInput
@@ -831,32 +1163,71 @@ export default function PlanningInboundPage() {
                       style={{ width: 130 }}
                     />
                   </Group>
-                  <Button size="xs" variant="outline" color="indigo" onClick={load}>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    color="indigo"
+                    onClick={load}
+                  >
                     Refresh Data
                   </Button>
                 </Group>
 
                 <Box style={{ overflowX: "auto" }}>
-                  <Table withTableBorder withColumnBorders style={{ fontSize: 11 }}>
-                    <Table.Thead style={{ background: "#eef2ff", borderBottom: "2px solid #c7d2fe" }}>
+                  <Table
+                    withTableBorder
+                    withColumnBorders
+                    style={{ fontSize: 11 }}
+                  >
+                    <Table.Thead
+                      style={{
+                        background: "#eef2ff",
+                        borderBottom: "2px solid #c7d2fe",
+                      }}
+                    >
                       <Table.Tr>
-                        <Table.Th style={{ color: "#3730a3", cursor: "pointer" }} onClick={() => handleSort('no_po')}>
-                          No PO / SJ{sortIcon('no_po')}
+                        <Table.Th
+                          style={{
+                            color: "#3730a3",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                          }}
+                          onClick={() => handleSort("no_po")}
+                        >
+                          No PO / SJ{sortIcon("no_po")}
                         </Table.Th>
-                        <Table.Th style={{ color: "#3730a3", cursor: "pointer" }} onClick={() => handleSort('supplier')}>
-                          Supplier{sortIcon('supplier')}
+                        <Table.Th
+                          style={{
+                            color: "#3730a3",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                          }}
+                          onClick={() => handleSort("supplier")}
+                        >
+                          Supplier{sortIcon("supplier")}
                         </Table.Th>
                         <Table.Th style={{ color: "#3730a3" }}>Items</Table.Th>
-                        <Table.Th style={{ color: "#3730a3", cursor: "pointer" }} onClick={() => handleSort('estimasi_datang')}>
-                          Timeline{sortIcon('estimasi_datang')}
+                        <Table.Th
+                          style={{ color: "#3730a3", cursor: "pointer" }}
+                          onClick={() => handleSort("estimasi_datang")}
+                        >
+                          Timeline{sortIcon("estimasi_datang")}
                         </Table.Th>
-                        <Table.Th style={{ color: "#3730a3", cursor: "pointer" }} onClick={() => handleSort('status')}>
-                          Status{sortIcon('status')}
+                        <Table.Th
+                          style={{ color: "#3730a3", cursor: "pointer" }}
+                          onClick={() => handleSort("status")}
+                        >
+                          Status{sortIcon("status")}
                         </Table.Th>
-                        <Table.Th style={{ color: "#3730a3", cursor: "pointer" }} onClick={() => handleSort('note')}>
-                          Keterangan{sortIcon('note')}
+                        <Table.Th
+                          style={{ color: "#3730a3", cursor: "pointer" }}
+                          onClick={() => handleSort("note")}
+                        >
+                          Keterangan{sortIcon("note")}
                         </Table.Th>
-                        <Table.Th style={{ color: "#3730a3" }}>Aksi</Table.Th>
+                        <Table.Th style={{ color: "#3730a3", width: 70 }}>
+                          Aksi
+                        </Table.Th>
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -874,14 +1245,30 @@ export default function PlanningInboundPage() {
                         }
 
                         let diffBadge = null;
-                        if (p.status === "DONE" && p.selisih_menit !== null && p.selisih_menit !== undefined) {
+                        if (
+                          p.status === "DONE" &&
+                          p.selisih_menit !== null &&
+                          p.selisih_menit !== undefined
+                        ) {
                           const diff = p.selisih_menit;
                           if (diff > 0) {
-                            diffBadge = <Badge color="red" size="xs" variant="light">+{diff}m</Badge>;
+                            diffBadge = (
+                              <Badge color="red" size="xs" variant="light">
+                                +{diff}m
+                              </Badge>
+                            );
                           } else if (diff < 0) {
-                            diffBadge = <Badge color="green" size="xs" variant="light">{diff}m</Badge>;
+                            diffBadge = (
+                              <Badge color="green" size="xs" variant="light">
+                                {diff}m
+                              </Badge>
+                            );
                           } else {
-                            diffBadge = <Badge color="teal" size="xs" variant="light">Tepat</Badge>;
+                            diffBadge = (
+                              <Badge color="teal" size="xs" variant="light">
+                                Tepat
+                              </Badge>
+                            );
                           }
                         }
 
@@ -889,25 +1276,53 @@ export default function PlanningInboundPage() {
                           p.status === "DONE"
                             ? "green"
                             : p.status === "FAIL"
-                            ? "red"
-                            : "yellow";
+                              ? "red"
+                              : "yellow";
 
                         return (
                           <Table.Tr key={p.id}>
                             <Table.Td fw={700}>{p.no_po}</Table.Td>
                             <Table.Td>{p.supplier || "-"}</Table.Td>
-                            <Table.Td style={{ padding: '4px 6px' }}>
-                              <div style={{ maxHeight: 80, overflowY: 'auto' }}>
+                            <Table.Td style={{ padding: "4px 6px" }}>
+                              <div style={{ maxHeight: 80, overflowY: "auto" }}>
                                 {p.items?.map((item: any, idx: number) => {
-                                  const itemBarangId = item.barang_id ?? item.barangId;
-                                  const itemAllocations = item.rack_allocations ?? item.rackAllocations ?? [];
-                                  const bName = barangs.find((b: any) => b.id === itemBarangId)?.nama || '-';
+                                  const itemBarangId =
+                                    item.barang_id ?? item.barangId;
+                                  const itemAllocations =
+                                    item.rack_allocations ??
+                                    item.rackAllocations ??
+                                    [];
+                                  const bName =
+                                    barangs.find(
+                                      (b: any) => b.id === itemBarangId,
+                                    )?.nama || "-";
                                   return (
-                                    <div key={idx} style={{ fontSize: 10, borderBottom: '1px solid #f1f5f9', padding: '1px 0', lineHeight: '1.3' }}>
-                                      <span style={{ fontWeight: 600 }}>{bName}</span> x{item.qty} {item.satuan || ''}
-                                    {itemAllocations.map((a: any) => (
-                                      <span key={a.gudang_id ?? a.gudangId} style={{ color: "#64748b", fontSize: 9, display: 'block', paddingLeft: 8 }}>
-                                        {a.gudangName || `Rak #${a.gudang_id ?? a.gudangId}`}: {a.qty}
+                                    <div
+                                      key={idx}
+                                      style={{
+                                        fontSize: 10,
+                                        borderBottom: "1px solid #f1f5f9",
+                                        padding: "1px 0",
+                                        lineHeight: "1.3",
+                                      }}
+                                    >
+                                      <span style={{ fontWeight: 600 }}>
+                                        {bName}
+                                      </span>{" "}
+                                      x{item.qty} {item.satuan || ""}
+                                      {itemAllocations.map((a: any) => (
+                                        <span
+                                          key={a.gudang_id ?? a.gudangId}
+                                          style={{
+                                            color: "#64748b",
+                                            fontSize: 9,
+                                            display: "block",
+                                            paddingLeft: 8,
+                                          }}
+                                        >
+                                          {a.gudangName ||
+                                            `Rak #${a.gudang_id ?? a.gudangId}`}
+                                          : {a.qty}
                                         </span>
                                       ))}
                                     </div>
@@ -915,22 +1330,64 @@ export default function PlanningInboundPage() {
                                 })}
                               </div>
                             </Table.Td>
-                            <Table.Td style={{ fontSize: 10, padding: '4px 6px', verticalAlign: 'top' }}>
-                              <div><span style={{ color: '#64748b' }}>ETA:</span> {etaStr}</div>
-                              {realStr !== '-' && <div><span style={{ color: '#64748b' }}>Realisasi:</span> {realStr}</div>}
-                              {diffBadge && <div style={{ marginTop: 2 }}>{diffBadge}</div>}
-                              {realStr === '-' && etaStr === '-' && <span style={{ color: '#adb5bd' }}>-</span>}
+                            <Table.Td
+                              style={{
+                                fontSize: 10,
+                                padding: "4px 6px",
+                                verticalAlign: "top",
+                              }}
+                            >
+                              <div>
+                                <span style={{ color: "#64748b" }}>ETA:</span>{" "}
+                                {etaStr}
+                              </div>
+                              {realStr !== "-" && (
+                                <div>
+                                  <span style={{ color: "#64748b" }}>
+                                    Realisasi:
+                                  </span>{" "}
+                                  {realStr}
+                                </div>
+                              )}
+                              {diffBadge && (
+                                <div style={{ marginTop: 2 }}>{diffBadge}</div>
+                              )}
+                              {realStr === "-" && etaStr === "-" && (
+                                <span style={{ color: "#adb5bd" }}>-</span>
+                              )}
                             </Table.Td>
                             <Table.Td>
-                              <Badge color={badgeColor} variant="filled" size="xs">
+                              <Badge
+                                color={badgeColor}
+                                variant="filled"
+                                size="xs"
+                              >
                                 {p.status}
                               </Badge>
-                              <div style={{ fontSize: 9, color: '#64748b', marginTop: 3 }}>Dibuat {p.created_by_username || 'sistem'} · {fmt(p.created_at)}</div>
-                              {p.published_at && <div style={{ fontSize: 9, color: '#64748b' }}>Eksekusi {p.executed_by_username || 'sistem'} · {fmt(p.published_at)}</div>}
+                              <div
+                                style={{
+                                  fontSize: 9,
+                                  color: "#64748b",
+                                  marginTop: 3,
+                                }}
+                              >
+                                Dibuat {p.created_by_username || "sistem"} ·{" "}
+                                {fmt(p.created_at)}
+                              </div>
+                              {p.published_at && (
+                                <div style={{ fontSize: 9, color: "#64748b" }}>
+                                  Eksekusi {p.executed_by_username || "sistem"}{" "}
+                                  · {fmt(p.published_at)}
+                                </div>
+                              )}
                             </Table.Td>
                             <Table.Td>{p.note || "-"}</Table.Td>
+                            {/* FIX: kolom Aksi selalu render sesuatu (tombol atau
+                                placeholder "-") supaya tinggi & lebar kolom
+                                konsisten di semua baris, tidak "bolong" saat
+                                status bukan WAIT. */}
                             <Table.Td>
-                              {p.status === "WAIT" && (
+                              {p.status === "WAIT" ? (
                                 <Group gap={2} wrap="nowrap">
                                   <Tooltip label="Edit">
                                     <ActionIcon
@@ -938,26 +1395,36 @@ export default function PlanningInboundPage() {
                                       color="green"
                                       variant="light"
                                       onClick={() => {
-                                        const mappedItems = p.items.map((it: any) => {
-                                          const bObj = barangs.find((b: any) => b.id === it.barangId);
-                                          return {
-                                            barangId: it.barangId,
-                                            qty: it.qty,
-                                            _name: bObj ? bObj.nama : '-',
-                                            satuan: it.satuan || bObj?.satuan || '',
-                                            zone: it.zone || '',
-                                            rackAllocations: it.rackAllocations || [],
-                                          };
-                                        });
+                                        const mappedItems = p.items.map(
+                                          (it: any) => {
+                                            const bObj = barangs.find(
+                                              (b: any) => b.id === it.barangId,
+                                            );
+                                            return {
+                                              barangId: it.barangId,
+                                              qty: it.qty,
+                                              _name: bObj ? bObj.nama : "-",
+                                              satuan:
+                                                it.satuan || bObj?.satuan || "",
+                                              zone: it.zone || "",
+                                              rackAllocations:
+                                                it.rackAllocations || [],
+                                            };
+                                          },
+                                        );
                                         setForm({
                                           no_po: p.no_po,
                                           supplier: p.supplier || "",
-                                          estimasi_datang: p.estimasi_datang ? new Date(p.estimasi_datang).toISOString().slice(0, 16) : "",
+                                          estimasi_datang: p.estimasi_datang
+                                            ? new Date(p.estimasi_datang)
+                                                .toISOString()
+                                                .slice(0, 16)
+                                            : "",
                                           note: p.note || "",
                                           items: mappedItems,
                                         });
-                                         setEditPlanId(p.id);
-                                       }}
+                                        setEditPlanId(p.id);
+                                      }}
                                     >
                                       <IconEdit size={13} />
                                     </ActionIcon>
@@ -973,6 +1440,10 @@ export default function PlanningInboundPage() {
                                     </ActionIcon>
                                   </Tooltip>
                                 </Group>
+                              ) : (
+                                <Text size="xs" c="dimmed">
+                                  -
+                                </Text>
                               )}
                             </Table.Td>
                           </Table.Tr>
@@ -990,8 +1461,13 @@ export default function PlanningInboundPage() {
                     </Table.Tbody>
                   </Table>
                 </Box>
-                
-                <Pagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
+
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  total={total}
+                  onPageChange={setPage}
+                />
               </Paper>
             </Stack>
           </Grid.Col>
